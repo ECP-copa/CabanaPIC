@@ -7,7 +7,6 @@
 #include <iostream>
 
 #include <interpolator.h>
-#include <visualization.h>
 
 #define real_t float
 
@@ -61,6 +60,9 @@ Cabana::MemberTypes<
 // Set the type for the particle AoSoA.
 using particle_list_t =
     Cabana::AoSoA<ParticleDataTypes,MemorySpace,array_size>;
+
+// TODO: tidy this so the include doesn't have to be so low down..
+#include <visualization.h>
 
 //---------------------------------------------------------------------------//
 // Helper functions.
@@ -267,45 +269,46 @@ void initialize_interpolator(interpolator_array_t* f)
     }
 }
 
-void write_vis(mesh_t& m, Visualizer& vis, size_t step)
+void write_vis(particle_list_t particles, Visualizer& vis, size_t step)
 {
 
-  logger << "Writing Vis " << step << std::endl;
-  size_t total_num_particles = 0;
+  size_t total_num_particles = particles.size();
 
-
+  /*
   for (unsigned int sn = 0; sn < species.size(); sn++)
   {
     int particle_count = species[sn].num_particles;
     total_num_particles += particle_count;
   }
+  */
 
   vis.write_header(total_num_particles, step);
 
-  for (unsigned int sn = 0; sn < species.size(); sn++)
-  {
-    auto particles_accesor = get_particle_accessor(m, species[sn].key);
-    vis.write_particle_pos(particles_accesor, total_num_particles, m);
-  }
+  //for (unsigned int sn = 0; sn < species.size(); sn++)
+  //{
+    //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particles_position(particles);
+  //}
 
   vis.write_cell_types(total_num_particles);
 
   vis.pre_scalars(total_num_particles);
   vis.write_particles_property_header("weight", total_num_particles);
 
-  for (unsigned int sn = 0; sn < species.size(); sn++)
-  {
-    auto particles_accesor = get_particle_accessor(m, species[sn].key);
-    vis.write_particles_w(particles_accesor, m);
-  }
+  //for (unsigned int sn = 0; sn < species.size(); sn++)
+  //{
+    //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particles_w(particles);
+  //}
+  //*/
 
   vis.write_particles_property_header("species", total_num_particles);
 
-  for (unsigned int sn = 0; sn < species.size(); sn++)
-  {
-    auto particles_accesor = get_particle_accessor(m, species[sn].key);
-    vis.write_particles_sp(particles_accesor, m, sn);
-  }
+  //for (unsigned int sn = 0; sn < species.size(); sn++)
+  //{
+    //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particles_sp(particles, 1);
+  //}
   vis.finalize();
 
 }
@@ -340,6 +343,8 @@ int main( int argc, char* argv[] )
 
     initialize_interpolator(f);
 
+    Visualizer vis;
+
     for (size_t step = 0; step < num_steps; step++)
     {
         std::cout << "Step " << step << std::endl;
@@ -350,7 +355,7 @@ int main( int argc, char* argv[] )
         // Print particles.
         print_particles( particles );
 
-        write_viz();
+        write_vis(particles, vis, step);
     }
 
     // TODO: delete kokkos views/cabana data
