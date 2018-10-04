@@ -1,0 +1,3 @@
+[submodule "Cabana"]
+	path = Cabana
+	url = https://github.com/ECP-copa/Cabana.git
