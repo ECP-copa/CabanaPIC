@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include <interpolator.h>
+#include <visualization.h>
 
 #define real_t float
 
@@ -65,7 +66,7 @@ using particle_list_t =
 // Helper functions.
 //---------------------------------------------------------------------------//
 // Function to intitialize the particles.
-void initializeParticles( particle_list_t particles )
+void initialize_particles( particle_list_t particles )
 {
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
@@ -106,7 +107,7 @@ void initializeParticles( particle_list_t particles )
 }
 
 // Function to print out the data for every particle.
-void printParticles( const particle_list_t particles )
+void print_particles( const particle_list_t particles )
 {
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
@@ -150,76 +151,91 @@ void printParticles( const particle_list_t particles )
 void uncenter_particles(
         particle_list_t particles,
         interpolator_array_t* f0,
-        real_t qdt_2mc )
+        real_t qdt_2mc
+    )
 {
-    /*
+
+    auto position_x = particles.slice<PositionX>();
+    auto position_y = particles.slice<PositionY>();
+    auto position_z = particles.slice<PositionZ>();
+
+    auto velocity_x = particles.slice<VelocityX>();
+    auto velocity_y = particles.slice<VelocityY>();
+    auto velocity_z = particles.slice<VelocityZ>();
+
+    auto charge = particles.slice<Charge>();
+    auto cell = particles.slice<Cell_Index>();
+
     const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
     const real_t one_third      = 1./3.;
     const real_t two_fifteenths = 2./15.;
 
-    //int first, ii, n;
+    auto _uncenter =
+        KOKKOS_LAMBDA( const int s ) {
+            for ( int i = 0; i < particle_list_t::vector_length; ++i )
+            {
+                // Grab particle properties
+                real_t dx = position_x.access(s,i);   // Load position
+                real_t dy = position_y.access(s,i);   // Load position
+                real_t dz = position_z.access(s,i);   // Load position
 
-    for ( auto idx = particles.begin();
-            idx != particles.end();
-            ++idx )
-    {
-        // Grab particle properties
-        real_t dx = particles.get<PositionX>(idx);                            // Load position
-        real_t dy = particles.get<PositionY>(idx);
-        real_t dz = particles.get<PositionZ>(idx);
-        int ii = particles.get<Cell_Index>(idx);
+                int ii = cell.access(s,i);
 
-        // Grab interpolator
-        interpolator_t& f = f0->i[ii];                          // Interpolate E
+                // Grab interpolator
+                interpolator_t& f = f0->i[ii];                          // Interpolate E
 
-        // Calculate field values
-        real_t hax = qdt_2mc*(( f.ex + dy*f.dexdy ) + dz*( f.dexdz + dy*f.d2exdydz ));
-        real_t hay = qdt_2mc*(( f.ey + dz*f.deydz ) + dx*( f.deydx + dz*f.d2eydzdx ));
-        real_t haz = qdt_2mc*(( f.ez + dx*f.dezdx ) + dy*( f.dezdy + dx*f.d2ezdxdy ));
+                // Calculate field values
+                real_t hax = qdt_2mc*(( f.ex + dy*f.dexdy ) + dz*( f.dexdz + dy*f.d2exdydz ));
+                real_t hay = qdt_2mc*(( f.ey + dz*f.deydz ) + dx*( f.deydx + dz*f.d2eydzdx ));
+                real_t haz = qdt_2mc*(( f.ez + dx*f.dezdx ) + dy*( f.dezdy + dx*f.d2ezdxdy ));
 
 
-        real_t cbx = f.cbx + dx*f.dcbxdx;            // Interpolate B
-        real_t cby = f.cby + dy*f.dcbydy;
-        real_t cbz = f.cbz + dz*f.dcbzdz;
+                real_t cbx = f.cbx + dx*f.dcbxdx;            // Interpolate B
+                real_t cby = f.cby + dy*f.dcbydy;
+                real_t cbz = f.cbz + dz*f.dcbzdz;
 
-        // Load momentum
-        real_t ux = particles.get<VelocityX>(idx);
-        real_t uy = particles.get<VelocityY>(idx);
-        real_t uz = particles.get<VelocityZ>(idx);
+                // Load momentum
+                real_t ux = velocity_x.access(s,i);   // Load velocity
+                real_t uy = velocity_y.access(s,i);   // Load velocity
+                real_t uz = velocity_z.access(s,i);   // Load velocity
 
-        real_t v0 = qdt_4mc/(float)sqrt(one + (ux*ux + (uy*uy + uz*uz)));
+                real_t v0 = qdt_4mc/(float)sqrt(one + (ux*ux + (uy*uy + uz*uz)));
 
-        // Borris push
-        // Boris - scalars
-        real_t v1 = cbx*cbx + (cby*cby + cbz*cbz);
-        real_t v2 = (v0*v0)*v1;
-        real_t v3 = v0*(one+v2*(one_third+v2*two_fifteenths));
-        real_t v4 = v3/(one+v1*(v3*v3));
+                // Borris push
+                // Boris - scalars
+                real_t v1 = cbx*cbx + (cby*cby + cbz*cbz);
+                real_t v2 = (v0*v0)*v1;
+                real_t v3 = v0*(one+v2*(one_third+v2*two_fifteenths));
+                real_t v4 = v3/(one+v1*(v3*v3));
 
-        v4  += v4;
+                v4  += v4;
 
-        v0   = ux + v3*( uy*cbz - uz*cby );      // Boris - uprime
-        v1   = uy + v3*( uz*cbx - ux*cbz );
-        v2   = uz + v3*( ux*cby - uy*cbx );
+                v0   = ux + v3*( uy*cbz - uz*cby );      // Boris - uprime
+                v1   = uy + v3*( uz*cbx - ux*cbz );
+                v2   = uz + v3*( ux*cby - uy*cbx );
 
-        ux  += v4*( v1*cbz - v2*cby );           // Boris - rotation
-        uy  += v4*( v2*cbx - v0*cbz );
-        uz  += v4*( v0*cby - v1*cbx );
+                ux  += v4*( v1*cbz - v2*cby );           // Boris - rotation
+                uy  += v4*( v2*cbx - v0*cbz );
+                uz  += v4*( v0*cby - v1*cbx );
 
-        ux  += hax;                              // Half advance E
-        uy  += hay;
-        uz  += haz;
+                ux  += hax;                              // Half advance E
+                uy  += hay;
+                uz  += haz;
 
-        std::cout << " hay " << hay << " ux " << ux << std::endl;
+                std::cout << " hay " << hay << " ux " << ux << std::endl;
 
-        // Store result
-        particles.get<VelocityX>(idx) = ux;
-        particles.get<VelocityY>(idx) = uy;
-        particles.get<VelocityZ>(idx) = uz;
+                // Store result
+                velocity_x.access(s,i) = ux;
+                velocity_y.access(s,i) = uy;
+                velocity_z.access(s,i) = uz;
 
-    }
-*/
+            }
+        };
+
+    Cabana::RangePolicy<particle_list_t::vector_length,ExecutionSpace>
+        vec_policy( 0, particles.numSoA() );
+    Cabana::parallel_for( vec_policy, _uncenter, parallel_algorithm_tag() );
 }
 
 void initialize_interpolator(interpolator_array_t* f)
@@ -251,6 +267,49 @@ void initialize_interpolator(interpolator_array_t* f)
     }
 }
 
+void write_vis(mesh_t& m, Visualizer& vis, size_t step)
+{
+
+  logger << "Writing Vis " << step << std::endl;
+  size_t total_num_particles = 0;
+
+
+  for (unsigned int sn = 0; sn < species.size(); sn++)
+  {
+    int particle_count = species[sn].num_particles;
+    total_num_particles += particle_count;
+  }
+
+  vis.write_header(total_num_particles, step);
+
+  for (unsigned int sn = 0; sn < species.size(); sn++)
+  {
+    auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particle_pos(particles_accesor, total_num_particles, m);
+  }
+
+  vis.write_cell_types(total_num_particles);
+
+  vis.pre_scalars(total_num_particles);
+  vis.write_particles_property_header("weight", total_num_particles);
+
+  for (unsigned int sn = 0; sn < species.size(); sn++)
+  {
+    auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particles_w(particles_accesor, m);
+  }
+
+  vis.write_particles_property_header("species", total_num_particles);
+
+  for (unsigned int sn = 0; sn < species.size(); sn++)
+  {
+    auto particles_accesor = get_particle_accessor(m, species[sn].key);
+    vis.write_particles_sp(particles_accesor, m, sn);
+  }
+  vis.finalize();
+
+}
+
 //---------------------------------------------------------------------------//
 // Main.
 //---------------------------------------------------------------------------//
@@ -266,13 +325,13 @@ int main( int argc, char* argv[] )
     particle_list_t particles( num_particle );
 
     // Initialize particles.
-    initializeParticles( particles );
+    initialize_particles( particles );
 
     // Uncenter Particles
     real_t qdt_2md = 1.0f;
 
     std::cout << "Initial:" << std::endl;
-    printParticles( particles );
+    print_particles( particles );
 
     size_t num_steps = 10;
 
@@ -284,13 +343,17 @@ int main( int argc, char* argv[] )
     for (size_t step = 0; step < num_steps; step++)
     {
         std::cout << "Step " << step << std::endl;
+
         // Move
         uncenter_particles( particles, f, qdt_2md);
 
         // Print particles.
-        printParticles( particles );
+        print_particles( particles );
+
+        write_viz();
     }
 
+    // TODO: delete kokkos views/cabana data
     // Finalize.
     Cabana::finalize();
     return 0;
