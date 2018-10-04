@@ -27,6 +27,7 @@ class Visualizer {
             vis_file << "POINTS " << total_num_particles << " float" << std::endl;
         }
 
+        // TODO: all these loops are the same, we could replace it with vtemplate
         void write_particles_position(particle_list_t& particles)
         {
             auto position_x = particles.slice<PositionX>();
