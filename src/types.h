@@ -1,8 +1,21 @@
 #ifndef pic_types_h
 #define pic_types_h
 
-#include <interpolator.h>
 #define real_t float
+
+/////////////// START VPIC TYPE ////////////
+
+#include <grid.h>
+#include <interpolator.h>
+#include <accumulator.h>
+
+// TODO: should this be in it's own file?
+typedef struct particle_mover {
+  float dispx, dispy, dispz; // Displacement of particle
+  int32_t i;                 // Index of the particle to move
+} particle_mover_t;
+
+/////////////// END VPIC TYPE ////////////
 
 //---------------------------------------------------------------------------//
 // Define particle data.

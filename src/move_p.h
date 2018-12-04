@@ -6,31 +6,53 @@
 // TODO: add namespace etc?
 // TODO: port this to cabana syntax
 int move_p(
-        //particle_t       * ALIGNED(128) p0,
-        particle_mover_t * ALIGNED(16)  pm,
-        accumulator_t    * ALIGNED(128) a0,
-        const grid_t     *              g,
-        const float                     qsp )
+        particle_list_t particles,
+        particle_mover_t* pm,
+        accumulator_t* a0,
+        const grid_t* g,
+        const float qsp
+    )
 {
-    float s_midx, s_midy, s_midz;
-    float s_dispx, s_dispy, s_dispz;
+
+    // Grab accessors
+    auto position_x = particles.slice<PositionX>();
+    auto position_y = particles.slice<PositionY>();
+    auto position_z = particles.slice<PositionZ>();
+
+    auto velocity_x = particles.slice<VelocityX>();
+    auto velocity_y = particles.slice<VelocityY>();
+    auto velocity_z = particles.slice<VelocityZ>();
+
+    auto charge = particles.slice<Charge>();
+    auto cell = particles.slice<Cell_Index>();
+
+
+    // Kernel variables
     float s_dir[3];
     float v0, v1, v2, v3, v4, v5, q;
     int axis, face;
     int64_t neighbor;
     float *a;
-    particle_t * ALIGNED(32) p = p0 + pm->i;
+
+    //particle_t* p = p0 + pm->i;
+    int index = pm->i;
 
     q = qsp*p->w;
 
     for(;;) {
+        /*
         s_midx = p->dx;
         s_midy = p->dy;
         s_midz = p->dz;
+        */
 
-        s_dispx = pm->dispx;
-        s_dispy = pm->dispy;
-        s_dispz = pm->dispz;
+        float s_midx = position_x.access(index);
+        float s_midy = position_y.access(index);
+        float s_midz = position_z.access(index);
+
+        float s_dispx = pm->dispx;
+        float s_dispy = pm->dispy;
+        float s_dispz = pm->dispz;
 
         s_dir[0] = (s_dispx>0) ? 1 : -1;
         s_dir[1] = (s_dispy>0) ? 1 : -1;
@@ -66,7 +88,10 @@ int move_p(
         // the total physical charge that passed through the appropriate
         // current quadrant in a time-step
         v5 = q*s_dispx*s_dispy*s_dispz*(1./3.);
-        a = (float *)(a0 + p->i);
+
+        int ii = cell.access(i);
+        a = (float *)(a0 + ii);
+
 #   define accumulate_j(X,Y,Z)                                        \
         v4  = q*s_disp##X;    /* v2 = q ux                            */  \
         v1  = v4*s_mid##Y;    /* v1 = q ux dy                         */  \
@@ -97,9 +122,15 @@ int move_p(
         pm->dispz -= s_dispz;
 
         // Compute the new particle offset
+        /*
         p->dx += s_dispx+s_dispx;
         p->dy += s_dispy+s_dispy;
         p->dz += s_dispz+s_dispz;
+        */
+        position_x.access(index) += s_dispx+s_dispx;
+        position_y.access(index) += s_dispy+s_dispy;
+        position_z.access(index) += s_dispz+s_dispz;
+
 
         // If an end streak, return success (should be ~50% of the time)
 
@@ -113,10 +144,14 @@ int move_p(
         // +/-1 _exactly_ for the particle.
 
         v0 = s_dir[axis];
+
+        // TODO: do branching based on axis
+
         (&(p->dx))[axis] = v0; // Avoid roundoff fiascos--put the particle
+
         // _exactly_ on the boundary.
         face = axis; if( v0>0 ) face += 3;
-        neighbor = g->neighbor[ 6*p->i + face ];
+        neighbor = g->neighbor[ 6* ii + face ];
 
         if( UNLIKELY( neighbor==reflect_particles ) ) {
             // Hit a reflecting boundary condition.  Reflect the particle
@@ -131,14 +166,18 @@ int move_p(
             // Cannot handle the boundary condition here.  Save the updated
             // particle position, face it hit and update the remaining
             // displacement in the particle mover.
-            p->i = 8*p->i + face;
+            //p->i = 8*p->i + face;
+            cell.access(i) = 8 * ii + face;
+
             return 1; // Return "mover still in use"
         }
 
         // Crossed into a normal voxel.  Update the voxel index, convert the
         // particle coordinate system and keep moving the particle.
 
-        p->i = neighbor - g->rangel; // Compute local index of neighbor
+        //p->i = neighbor - g->rangel; // Compute local index of neighbor
+        cell.access(i) = neighbor - g->rangel;
+
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         (&(p->dx))[axis] = -v0;      // Convert coordinate system
     }
