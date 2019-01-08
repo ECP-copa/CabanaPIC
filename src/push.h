@@ -34,9 +34,10 @@ void push(
     const real_t two_fifteenths = 2./15.;
 
     auto _push =
-        KOKKOS_LAMBDA( const int s ) {
-            for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            {
+        KOKKOS_LAMBDA( const int s, const int i )
+        {
+            //for ( int i = 0; i < particle_list_t::vector_length; ++i )
+            //{
                 // TODO: deal with pms
                 particle_mover_t local_pm();
 
@@ -172,12 +173,12 @@ void push(
                     } // if
                 }
 
-            }
+            //}
         };
 
-    Cabana::RangePolicy<particle_list_t::vector_length,ExecutionSpace>
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
         vec_policy( 0, particles.numSoA() );
-    Cabana::parallel_for( vec_policy, _push, parallel_algorithm_tag() );
+    Cabana::simd_parallel_for( vec_policy, _push, "push()" );
 }
 
 #endif // pic_push_h

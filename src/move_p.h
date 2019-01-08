@@ -26,6 +26,7 @@ int move_p(
     auto charge = particles.slice<Charge>();
     auto cell = particles.slice<Cell_Index>();
 
+    auto cell = particles.slice<Weight>();
 
     // Kernel variables
     float s_dir[3];
@@ -37,7 +38,7 @@ int move_p(
     //particle_t* p = p0 + pm->i;
     int index = pm->i;
 
-    q = qsp*p->w;
+    q = qsp * weight.access(index);
 
     for(;;) {
         /*
@@ -150,10 +151,12 @@ int move_p(
         (&(p->dx))[axis] = v0; // Avoid roundoff fiascos--put the particle
 
         // _exactly_ on the boundary.
-        face = axis; if( v0>0 ) face += 3;
+        face = axis;
+        if( v0>0 ) face += 3;
+
         neighbor = g->neighbor[ 6* ii + face ];
 
-        if( UNLIKELY( neighbor==reflect_particles ) ) {
+        if ( neighbor==reflect_particles ) {
             // Hit a reflecting boundary condition.  Reflect the particle
             // momentum and remaining displacement and keep moving the
             // particle.
@@ -162,7 +165,7 @@ int move_p(
             continue;
         }
 
-        if( UNLIKELY( neighbor<g->rangel || neighbor>g->rangeh ) ) {
+        if ( neighbor<g->rangel || neighbor>g->rangeh ) {
             // Cannot handle the boundary condition here.  Save the updated
             // particle position, face it hit and update the remaining
             // displacement in the particle mover.
@@ -177,6 +180,8 @@ int move_p(
 
         //p->i = neighbor - g->rangel; // Compute local index of neighbor
         cell.access(i) = neighbor - g->rangel;
+
+        // TODO: port the macros from the Kokkos port
 
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         (&(p->dx))[axis] = -v0;      // Convert coordinate system

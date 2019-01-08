@@ -26,12 +26,13 @@ void initialize_particles( particle_list_t particles )
     auto cell = particles.slice<Cell_Index>();
 
     auto _init =
-        KOKKOS_LAMBDA( const int s )
+        //KOKKOS_LAMBDA( const int s )
+        KOKKOS_LAMBDA( const int s, const int i )
         {
             // Much more likely to vectroize and give good performance
             float counter = (float)s;
-            for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            {
+            //for ( int i = 0; i < particle_list_t::vector_length; ++i )
+            //{
                 // Initialize position.
                 position_x.access(s,i) = 1.1 + counter;
                 position_y.access(s,i) = 2.2 + counter;
@@ -45,11 +46,11 @@ void initialize_particles( particle_list_t particles )
                 charge.access(s,i) = 1.0;
                 cell.access(s,i) = s;
                 counter += 0.01;
-            }
+            //}
         };
-    Cabana::RangePolicy<particle_list_t::vector_length,ExecutionSpace>
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
         vec_policy( 0, particles.numSoA() );
-    Cabana::parallel_for( vec_policy, _init, parallel_algorithm_tag() );
+    Cabana::simd_parallel_for( vec_policy, _init, "init()" );
 }
 
 // Function to print out the data for every particle.
@@ -67,11 +68,11 @@ void print_particles( const particle_list_t particles )
     auto cell = particles.slice<Cell_Index>();
 
     auto _print =
-        KOKKOS_LAMBDA( const int s )
+        KOKKOS_LAMBDA( const int s, const int i )
         {
             // Much more likely to vectroize and give good performance
-            for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            {
+            //for ( int i = 0; i < particle_list_t::vector_length; ++i )
+            //{
                 std::cout << "Struct id: " << s;
                 std::cout << " Struct offset: " << i;
                 std::cout << " Position: "
@@ -85,12 +86,12 @@ void print_particles( const particle_list_t particles )
                     << velocity_y.access(s,i) << " "
                     << velocity_z.access(s,i) << " ";
                 std::cout << std::endl;
-            }
+            //}
         };
 
-    Cabana::RangePolicy<particle_list_t::vector_length,ExecutionSpace>
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
         vec_policy( 0, particles.numSoA() );
-    Cabana::parallel_for( vec_policy, _print, parallel_algorithm_tag() );
+    Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
 
 }
 
@@ -118,9 +119,10 @@ void uncenter_particles(
     const real_t two_fifteenths = 2./15.;
 
     auto _uncenter =
-        KOKKOS_LAMBDA( const int s ) {
-            for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            {
+        //KOKKOS_LAMBDA( const int s ) {
+        KOKKOS_LAMBDA( const int s, const int i ) {
+            //for ( int i = 0; i < particle_list_t::vector_length; ++i )
+            //{
                 // Grab particle properties
                 real_t dx = position_x.access(s,i);   // Load position
                 real_t dy = position_y.access(s,i);   // Load position
@@ -176,12 +178,12 @@ void uncenter_particles(
                 velocity_y.access(s,i) = uy;
                 velocity_z.access(s,i) = uz;
 
-            }
+            //}
         };
 
-    Cabana::RangePolicy<particle_list_t::vector_length,ExecutionSpace>
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
         vec_policy( 0, particles.numSoA() );
-    Cabana::parallel_for( vec_policy, _uncenter, parallel_algorithm_tag() );
+    Cabana::simd_parallel_for( vec_policy, _uncenter, "uncenter()" );
 }
 
 void initialize_interpolator(interpolator_array_t* f)

@@ -28,7 +28,7 @@ const std::size_t array_size = VLEN;
 
 using MemorySpace = Cabana::HostSpace;
 using ExecutionSpace = Kokkos::Serial;
-using parallel_algorithm_tag = Cabana::StructParallelTag;
+//using parallel_algorithm_tag = Cabana::StructParallelTag;
 
 // User field enumeration. These will be used to index into the data set. Must
 // start at 0 and increment contiguously.
