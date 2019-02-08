@@ -3,43 +3,23 @@
 
 #define real_t float
 
-/////////////// START VPIC TYPE ////////////
 
-#include <grid.h>
-#include <interpolator.h>
-#include <accumulator.h>
-
-// TODO: should this be in it's own file?
-class particle_mover_t {
-    public:
-  float dispx, dispy, dispz; // Displacement of particle
-  int32_t i;                 // Index of the particle to move
-};
-
-/////////////// END VPIC TYPE ////////////
-
-//---------------------------------------------------------------------------//
-// Define particle data.
-//---------------------------------------------------------------------------//
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
 #define VLEN 16
 #endif
 const std::size_t array_size = VLEN;
 
+#ifndef CELL_BLOCK_FACTOR
+#define CELL_BLOCK_FACTOR 16
+#endif
+// Cell blocking factor in memory
+const size_t cell_blocking = CELL_BLOCK_FACTOR;
+
 using MemorySpace = Cabana::HostSpace;
 using ExecutionSpace = Kokkos::Serial;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
 
-// User field enumeration. These will be used to index into the data set. Must
-// start at 0 and increment contiguously.
-//
-// NOTE: Users don't have to make this enum (or some other set of integral
-// constants) but it is a nice way to provide meaning to the different data
-// types and values assigned to the particles.
-//
-// NOTE: These enums are also ordered in the same way as the data in the
-// template parameters below.
 enum UserParticleFields
 {
     PositionX = 0,
@@ -68,5 +48,52 @@ Cabana::MemberTypes<
 // Set the type for the particle AoSoA.
 using particle_list_t =
     Cabana::AoSoA<ParticleDataTypes,MemorySpace,array_size>;
+
+/////////////// START VPIC TYPE ////////////
+
+#include <grid.h>
+
+#ifdef USE_NON_KOKKOS_TYPES // UNTESTED!
+#include <interpolator.h>
+#include <accumulator.h>
+#else
+    using InterpolatorDataTypes =
+        Cabana::MemberTypes<
+        float, //  ex,
+        float , // dexdy,
+        float , // dexdz,
+        float , // d2exdydz,
+        float , // ey,
+        float , // deydz,
+        float , // deydx,
+        float , // d2eydzdx,
+        float , // ez,
+        float , // dezdx,
+        float , // dezdy,
+        float , // d2ezdxdy,
+        float , // cbx,
+        float , // dcbxdx,
+        float , // cby,
+        float , // dcbydy,
+        float , // cbz,
+        float // dcbzdz,
+        >;
+    using interpolator_array_t = Cabana::AoSoA<InterpolatorDataTypes,MemorySpace,cell_blocking>;
+using AccumulatorDataTypes =
+    Cabana::MemberTypes<
+    float[12] // jx[4] jy[4] jz[4]
+>;
+using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
+#endif
+
+
+// TODO: should this be in it's own file?
+class particle_mover_t {
+    public:
+  float dispx, dispy, dispz; // Displacement of particle
+  int32_t i;                 // Index of the particle to move
+};
+
+/////////////// END VPIC TYPE ////////////
 
 #endif // pic_types_h

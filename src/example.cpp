@@ -278,6 +278,8 @@ int main( int argc, char* argv[] )
     // Initialize particles.
     initialize_particles( particles );
 
+    grid_t* g = new grid();
+
     real_t qdt_2mc = 1.0f;
     real_t cdt_dx = 1.0f;
     real_t cdt_dy = 1.0f;
@@ -287,19 +289,17 @@ int main( int argc, char* argv[] )
     std::cout << "Initial:" << std::endl;
     print_particles( particles );
 
-    size_t num_steps = 10;
+    const size_t num_steps = 10;
+    const size_t num_cells = 1;
 
-    // If we force ii = 0 for all particles, this can be 1 big?
-    interpolator_array_t* f = new interpolator_array_t(1);
+    // OLD WAY TO CREATE DATA
+    // If we force ii = 0 for all particles, these can be 1 big?
+    //interpolator_array_t* f = new interpolator_array_t(num_cells);
+    //accumulator_array_t* a = new accumulator_array_t(num_cells);
 
-    // If we force ii = 0 for all particles, this can be 1 big?
-    accumulator_array_t* a = new accumulator_array_t(1);
-
-    // If we force ii = 0 for all particles, this can be 1 big?
-    grid_t* g = new grid();
-
-    //using grid_list_t = Cabana::AoSoA<GridDataTypes,MemorySpace,array_size>;
-    //grid_list_t grid( n );
+    // NEW CABANA WAY
+    interpolator_array_t f(num_cells);
+    accumulator_array_t a(num_cells);
 
     initialize_interpolator(f);
 
