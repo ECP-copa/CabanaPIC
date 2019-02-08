@@ -106,9 +106,9 @@ void push(
                 v4   = v1 + uy;
                 real_t v5   = v2 + uz;
 
-                // FIXME-KJB: COULD SHORT CIRCUIT ACCUMULATION IN THE CASE WHERE QSP==0!
-                if(  v3<=one &&  v4<=one &&  v5<=one &&   // Check if inbnds
-                        -v3<=one && -v4<=one && -v5<=one ) {
+                // Check if inbnds
+                //if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
+                {
 
                     // Common case (inbnds).  Note: accumulator values are 4 times
                     // the total physical charge that passed through the appropriate
@@ -154,6 +154,8 @@ void push(
 #     undef ACCUMULATE_J
 
                 }
+
+                /*
                 else
                 {                                    // Unlikely
                     local_pm.dispx = ux;
@@ -172,6 +174,7 @@ void push(
                         //} // if
                     //} // if
                 }
+                */
 
             //}
         };
