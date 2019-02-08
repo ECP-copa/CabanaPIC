@@ -194,7 +194,9 @@ void initialize_interpolator(interpolator_array_t* f)
         auto& f_ = f->i[i];
 
         // Throw in some place holder values
+#ifdef ELECTRO_
         f_.ex = 0.01;
+#endif
         f_.dexdy = 0.02;
         f_.dexdz = 0.03;
         f_.d2exdydz = 0.04;
@@ -276,8 +278,11 @@ int main( int argc, char* argv[] )
     // Initialize particles.
     initialize_particles( particles );
 
-    // Uncenter Particles
-    real_t qdt_2md = 1.0f;
+    real_t qdt_2mc = 1.0f;
+    real_t cdt_dx = 1.0f;
+    real_t cdt_dy = 1.0f;
+    real_t cdt_dz = 1.0f;
+    real_t qsp = 1.0f;
 
     std::cout << "Initial:" << std::endl;
     print_particles( particles );
@@ -286,6 +291,15 @@ int main( int argc, char* argv[] )
 
     // If we force ii = 0 for all particles, this can be 1 big?
     interpolator_array_t* f = new interpolator_array_t(1);
+
+    // If we force ii = 0 for all particles, this can be 1 big?
+    accumulator_array_t* a = new accumulator_array_t(1);
+
+    // If we force ii = 0 for all particles, this can be 1 big?
+    grid_t* g = new grid();
+
+    //using grid_list_t = Cabana::AoSoA<GridDataTypes,MemorySpace,array_size>;
+    //grid_list_t grid( n );
 
     initialize_interpolator(f);
 
@@ -296,7 +310,18 @@ int main( int argc, char* argv[] )
         std::cout << "Step " << step << std::endl;
 
         // Move
-        uncenter_particles( particles, f, qdt_2md);
+        //uncenter_particles( particles, f, qdt_2mc);
+        push(
+            particles,
+            f,
+            qdt_2mc,
+            cdt_dx,
+            cdt_dy,
+            cdt_dz,
+            qsp,
+            a,
+            g
+        );
 
         // Print particles.
         print_particles( particles );

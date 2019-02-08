@@ -2,7 +2,7 @@
 #define pic_push_h
 
 #include <types.h>
-#include "move_p.h"
+//#include "move_p.h"
 
 void push(
         particle_list_t particles,
@@ -12,7 +12,7 @@ void push(
         real_t cdt_dy,
         real_t cdt_dz,
         real_t qsp,
-        accumulator_t* a0,
+        accumulator_array_t* a0,
         grid_t* g
     )
 {
@@ -39,7 +39,7 @@ void push(
             //for ( int i = 0; i < particle_list_t::vector_length; ++i )
             //{
                 // TODO: deal with pms
-                particle_mover_t local_pm();
+                particle_mover_t local_pm = particle_mover_t();
 
                 real_t dx = position_x.access(s,i);   // Load position
                 real_t dy = position_y.access(s,i);   // Load position
@@ -125,7 +125,7 @@ void push(
                     dy = v1;
                     dz = v2;
                     v5 = q*ux*uy*uz*one_third;              // Compute correction
-                    real_t* a  = (real_t *)( a0 + ii );              // Get accumulator
+                    real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
 
 #     define ACCUMULATE_J(X,Y,Z,offset)                                 \
                     v4  = q*u##X;   /* v2 = q ux                            */        \
@@ -156,21 +156,21 @@ void push(
                 }
                 else
                 {                                    // Unlikely
-                    local_pm->dispx = ux;
-                    local_pm->dispy = uy;
-                    local_pm->dispz = uz;
+                    local_pm.dispx = ux;
+                    local_pm.dispy = uy;
+                    local_pm.dispz = uz;
 
-                    local_pm->i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
+                    local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
-                    if( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
-                        // TODO: renable this
+                    // TODO: renable this
+                    //if( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
                         //if( nm<max_nm ) {
                             //pm[nm++] = local_pm[0];
                         //}
                         //else {
                             //ignore++;                 // Unlikely
                         //} // if
-                    } // if
+                    //} // if
                 }
 
             //}

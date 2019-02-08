@@ -10,10 +10,11 @@
 #include <accumulator.h>
 
 // TODO: should this be in it's own file?
-typedef struct particle_mover {
+class particle_mover_t {
+    public:
   float dispx, dispy, dispz; // Displacement of particle
   int32_t i;                 // Index of the particle to move
-} particle_mover_t;
+};
 
 /////////////// END VPIC TYPE ////////////
 
