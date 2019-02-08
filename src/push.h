@@ -6,13 +6,13 @@
 
 void push(
         particle_list_t particles,
-        interpolator_array_t* f0,
+        interpolator_array_t& f0,
         real_t qdt_2mc,
         real_t cdt_dx,
         real_t cdt_dy,
         real_t cdt_dz,
         real_t qsp,
-        accumulator_array_t* a0,
+        accumulator_array_t& a0,
         grid_t* g
     )
 {
@@ -47,18 +47,64 @@ void push(
 
                 int ii = cell.access(s,i);
 
-                interpolator_t& f = f0->i[ii];
+                // TODO: hoist slice call
+                auto ex = f0.slice<EX>()(ii);
+                auto dexdy  = f0.slice<DEXDY>()(ii);
+                auto dexdz  = f0.slice<DEXDZ>()(ii);
+                auto d2exdydz  = f0.slice<D2EXDYDZ>()(ii);
+                auto ey  = f0.slice<EY>()(ii);
+                auto deydz  = f0.slice<DEYDZ>()(ii);
+                auto deydx  = f0.slice<DEYDX>()(ii);
+                auto d2eydzdx  = f0.slice<D2EYDZDX>()(ii);
+                auto ez  = f0.slice<EZ>()(ii);
+                auto dezdx  = f0.slice<DEZDX>()(ii);
+                auto dezdy  = f0.slice<DEZDY>()(ii);
+                auto d2ezdxdy  = f0.slice<D2EZDXDY>()(ii);
+                auto cbx  = f0.slice<CBX>()(ii);
+                auto dcbxdx   = f0.slice<DCBXDX>()(ii);
+                auto cby  = f0.slice<CBY>()(ii);
+                auto dcbydy  = f0.slice<DCBYDY>()(ii);
+                auto cbz  = f0.slice<CBZ>()(ii);
+                auto dcbzdz  = f0.slice<DCBZDZ>()(ii);
+                /*
+                auto ex  = f0.get<EX>(ii);
+                auto dexdy  = f0.get<DEXDY>(ii);
+                auto dexdz  = f0.get<DEXDZ>(ii);
+                auto d2exdydz  = f0.get<D2EXDYDZ>(ii);
+                auto ey  = f0.get<EY>(ii);
+                auto deydz  = f0.get<DEYDZ>(ii);
+                auto deydx  = f0.get<DEYDX>(ii);
+                auto d2eydzdx  = f0.get<D2EYDZDX>(ii);
+                auto ez  = f0.get<EZ>(ii);
+                auto dezdx  = f0.get<DEZDX>(ii);
+                auto dezdy  = f0.get<DEZDY>(ii);
+                auto d2ezdxdy  = f0.get<D2EZDXDY>(ii);
+                auto cbx  = f0.get<CBX>(ii);
+                auto dcbxdx   = f0.get<DCBXDX>(ii);
+                auto cby  = f0.get<CBY>(ii);
+                auto dcbydy  = f0.get<DCBYDY>(ii);
+                auto cbz  = f0.get<CBZ>(ii);
+                auto dcbzdz  = f0.get<DCBZDZ>(ii);
+                */
 
+                /*
                 real_t hax  = qdt_2mc*(    ( f.ex    + dy*f.dexdy    ) +
                         dz*( f.dexdz + dy*f.d2exdydz ) );
                 real_t hay  = qdt_2mc*(    ( f.ey    + dz*f.deydz    ) +
                         dx*( f.deydx + dz*f.d2eydzdx ) );
                 real_t haz  = qdt_2mc*(    ( f.ez    + dx*f.dezdx    ) +
                         dy*( f.dezdy + dx*f.d2ezdxdy ) );
+                */
+                real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
+                        dz*( dexdz + dy*d2exdydz ) );
+                real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
+                        dx*( deydx + dz*d2eydzdx ) );
+                real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
+                        dy*( dezdy + dx*d2ezdxdy ) );
 
-                real_t cbx  = f.cbx + dx*f.dcbxdx;             // Interpolate B
-                real_t cby  = f.cby + dy*f.dcbydy;
-                real_t cbz  = f.cbz + dz*f.dcbzdz;
+                cbx  = cbx + dx*dcbxdx;             // Interpolate B
+                cby  = cby + dy*dcbydy;
+                cbz  = cbz + dz*dcbzdz;
 
                 real_t ux = velocity_x.access(s,i);   // Load velocity
                 real_t uy = velocity_y.access(s,i);   // Load velocity
@@ -125,7 +171,8 @@ void push(
                     dy = v1;
                     dz = v2;
                     v5 = q*ux*uy*uz*one_third;              // Compute correction
-                    real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
+
+                    //real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
 
 #     define ACCUMULATE_J(X,Y,Z,offset)                                 \
                     v4  = q*u##X;   /* v2 = q ux                            */        \
@@ -142,10 +189,10 @@ void push(
                     v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */        \
                     v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */        \
                     v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */        \
-                    a[offset+0] += v0;                                                \
-                    a[offset+1] += v1;                                                \
-                    a[offset+2] += v2;                                                \
-                    a[offset+3] += v3
+                    a0.slice<0>()(ii,offset+0) += v0; \
+                    a0.slice<0>()(ii,offset+1) += v1; \
+                    a0.slice<0>()(ii,offset+2) += v2; \
+                    a0.slice<0>()(ii,offset+3) += v3;
 
                     ACCUMULATE_J( x,y,z, 0 );
                     ACCUMULATE_J( y,z,x, 4 );

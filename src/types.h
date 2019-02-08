@@ -57,6 +57,29 @@ using particle_list_t =
 #include <interpolator.h>
 #include <accumulator.h>
 #else
+
+enum InterpolatorFields
+{
+    EX = 0,
+    DEXDY,
+    DEXDZ,
+    D2EXDYDZ,
+    EY,
+    DEYDZ,
+    DEYDX,
+    D2EYDZDX,
+    EZ,
+    DEZDX,
+    DEZDY,
+    D2EZDXDY,
+    CBX,
+    DCBXDX,
+    CBY,
+    DCBYDY,
+    CBZ,
+    DCBZDZ
+};
+
     using InterpolatorDataTypes =
         Cabana::MemberTypes<
         float, //  ex,

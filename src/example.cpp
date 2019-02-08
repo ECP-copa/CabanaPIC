@@ -97,7 +97,7 @@ void print_particles( const particle_list_t particles )
 
 void uncenter_particles(
         particle_list_t particles,
-        interpolator_array_t* f0,
+        interpolator_array_t& f0,
         real_t qdt_2mc
     )
 {
@@ -130,18 +130,35 @@ void uncenter_particles(
 
                 int ii = cell.access(s,i);
 
-                // Grab interpolator
-                interpolator_t& f = f0->i[ii];                          // Interpolate E
+                // Grab interpolator values
+                // TODO: hoist slice call?
+                auto ex = f0.slice<EX>()(ii);
+                auto dexdy  = f0.slice<DEXDY>()(ii);
+                auto dexdz  = f0.slice<DEXDZ>()(ii);
+                auto d2exdydz  = f0.slice<D2EXDYDZ>()(ii);
+                auto ey  = f0.slice<EY>()(ii);
+                auto deydz  = f0.slice<DEYDZ>()(ii);
+                auto deydx  = f0.slice<DEYDX>()(ii);
+                auto d2eydzdx  = f0.slice<D2EYDZDX>()(ii);
+                auto ez  = f0.slice<EZ>()(ii);
+                auto dezdx  = f0.slice<DEZDX>()(ii);
+                auto dezdy  = f0.slice<DEZDY>()(ii);
+                auto d2ezdxdy  = f0.slice<D2EZDXDY>()(ii);
+                auto cbx  = f0.slice<CBX>()(ii);
+                auto dcbxdx   = f0.slice<DCBXDX>()(ii);
+                auto cby  = f0.slice<CBY>()(ii);
+                auto dcbydy  = f0.slice<DCBYDY>()(ii);
+                auto cbz  = f0.slice<CBZ>()(ii);
+                auto dcbzdz  = f0.slice<DCBZDZ>()(ii);
 
                 // Calculate field values
-                real_t hax = qdt_2mc*(( f.ex + dy*f.dexdy ) + dz*( f.dexdz + dy*f.d2exdydz ));
-                real_t hay = qdt_2mc*(( f.ey + dz*f.deydz ) + dx*( f.deydx + dz*f.d2eydzdx ));
-                real_t haz = qdt_2mc*(( f.ez + dx*f.dezdx ) + dy*( f.dezdy + dx*f.d2ezdxdy ));
+                real_t hax = qdt_2mc*(( ex + dy*dexdy ) + dz*( dexdz + dy*d2exdydz ));
+                real_t hay = qdt_2mc*(( ey + dz*deydz ) + dx*( deydx + dz*d2eydzdx ));
+                real_t haz = qdt_2mc*(( ez + dx*dezdx ) + dy*( dezdy + dx*d2ezdxdy ));
 
-
-                real_t cbx = f.cbx + dx*f.dcbxdx;            // Interpolate B
-                real_t cby = f.cby + dy*f.dcbydy;
-                real_t cbz = f.cbz + dz*f.dcbzdz;
+                cbx = cbx + dx*dcbxdx;            // Interpolate B
+                cby = cby + dy*dcbydy;
+                cbz = cbz + dz*dcbzdz;
 
                 // Load momentum
                 real_t ux = velocity_x.access(s,i);   // Load velocity
@@ -186,34 +203,48 @@ void uncenter_particles(
     Cabana::simd_parallel_for( vec_policy, _uncenter, "uncenter()" );
 }
 
-void initialize_interpolator(interpolator_array_t* f)
+void initialize_interpolator(interpolator_array_t& f0)
 {
-    for (size_t i = 0; i < f->size; i++)
-    {
-        // Current one
-        auto& f_ = f->i[i];
+    auto ex = f0.slice<EX>();
+    auto dexdy  = f0.slice<DEXDY>();
+    auto dexdz  = f0.slice<DEXDZ>();
+    auto d2exdydz  = f0.slice<D2EXDYDZ>();
+    auto ey  = f0.slice<EY>();
+    auto deydz  = f0.slice<DEYDZ>();
+    auto deydx  = f0.slice<DEYDX>();
+    auto d2eydzdx  = f0.slice<D2EYDZDX>();
+    auto ez  = f0.slice<EZ>();
+    auto dezdx  = f0.slice<DEZDX>();
+    auto dezdy  = f0.slice<DEZDY>();
+    auto d2ezdxdy  = f0.slice<D2EZDXDY>();
+    auto cbx  = f0.slice<CBX>();
+    auto dcbxdx   = f0.slice<DCBXDX>();
+    auto cby  = f0.slice<CBY>();
+    auto dcbydy  = f0.slice<DCBYDY>();
+    auto cbz  = f0.slice<CBZ>();
+    auto dcbzdz  = f0.slice<DCBZDZ>();
 
+    for (size_t i = 0; i < f0.size(); i++)
+    {
         // Throw in some place holder values
-#ifdef ELECTRO_
-        f_.ex = 0.01;
-#endif
-        f_.dexdy = 0.02;
-        f_.dexdz = 0.03;
-        f_.d2exdydz = 0.04;
-        f_.ey = 0.05;
-        f_.deydz = 0.06;
-        f_.deydx = 0.07;
-        f_.d2eydzdx = 0.08;
-        f_.ez = 0.09;
-        f_.dezdx = 0.10;
-        f_.dezdy = 0.11;
-        f_.d2ezdxdy = 0.12;
-        f_.cbx = 0.13;
-        f_.dcbxdx = 0.14;
-        f_.cby = 0.15;
-        f_.dcbydy = 0.16;
-        f_.cbz = 0.17;
-        f_.dcbzdz = 0.18;
+        ex(i) = 0.01;
+        dexdy(i) = 0.02;
+        dexdz(i) = 0.03;
+        d2exdydz(i) = 0.04;
+        ey(i) = 0.05;
+        deydz(i) = 0.06;
+        deydx(i) = 0.07;
+        d2eydzdx(i) = 0.08;
+        ez(i) = 0.09;
+        dezdx(i) = 0.10;
+        dezdy(i) = 0.11;
+        d2ezdxdy(i) = 0.12;
+        cbx(i) = 0.13;
+        dcbxdx(i) = 0.14;
+        cby(i) = 0.15;
+        dcbydy(i) = 0.16;
+        cbz(i) = 0.17;
+        dcbzdz(i) = 0.18;
     }
 }
 
@@ -269,6 +300,7 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
+    {
     // Declare a number of particles.
     int num_particle = 45;
 
@@ -328,8 +360,8 @@ int main( int argc, char* argv[] )
 
         write_vis(particles, vis, step);
     }
+    } // End Scoping block 
 
-    // TODO: delete kokkos views/cabana data
     // Finalize.
     Cabana::finalize();
     return 0;
