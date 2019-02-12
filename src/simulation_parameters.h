@@ -1,7 +1,7 @@
 #ifndef SIMULATION_PARAMETERS_H
 #define SIMULATION_PARAMETERS_H
 
-class Parameters_
+template <class real_> class Parameters_
 {
 
     // TODO: Setters and getters
