@@ -322,14 +322,14 @@ int main( int argc, char* argv[] )
     print_particles( particles );
 
     const size_t num_steps = 10;
-    const size_t num_cells = 1;
+    const size_t num_cells = 2;
 
     // OLD WAY TO CREATE DATA
     // If we force ii = 0 for all particles, these can be 1 big?
     //interpolator_array_t* f = new interpolator_array_t(num_cells);
     //accumulator_array_t* a = new accumulator_array_t(num_cells);
 
-    // NEW CABANA WAY
+    // NEW CABANA STYLE
     interpolator_array_t f(num_cells);
     accumulator_array_t a(num_cells);
 
@@ -341,8 +341,10 @@ int main( int argc, char* argv[] )
     {
         std::cout << "Step " << step << std::endl;
 
+        // Sort TODO
+        // sort_particles();
+
         // Move
-        //uncenter_particles( particles, f, qdt_2mc);
         push(
             particles,
             f,
@@ -355,12 +357,27 @@ int main( int argc, char* argv[] )
             g
         );
 
+        // boundary_p TODO
+        // boundary_p(); // Implies Parallel!
+
+        // unload_accumulator_array TODO
+
+        // Half advance the magnetic field from B_0 to B_{1/2}
+        // advance_b(); TODO
+
+        // Advance the electric field from E_0 to E_1
+        // advance_e(); TODO
+
+        // Half advance the magnetic field from B_{1/2} to B_1
+        // advance_b(); TODO
+
         // Print particles.
         print_particles( particles );
 
+        // Output vis
         write_vis(particles, vis, step);
     }
-    } // End Scoping block 
+    } // End Scoping block
 
     // Finalize.
     Cabana::finalize();
