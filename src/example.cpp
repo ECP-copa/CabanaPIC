@@ -31,6 +31,13 @@ void initialize_params()
   Parameters::instance().ny = Parameters::instance().NY_global;
   Parameters::instance().nz = Parameters::instance().NZ_global;
 
+  Parameters::instance().num_ghosts = 1;
+
+  Parameters::instance().num_cells =
+      (Parameters::instance().nx + Parameters::instance().num_ghosts*2) *
+      (Parameters::instance().ny + Parameters::instance().num_ghosts*2) *
+      (Parameters::instance().nz + Parameters::instance().num_ghosts*2);
+
   Parameters::instance().NPPC = default_ppc;
 
   Parameters::instance().dt = 0.1;
@@ -49,6 +56,7 @@ void initialize_params()
   Parameters::instance().dy = Parameters::instance().len_y / Parameters::instance().ny;
   Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
 
+  Parameters::instance().print_run_details();
 }
 
 // Function to intitialize the particles.
@@ -121,7 +129,7 @@ void print_particles( const particle_list_t particles )
                     << position_z.access(s,i) << " ";
                 std::cout << std::endl;
 
-                std::cout << " Velocity "
+                std::cout << "Velocity "
                     << velocity_x.access(s,i) << " "
                     << velocity_y.access(s,i) << " "
                     << velocity_z.access(s,i) << " ";
@@ -340,7 +348,12 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
+    // Cabana scoping block
     {
+
+    // Initialize input deck params.
+    initialize_params();
+
     // Declare a number of particles.
     int num_particle = 45;
 
@@ -360,12 +373,12 @@ int main( int argc, char* argv[] )
 
     std::cout << "Initial:" << std::endl;
     print_particles( particles );
+    std::cout << std::endl;
 
-    const size_t num_steps = 10;
-    const size_t num_cells = 2;
+    const size_t num_steps = Parameters::instance().num_steps;
+    const size_t num_cells = Parameters::instance().num_cells;
 
     // OLD WAY TO CREATE DATA
-    // If we force ii = 0 for all particles, these can be 1 big?
     //interpolator_array_t* f = new interpolator_array_t(num_cells);
     //accumulator_array_t* a = new accumulator_array_t(num_cells);
 
@@ -413,9 +426,12 @@ int main( int argc, char* argv[] )
 
         // Print particles.
         print_particles( particles );
+        std::cout << std::endl;
 
         // Output vis
         write_vis(particles, vis, step);
+
+
     }
     } // End Scoping block
 

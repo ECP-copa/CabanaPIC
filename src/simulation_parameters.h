@@ -31,6 +31,11 @@ template <class real_> class Parameters_
         size_t ny = NY_global;
         size_t nz = NZ_global;
 
+        // This *includes* the ghost cells
+        size_t num_cells = 0;
+
+        size_t num_ghosts = 1;
+
         size_t NPPC = 32;
 
         double dt = 0.1;
@@ -56,5 +61,15 @@ template <class real_> class Parameters_
         real_ dx = len_x/nx;
         real_ dy = len_y/ny;
         real_ dz = len_z/nz;
+
+        void print_run_details()
+        {
+            std::cout << "~~~ Run Specifications ~~~ " << std::endl;
+            std::cout << "Nx: " << nx << " Ny: " << ny << " Nz: " << nz << " Num Ghosts: " << num_ghosts << ". Cells Total: " << num_cells << std::endl;
+            std::cout << "Len X: " << len_x << " Len Y: " << len_y << " Len Z: " << len_z << num_ghosts << std::endl;
+            std::cout << "Approx Particle Count: " << NPPC*num_cells << " (NPPC: " << NPPC << ")" << std::endl;
+            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
+            std::cout << std::endl;
+        }
 };
 #endif // SIMULATION_PARAMETERS_H
