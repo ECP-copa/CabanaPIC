@@ -49,23 +49,23 @@ void push(
 
                 // TODO: hoist slice call
                 auto ex = f0.slice<EX>()(ii);
-                auto dexdy  = f0.slice<DEXDY>()(ii);
-                auto dexdz  = f0.slice<DEXDZ>()(ii);
-                auto d2exdydz  = f0.slice<D2EXDYDZ>()(ii);
-                auto ey  = f0.slice<EY>()(ii);
-                auto deydz  = f0.slice<DEYDZ>()(ii);
-                auto deydx  = f0.slice<DEYDX>()(ii);
-                auto d2eydzdx  = f0.slice<D2EYDZDX>()(ii);
-                auto ez  = f0.slice<EZ>()(ii);
-                auto dezdx  = f0.slice<DEZDX>()(ii);
-                auto dezdy  = f0.slice<DEZDY>()(ii);
-                auto d2ezdxdy  = f0.slice<D2EZDXDY>()(ii);
-                auto cbx  = f0.slice<CBX>()(ii);
-                auto dcbxdx   = f0.slice<DCBXDX>()(ii);
-                auto cby  = f0.slice<CBY>()(ii);
-                auto dcbydy  = f0.slice<DCBYDY>()(ii);
-                auto cbz  = f0.slice<CBZ>()(ii);
-                auto dcbzdz  = f0.slice<DCBZDZ>()(ii);
+                auto dexdy = f0.slice<DEXDY>()(ii);
+                auto dexdz = f0.slice<DEXDZ>()(ii);
+                auto d2exdydz = f0.slice<D2EXDYDZ>()(ii);
+                auto ey = f0.slice<EY>()(ii);
+                auto deydz = f0.slice<DEYDZ>()(ii);
+                auto deydx = f0.slice<DEYDX>()(ii);
+                auto d2eydzdx = f0.slice<D2EYDZDX>()(ii);
+                auto ez = f0.slice<EZ>()(ii);
+                auto dezdx = f0.slice<DEZDX>()(ii);
+                auto dezdy = f0.slice<DEZDY>()(ii);
+                auto d2ezdxdy = f0.slice<D2EZDXDY>()(ii);
+                auto cbx = f0.slice<CBX>()(ii);
+                auto dcbxdx = f0.slice<DCBXDX>()(ii);
+                auto cby = f0.slice<CBY>()(ii);
+                auto dcbydy = f0.slice<DCBYDY>()(ii);
+                auto cbz = f0.slice<CBZ>()(ii);
+                auto dcbzdz = f0.slice<DCBZDZ>()(ii);
                 /*
                 auto ex  = f0.get<EX>(ii);
                 auto dexdy  = f0.get<DEXDY>(ii);

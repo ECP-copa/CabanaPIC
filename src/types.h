@@ -74,7 +74,7 @@ using particle_list_t =
 #else
 
 enum InterpolatorFields
-{
+{ // TODO: things in here like EXYZ and CBXYZ are ambigious
     EX = 0,
     DEXDY,
     DEXDZ,
@@ -132,7 +132,7 @@ enum FieldFields
     FIELD_CBX,
     FIELD_CBY,
     FIELD_CBZ
-}
+};
 using FieldDataTypes = Cabana::MemberTypes<
 /*
   float ex,   ey,   ez,   div_e_err;     // Electric field and div E error
@@ -149,8 +149,9 @@ using FieldDataTypes = Cabana::MemberTypes<
   float, // cbx
   float, // cby
   float // cbz
+>;
 
-} field_t;
+using field_array_t = Cabana::AoSoA<FieldDataTypes,MemorySpace,cell_blocking>;
 
 // TODO: should this be in it's own file?
 class particle_mover_t {

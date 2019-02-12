@@ -9,6 +9,7 @@
 #include "simulation_parameters.h"
 #include "initializer.h"
 #include "visualization.h"
+#include "fields.h"
 #include "push.h"
 
 //---------------------------------------------------------------------------//
@@ -27,6 +28,15 @@ int main( int argc, char* argv[] )
     const size_t num_steps = Parameters::instance().num_steps;
     const size_t num_cells = Parameters::instance().num_cells;
     const size_t num_particles = Parameters::instance().num_particles;
+
+    const size_t nx = Parameters::instance().nx;
+    const size_t ny = Parameters::instance().ny;
+    const size_t nz = Parameters::instance().nz;
+
+    // TODO: give these a real value
+    const real_t px = 0.9; // (nx>1) ? frac*g->cvac*g->dt*g->rdx : 0;
+    const real_t py = 0.9; // (ny>1) ? frac*g->cvac*g->dt*g->rdy : 0;
+    const real_t pz = 0.9; // (nz>1) ? frac*g->cvac*g->dt*g->rdz : 0;
 
     logger << "nx " << Parameters::instance().nx << std::endl;
     logger << "num_particles " << num_particles << std::endl;
@@ -61,10 +71,12 @@ int main( int argc, char* argv[] )
     // NEW CABANA STYLE
     interpolator_array_t f(num_cells);
     accumulator_array_t a(num_cells);
+    field_array_t fields(num_cells);
 
     Initializer::initialize_interpolator(f);
 
     Visualizer vis;
+    EM_Field_Solver field_solver;
 
     for (size_t step = 0; step < num_steps; step++)
     {
@@ -92,13 +104,13 @@ int main( int argc, char* argv[] )
         // unload_accumulator_array TODO
 
         // Half advance the magnetic field from B_0 to B_{1/2}
-        // advance_b(); TODO
+        field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
         // Advance the electric field from E_0 to E_1
         // advance_e(); TODO
 
         // Half advance the magnetic field from B_{1/2} to B_1
-        // advance_b(); TODO
+        field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
         // Print particles.
         print_particles( particles );
