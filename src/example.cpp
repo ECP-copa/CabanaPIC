@@ -9,9 +9,48 @@
 #include "push.h"
 #include "simulation_parameters.h"
 
+using Parameters = Parameters_<real_t>;
 //---------------------------------------------------------------------------//
 // Helper functions.
 //---------------------------------------------------------------------------//
+//
+
+void initialize_params()
+{
+
+  logger << "Importing Default Input Deck" << std::endl;
+  const size_t default_num_cells = 16;
+  const size_t default_ppc = 32;
+  const real_t default_grid_len = 1.0;
+
+  Parameters::instance().NX_global = default_num_cells;
+  Parameters::instance().NY_global = default_num_cells;
+  Parameters::instance().NZ_global = default_num_cells;
+
+  Parameters::instance().nx = Parameters::instance().NX_global;
+  Parameters::instance().ny = Parameters::instance().NY_global;
+  Parameters::instance().nz = Parameters::instance().NZ_global;
+
+  Parameters::instance().NPPC = default_ppc;
+
+  Parameters::instance().dt = 0.1;
+
+  Parameters::instance().num_steps = 5;
+
+  Parameters::instance().len_x_global = default_grid_len;
+  Parameters::instance().len_y_global = default_grid_len;
+  Parameters::instance().len_z_global = default_grid_len;
+
+  Parameters::instance().len_x = default_grid_len;
+  Parameters::instance().len_y = default_grid_len;
+  Parameters::instance().len_z = default_grid_len;
+
+  Parameters::instance().dx = Parameters::instance().len_x / Parameters::instance().nx;
+  Parameters::instance().dy = Parameters::instance().len_y / Parameters::instance().ny;
+  Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
+
+}
+
 // Function to intitialize the particles.
 void initialize_particles( particle_list_t particles )
 {

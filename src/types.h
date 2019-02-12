@@ -3,7 +3,6 @@
 
 #define real_t float
 
-
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
 #define VLEN 16
@@ -116,6 +115,12 @@ class particle_mover_t {
   float dispx, dispy, dispz; // Displacement of particle
   int32_t i;                 // Index of the particle to move
 };
+
+#if ENABLE_DEBUG
+  #define logger std::cout << "LOG:" << __FILE__ << ":" << __LINE__ << " \t :: \t "
+#else
+  #define logger while(0) std::cout
+#endif /* ENABLE_DEBUG */
 
 /////////////// END VPIC TYPE ////////////
 
