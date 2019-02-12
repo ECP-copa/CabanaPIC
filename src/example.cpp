@@ -4,9 +4,10 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <types.h>
-#include <visualization.h>
-#include <push.h>
+#include "types.h"
+#include "visualization.h"
+#include "push.h"
+#include "simulation_parameters.h"
 
 //---------------------------------------------------------------------------//
 // Helper functions.
