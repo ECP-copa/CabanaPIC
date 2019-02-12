@@ -227,7 +227,7 @@ void push(
         };
 
     Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
-        vec_policy( 0, particles.numSoA() );
+        vec_policy( 0, particles.size() );
     Cabana::simd_parallel_for( vec_policy, _push, "push()" );
 }
 

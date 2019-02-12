@@ -34,7 +34,8 @@ int main( int argc, char* argv[] )
 
     // Create the particle list.
     particle_list_t particles( num_particles );
-    logger << "numSoA particles.numSoA() << std::endl;
+    logger << "size " << particles.size() << std::endl;
+    logger << "numSoA " << particles.numSoA() << std::endl;
 
     // Initialize particles.
     Initializer::initialize_particles( particles );
@@ -49,9 +50,9 @@ int main( int argc, char* argv[] )
     real_t qsp = 1.0f;
 
     // Print initial particle positions
-    loggerer << "Initial:" << std::endl;
+    logger << "Initial:" << std::endl;
     print_particles( particles );
-    loggerer << std::endl;
+    logger << std::endl;
 
     // OLD WAY TO CREATE DATA
     //interpolator_array_t* f = new interpolator_array_t(num_cells);

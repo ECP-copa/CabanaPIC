@@ -35,7 +35,9 @@ void print_particles( const particle_list_t particles )
 
     // TODO: How much sense does printing in parallel make???
     Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
-        vec_policy( 0, particles.numSoA() );
+        vec_policy( 0, particles.size() );
+    logger << "particles.numSoA() " << particles.numSoA() << std::endl;
+    logger << "particles.numSoA() " << particles.numSoA() << std::endl;
     Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
 
 }
