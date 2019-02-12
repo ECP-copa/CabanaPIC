@@ -99,6 +99,51 @@ class Visualizer {
             vis_file.close();
         }
 
+        void write_vis(particle_list_t particles, size_t step)
+        {
+
+            size_t total_num_particles = particles.size();
+
+            // TODO: this needs to be updated once species are introduced
+            /*
+               for (unsigned int sn = 0; sn < species.size(); sn++)
+               {
+               int particle_count = species[sn].num_particles;
+               total_num_particles += particle_count;
+               }
+               */
+
+            write_header(total_num_particles, step);
+
+            //for (unsigned int sn = 0; sn < species.size(); sn++)
+            //{
+            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+            write_particles_position(particles);
+            //}
+
+            write_cell_types(total_num_particles);
+
+            pre_scalars(total_num_particles);
+            write_particles_property_header("weight", total_num_particles);
+
+            //for (unsigned int sn = 0; sn < species.size(); sn++)
+            //{
+            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+            write_particles_w(particles);
+            //}
+            //*/
+
+            write_particles_property_header("species", total_num_particles);
+
+            //for (unsigned int sn = 0; sn < species.size(); sn++)
+            //{
+            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+            write_particles_sp(particles, 1);
+            //}
+            finalize();
+
+        }
+
 };
 
 #endif // Visualizer

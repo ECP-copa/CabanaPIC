@@ -3,6 +3,14 @@
 
 #define real_t float
 
+
+#define ENABLE_DEBUG 1
+#if ENABLE_DEBUG
+  #define logger std::cout << "LOG:" << __FILE__ << ":" << __LINE__ << " \t :: \t "
+#else
+  #define logger while(0) std::cout
+#endif /* ENABLE_DEBUG */
+
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
 #define VLEN 16
@@ -18,6 +26,14 @@ const size_t cell_blocking = CELL_BLOCK_FACTOR;
 using MemorySpace = Cabana::HostSpace;
 using ExecutionSpace = Kokkos::Serial;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
+
+///// END ESSENTIALS ///
+
+
+
+#include "simulation_parameters.h"
+
+using Parameters = Parameters_<real_t>;
 
 enum UserParticleFields
 {
@@ -115,12 +131,6 @@ class particle_mover_t {
   float dispx, dispy, dispz; // Displacement of particle
   int32_t i;                 // Index of the particle to move
 };
-
-#if ENABLE_DEBUG
-  #define logger std::cout << "LOG:" << __FILE__ << ":" << __LINE__ << " \t :: \t "
-#else
-  #define logger while(0) std::cout
-#endif /* ENABLE_DEBUG */
 
 /////////////// END VPIC TYPE ////////////
 

@@ -1,3 +1,6 @@
+#ifndef pic_fields_h
+#define pic_fields_h
+
 class EM_Field_Solver
 {
 
@@ -128,3 +131,5 @@ class EM_Field_Solver
         */
     }
 };
+
+#endif // pic_fields_h
