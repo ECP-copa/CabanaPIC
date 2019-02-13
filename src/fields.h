@@ -110,7 +110,15 @@ class EM_Field_Solver : Field_Solver
         }
 
 
-        void advance_e()
+        void advance_e(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+        )
         {
             // TODO: enable
             /*
@@ -122,9 +130,42 @@ class EM_Field_Solver : Field_Solver
                INIT_STENCIL();
                for( ; n_voxel; n_voxel-- ) {
                UPDATE_EX(); UPDATE_EY(); UPDATE_EZ();
+               #define UPDATE_EX()                       \
                NEXT_STENCIL();
                }
                */
+
+            auto ex = fields.slice<FIELD_EX>();
+            auto ey = fields.slice<FIELD_EY>();
+            auto ez = fields.slice<FIELD_EZ>();
+
+            auto cbx = fields.slice<FIELD_CBX>();
+            auto cby = fields.slice<FIELD_CBY>();
+            auto cbz = fields.slice<FIELD_CBZ>();
+
+            auto _advance_e = KOKKOS_LAMBDA( const int i )
+            {
+                float old_tcax = 0.0;
+                float tcax = ( py*(cbz(i)) - pz*(cby(i))) - old_tcax;
+                ex(i) = ex(i) +  tcax;
+
+                /*
+                // UPDATE_EX()
+                f0->tcax = ( py*(f0->cbz*m[f0->fmatz].rmuz-fy->cbz*m[fy->fmatz].rmuz) - pz*(f0->cby*m[f0->fmaty].rmuy-fz->cby*m[fz->fmaty].rmuy) ) - damp*f0->tcax;
+                f0->ex   = m[f0->ematx].decayx*f0->ex + m[f0->ematx].drivex*( f0->tcax - cj*f0->jfx ) ;
+
+                //#define UPDATE_EY()
+                f0->tcay = ( pz*(f0->cbx*m[f0->fmatx].rmux-fz->cbx*m[fz->fmatx].rmux) - px*(f0->cbz*m[f0->fmatz].rmuz-fx->cbz*m[fx->fmatz].rmuz) ) - damp*f0->tcay;
+                f0->ey   = m[f0->ematy].decayy*f0->ey + m[f0->ematy].drivey*( f0->tcay - cj*f0->jfy );
+
+                //#define UPDATE_EZ()
+                f0->tcaz = ( px*(f0->cby*m[f0->fmaty].rmuy-fx->cby*m[fx->fmaty].rmuy) - py*(f0->cbx*m[f0->fmatx].rmux-fy->cbx*m[fy->fmatx].rmux) ) - damp*f0->tcaz;
+                f0->ez   = m[f0->ematz].decayz*f0->ez + m[f0->ematz].drivez*( f0->tcaz - cj*f0->jfz );
+                */
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_for( exec_policy, _advance_e, "advance_e()" );
 
             /* // TODO: enable
                DECLARE_STENCIL();

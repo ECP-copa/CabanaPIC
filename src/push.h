@@ -45,6 +45,7 @@ void push(
                 real_t dy = position_y.access(s,i);   // Load position
                 real_t dz = position_z.access(s,i);   // Load position
 
+                // TODO: is this right??
                 int ii = cell.access(s,i);
 
                 // TODO: hoist slice call
