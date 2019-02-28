@@ -48,6 +48,12 @@ class Initializer {
             Parameters::instance().print_run_details();
         }
 
+        static const float rand_float(float min = 0, float max = 1)
+        {
+            return min + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max-min)));
+
+        }
+
         // Function to intitialize the particles.
         static void initialize_particles( particle_list_t particles )
         {
@@ -62,6 +68,9 @@ class Initializer {
             auto charge = particles.slice<Charge>();
             auto cell = particles.slice<Cell_Index>();
 
+            // TODO: sensible way to do rand in parallel?
+            srand (static_cast <unsigned> (time(0)));
+
             auto _init =
                 //KOKKOS_LAMBDA( const int s )
                 KOKKOS_LAMBDA( const int s, const int i )
@@ -71,9 +80,9 @@ class Initializer {
                     //for ( int i = 0; i < particle_list_t::vector_length; ++i )
                     //{
                     // Initialize position.
-                    position_x.access(s,i) = 1.1 + counter;
-                    position_y.access(s,i) = 2.2 + counter;
-                    position_z.access(s,i) = 3.3 + counter;
+                    position_x.access(s,i) = rand_float(-1.0f, 1.0f);
+                    position_y.access(s,i) = rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = rand_float(-1.0f, 1.0f);
 
                     // Initialize velocity.
                     velocity_x.access(s,i) = 0.1;
