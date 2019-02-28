@@ -40,6 +40,8 @@ void print_particles( const particle_list_t particles )
     logger << "particles.numSoA() " << particles.numSoA() << std::endl;
     Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
 
+    std::cout << std::endl;
+
 }
 
 #endif // pic_helper_h

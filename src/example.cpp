@@ -1,5 +1,6 @@
 #include <Cabana_AoSoA.hpp>
 #include <Cabana_Core.hpp>
+#include <Cabana_Sort.hpp> // is this needed if we already have core?
 
 #include <cstdlib>
 #include <iostream>
@@ -7,10 +8,16 @@
 #include "types.h"
 #include "helpers.h"
 #include "simulation_parameters.h"
+
 #include "initializer.h"
-#include "visualization.h"
+
 #include "fields.h"
+#include "accumulators.h"
+#include "interpolators.h"
+
 #include "push.h"
+
+#include "visualization.h"
 
 //---------------------------------------------------------------------------//
 // Main.
@@ -64,14 +71,13 @@ int main( int argc, char* argv[] )
     // Print initial particle positions
     logger << "Initial:" << std::endl;
     print_particles( particles );
-    logger << std::endl;
 
     // NEW CABANA STYLE
-    interpolator_array_t f(num_cells);
-    accumulator_array_t a(num_cells); // TODO: this should become a kokkos scatter add
+    interpolator_array_t interpolators(num_cells);
+    accumulator_array_t accumulators(num_cells); // TODO: this should become a kokkos scatter add
     field_array_t fields(num_cells);
 
-    Initializer::initialize_interpolator(f);
+    Initializer::initialize_interpolator(interpolators);
 
     // Can obviously supply solver type at compile time
     //Field_Solver<EM_Field_Solver> field_solver;
@@ -81,27 +87,33 @@ int main( int argc, char* argv[] )
     {
         std::cout << "Step " << step << std::endl;
 
+        // Convert fields to interpolators
+        load_interpolator_array();
+
         // TODO: Make the frequency of this configurable (every step is not
         // required for this incarnation)
-        sort_particles();
+        // Sort by cell index
+        auto keys = particles.slice<Cell_Index>();
+        auto bin_data = Cabana::sortByKey( keys );
 
         // Move
         push(
             particles,
-            f,
+            interpolators,
             qdt_2mc,
             cdt_dx,
             cdt_dy,
             cdt_dz,
             qsp,
-            a,
+            accumulators,
             g
         );
 
-        // boundary_p TODO
+        // TODO: boundaries?
         // boundary_p(); // Implies Parallel?
 
-        // unload_accumulator_array TODO
+        // Map accumulator current back onto the fields
+        unload_accumulator_array(fields, accumulators, nx, ny, nz);
 
         // Half advance the magnetic field from B_0 to B_{1/2}
         field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
@@ -114,11 +126,9 @@ int main( int argc, char* argv[] )
 
         // Print particles.
         print_particles( particles );
-        std::cout << std::endl;
 
         // Output vis
         vis.write_vis(particles, step);
-
 
     }
     } // End Scoping block
