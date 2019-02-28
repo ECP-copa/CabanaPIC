@@ -33,23 +33,13 @@ int main( int argc, char* argv[] )
     Visualizer vis;
 
     // Initialize input deck params.
-    Initializer::initialize_params(2, 1);
-    const size_t num_steps = Parameters::instance().num_steps;
+
+    // num_cells (without ghosts), num_particles_per_cell
+    Initializer::initialize_params(4, 2);
+
+    // Cache some values locally for printing
     const size_t num_cells = Parameters::instance().num_cells;
     const size_t num_particles = Parameters::instance().num_particles;
-
-    const size_t nx = Parameters::instance().nx;
-    const size_t ny = Parameters::instance().ny;
-    const size_t nz = Parameters::instance().nz;
-
-    // TODO: give these a real value
-    const real_t px = 0.9; // (nx>1) ? frac*g->cvac*g->dt*g->rdx : 0;
-    const real_t py = 0.9; // (ny>1) ? frac*g->cvac*g->dt*g->rdy : 0;
-    const real_t pz = 0.9; // (nz>1) ? frac*g->cvac*g->dt*g->rdz : 0;
-
-    logger << "nx " << Parameters::instance().nx << std::endl;
-    logger << "num_particles " << num_particles << std::endl;
-    logger << "num_cells " << num_cells << std::endl;
 
     // Create the particle list.
     particle_list_t particles( num_particles );
@@ -59,7 +49,7 @@ int main( int argc, char* argv[] )
     // Initialize particles.
     Initializer::initialize_particles( particles );
 
-    grid_t* g = new grid();
+    grid_t* grid = new grid_t();
 
     // Define some consts
     real_t qdt_2mc = 1.0f;
@@ -72,7 +62,7 @@ int main( int argc, char* argv[] )
     logger << "Initial:" << std::endl;
     print_particles( particles );
 
-    // NEW CABANA STYLE
+    // Allocate Cabana Data
     interpolator_array_t interpolators(num_cells);
     accumulator_array_t accumulators(num_cells); // TODO: this should become a kokkos scatter add
     field_array_t fields(num_cells);
@@ -83,6 +73,23 @@ int main( int argc, char* argv[] )
     //Field_Solver<EM_Field_Solver> field_solver;
     Field_Solver<ES_Field_Solver> field_solver;
 
+    // Grab some global values for use later
+    const size_t nx = Parameters::instance().nx;
+    const size_t ny = Parameters::instance().ny;
+    const size_t nz = Parameters::instance().nz;
+
+    logger << "nx " << Parameters::instance().nx << std::endl;
+    logger << "num_particles " << num_particles << std::endl;
+    logger << "num_cells " << num_cells << std::endl;
+    logger << "Actual NPPC " << Parameters::instance().NPPC << std::endl;
+
+    // TODO: give these a real value
+    const real_t px = 0.9; // (nx>1) ? frac*g->cvac*g->dt*g->rdx : 0;
+    const real_t py = 0.9; // (ny>1) ? frac*g->cvac*g->dt*g->rdy : 0;
+    const real_t pz = 0.9; // (nz>1) ? frac*g->cvac*g->dt*g->rdz : 0;
+
+    // simulation loop
+    const size_t num_steps = Parameters::instance().num_steps;
     for (size_t step = 0; step < num_steps; step++)
     {
         std::cout << "Step " << step << std::endl;
@@ -106,7 +113,7 @@ int main( int argc, char* argv[] )
             cdt_dz,
             qsp,
             accumulators,
-            g
+            grid
         );
 
         // TODO: boundaries?
