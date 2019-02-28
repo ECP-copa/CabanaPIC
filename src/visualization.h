@@ -80,16 +80,8 @@ class Visualizer {
         }
         void write_particles_sp(particle_list_t& particles, size_t sn)
         {
-            auto position_x = particles.slice<PositionX>();
-            auto position_y = particles.slice<PositionY>();
-            auto position_z = particles.slice<PositionZ>();
-
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
             {
-                        real_t x = position_x(idx);
-                        real_t y = position_y(idx);
-                        real_t z = position_z(idx);
-
                         vis_file << sn << std::endl;
             }
         }

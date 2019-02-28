@@ -34,7 +34,6 @@ int move_p(
     float s_dir[3];
     float v0, v1, v2, v3, v4, v5, q;
     int axis, face;
-    int64_t neighbor;
     float *a;
 
     //particle_t* p = p0 + pm->i;

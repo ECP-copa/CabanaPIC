@@ -1,11 +1,38 @@
 #ifndef pic_EM_fields_h
 #define pic_EM_fields_h
 
-class Field_Solver
+// Policy base class
+template<typename Solver_Type> class Field_Solver : public Solver_Type
 {
+    public:
+        void advance_b(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+                )
+        {
+            Solver_Type::advance_b( fields, px, py, pz, nx, ny, nz);
+        }
+        void advance_e(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+                )
+        {
+            Solver_Type::advance_e( fields, px, py, pz, nx, ny, nz );
+        }
 };
 
-class EM_Field_Solver : Field_Solver
+// FIXME: Field_solver is repeated => bad naming
+class ES_Field_Solver
 {
     public:
 
@@ -19,8 +46,63 @@ class EM_Field_Solver : Field_Solver
                 size_t nz
                 )
         {
-            int n_voxel;
+            // No-op, becasue ES
+        }
 
+        void advance_e(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+        )
+        {
+            auto ex = fields.slice<FIELD_EX>();
+            auto ey = fields.slice<FIELD_EY>();
+            auto ez = fields.slice<FIELD_EZ>();
+
+            auto cbx = fields.slice<FIELD_CBX>();
+            auto cby = fields.slice<FIELD_CBY>();
+            auto cbz = fields.slice<FIELD_CBZ>();
+
+            auto jfx = fields.slice<FIELD_JFX>();
+            auto jfy = fields.slice<FIELD_JFY>();
+            auto jfz = fields.slice<FIELD_JFZ>();
+
+            // NOTE: this does work on ghosts that is extra, but it simplifies
+            // the logic and is fairly cheap
+            auto _advance_e = KOKKOS_LAMBDA( const int i )
+            {
+                const float cj = 1; // TODO: g->dt/g->eps0;
+                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
+                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
+                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
+        }
+};
+
+// EM HERE: UNFINISHED
+// TODO: Finished
+
+class EM_Field_Solver
+{
+    public:
+
+        void advance_b(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+                )
+        {
             //f0 = &f(x,  y,  z  );
             //fx = &f(x+1,y,  z  );
             //fy = &f(x,  y+1,z  );
@@ -220,59 +302,6 @@ class EM_Field_Solver : Field_Solver
 
             // TODO: this normally neeeds a ghost update..
             */
-        }
-};
-
-class ES_Field_Solver : Field_Solver
-{
-    public:
-
-        void advance_b(
-                field_array_t fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz
-                )
-        {
-            // No-op
-        }
-
-        void advance_e(
-                field_array_t fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz
-        )
-        {
-            auto ex = fields.slice<FIELD_EX>();
-            auto ey = fields.slice<FIELD_EY>();
-            auto ez = fields.slice<FIELD_EZ>();
-
-            auto cbx = fields.slice<FIELD_CBX>();
-            auto cby = fields.slice<FIELD_CBY>();
-            auto cbz = fields.slice<FIELD_CBZ>();
-
-            auto jfx = fields.slice<FIELD_JFX>();
-            auto jfy = fields.slice<FIELD_JFY>();
-            auto jfz = fields.slice<FIELD_JFZ>();
-
-
-            auto _advance_e = KOKKOS_LAMBDA( const int i )
-            {
-                const float cj   = 1; // TODO: g->dt/g->eps0;
-                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
-                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
-                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
-            };
-
-            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
         }
 };
 

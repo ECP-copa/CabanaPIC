@@ -23,6 +23,8 @@ int main( int argc, char* argv[] )
     // Cabana scoping block
     {
 
+    Visualizer vis;
+
     // Initialize input deck params.
     Initializer::initialize_params(2, 1);
     const size_t num_steps = Parameters::instance().num_steps;
@@ -64,26 +66,24 @@ int main( int argc, char* argv[] )
     print_particles( particles );
     logger << std::endl;
 
-    // OLD WAY TO CREATE DATA
-    //interpolator_array_t* f = new interpolator_array_t(num_cells);
-    //accumulator_array_t* a = new accumulator_array_t(num_cells);
-
     // NEW CABANA STYLE
     interpolator_array_t f(num_cells);
-    accumulator_array_t a(num_cells);
+    accumulator_array_t a(num_cells); // TODO: this should become a kokkos scatter add
     field_array_t fields(num_cells);
 
     Initializer::initialize_interpolator(f);
 
-    Visualizer vis;
-    EM_Field_Solver field_solver;
+    // Can obviously supply solver type at compile time
+    //Field_Solver<EM_Field_Solver> field_solver;
+    Field_Solver<ES_Field_Solver> field_solver;
 
     for (size_t step = 0; step < num_steps; step++)
     {
         std::cout << "Step " << step << std::endl;
 
-        // Sort TODO
-        // sort_particles();
+        // TODO: Make the frequency of this configurable (every step is not
+        // required for this incarnation)
+        sort_particles();
 
         // Move
         push(
@@ -99,7 +99,7 @@ int main( int argc, char* argv[] )
         );
 
         // boundary_p TODO
-        // boundary_p(); // Implies Parallel!
+        // boundary_p(); // Implies Parallel?
 
         // unload_accumulator_array TODO
 
@@ -107,7 +107,7 @@ int main( int argc, char* argv[] )
         field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
         // Advance the electric field from E_0 to E_1
-        // advance_e(); TODO
+        field_solver.advance_e(fields, px, py, pz, nx, ny, nz);
 
         // Half advance the magnetic field from B_{1/2} to B_1
         field_solver.advance_b(fields, px, py, pz, nx, ny, nz);

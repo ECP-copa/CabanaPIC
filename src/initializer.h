@@ -51,7 +51,6 @@ class Initializer {
         static const float rand_float(float min = 0, float max = 1)
         {
             return min + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max-min)));
-
         }
 
         // Function to intitialize the particles.
@@ -76,7 +75,6 @@ class Initializer {
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
                     // Much more likely to vectroize and give good performance
-                    float counter = (float)s;
                     //for ( int i = 0; i < particle_list_t::vector_length; ++i )
                     //{
                     // Initialize position.
@@ -91,7 +89,6 @@ class Initializer {
 
                     charge.access(s,i) = 1.0;
                     cell.access(s,i) = s;
-                    counter += 0.01;
                     //}
                 };
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

@@ -28,7 +28,7 @@ void push(
     auto charge = particles.slice<Charge>();
     auto cell = particles.slice<Cell_Index>();
 
-    const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
+    //const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
     const real_t one_third      = 1./3.;
     const real_t two_fifteenths = 2./15.;
@@ -38,17 +38,10 @@ void push(
         {
             //for ( int i = 0; i < particle_list_t::vector_length; ++i )
             //{
-                // TODO: deal with pms
-                particle_mover_t local_pm = particle_mover_t();
-
-                real_t dx = position_x.access(s,i);   // Load position
-                real_t dy = position_y.access(s,i);   // Load position
-                real_t dz = position_z.access(s,i);   // Load position
-
-                // TODO: is this right??
+                // Setup data accessors
+                // This may be cleaner if we hoisted it?
                 int ii = cell.access(s,i);
 
-                // TODO: hoist slice call
                 auto ex = f0.slice<EX>()(ii);
                 auto dexdy = f0.slice<DEXDY>()(ii);
                 auto dexdz = f0.slice<DEXDZ>()(ii);
@@ -87,6 +80,15 @@ void push(
                 auto cbz  = f0.get<CBZ>(ii);
                 auto dcbzdz  = f0.get<DCBZDZ>(ii);
                 */
+
+                // Perform push
+
+                // TODO: deal with pm's
+                particle_mover_t local_pm = particle_mover_t();
+
+                real_t dx = position_x.access(s,i);   // Load position
+                real_t dy = position_y.access(s,i);   // Load position
+                real_t dz = position_z.access(s,i);   // Load position
 
                 /*
                 real_t hax  = qdt_2mc*(    ( f.ex    + dy*f.dexdy    ) +
@@ -160,7 +162,6 @@ void push(
                     // Common case (inbnds).  Note: accumulator values are 4 times
                     // the total physical charge that passed through the appropriate
                     // current quadrant in a time-step
-
                     q *= qsp;
 
                     // Store new position
@@ -210,18 +211,21 @@ void push(
 
                     local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
+                    // Handle particles that cross cells
+                    move_p( particles, local_pm, a0, g, qsp, s, i );
+
                     // TODO: renable this
                     //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
-                    if ( move_p( particles, local_pm, a0, g, qsp, s, i ) ) { // Unlikely
+                    //if ( move_p( particles, local_pm, a0, g, qsp, s, i ) ) { // Unlikely
                         //if( nm<max_nm ) {
                             //pm[nm++] = local_pm[0];
                         //}
                         //else {
                             //ignore++;                 // Unlikely
                         //} // if
-                    } // if
+                    //} // if
 
-                    /* // Copied from VPIC Kokkos
+                    /* // Copied from VPIC Kokkos for reference
                        if( move_p_kokkos( k_particles, k_local_particle_movers,
                            k_accumulators_sa, g, qsp ) ) { // Unlikely
                            if( k_nm(0)<max_nm ) {
