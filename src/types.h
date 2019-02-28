@@ -131,7 +131,10 @@ enum FieldFields
     FIELD_EZ,
     FIELD_CBX,
     FIELD_CBY,
-    FIELD_CBZ
+    FIELD_CBZ,
+    FIELD_JFX,
+    FIELD_JFY,
+    FIELD_JFZ
 };
 using FieldDataTypes = Cabana::MemberTypes<
 /*
@@ -148,7 +151,10 @@ using FieldDataTypes = Cabana::MemberTypes<
   float, // ez
   float, // cbx
   float, // cby
-  float // cbz
+  float, // cbz
+  float, // jfx
+  float, // jfy
+  float // jfz
 >;
 
 using field_array_t = Cabana::AoSoA<FieldDataTypes,MemorySpace,cell_blocking>;

@@ -1,6 +1,11 @@
 #ifndef SIMULATION_PARAMETERS_H
 #define SIMULATION_PARAMETERS_H
 
+enum Boundary {
+    Reflect = 0
+};
+
+
 template <class real_> class Parameters_
 {
 
@@ -28,6 +33,8 @@ template <class real_> class Parameters_
         size_t num_particles;
         double dt;
         int num_steps;
+
+        Boundary BOUNDARY_TYPE = Boundary::Reflect;
 
         // Assume domain starts at [0,0,0] and goes to [len,len,len]
         real_ len_x_global = 1.0;

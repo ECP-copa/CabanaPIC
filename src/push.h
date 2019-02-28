@@ -2,7 +2,7 @@
 #define pic_push_h
 
 #include <types.h>
-//#include "move_p.h"
+#include "move_p.h"
 
 void push(
         particle_list_t particles,
@@ -154,7 +154,7 @@ void push(
                 real_t v5   = v2 + uz;
 
                 // Check if inbnds
-                //if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
+                if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
                 {
 
                     // Common case (inbnds).  Note: accumulator values are 4 times
@@ -202,8 +202,6 @@ void push(
 #     undef ACCUMULATE_J
 
                 }
-
-                /*
                 else
                 {                                    // Unlikely
                     local_pm.dispx = ux;
@@ -213,18 +211,29 @@ void push(
                     local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
                     // TODO: renable this
-                    //if( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
+                    //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
+                    if ( move_p( particles, local_pm, a0, g, qsp, s, i ) ) { // Unlikely
                         //if( nm<max_nm ) {
                             //pm[nm++] = local_pm[0];
                         //}
                         //else {
                             //ignore++;                 // Unlikely
                         //} // if
-                    //} // if
-                }
-                */
+                    } // if
 
-            //}
+                    /* // Copied from VPIC Kokkos
+                       if( move_p_kokkos( k_particles, k_local_particle_movers,
+                           k_accumulators_sa, g, qsp ) ) { // Unlikely
+                           if( k_nm(0)<max_nm ) {
+                               nm = int(Kokkos::atomic_fetch_add( &k_nm(0), 1 ));
+                               if (nm >= max_nm) Kokkos::abort("overran max_nm");
+                                   copy_local_to_pm(nm);
+                               }
+                           }
+                    */
+                }
+
+            //} // end VLEN loop
         };
 
     Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

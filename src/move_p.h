@@ -7,10 +7,12 @@
 // TODO: port this to cabana syntax
 int move_p(
         particle_list_t particles,
-        particle_mover_t* pm,
-        accumulator_t* a0,
+        particle_mover_t& pm,
+        const accumulator_array_t& a0, // TODO: does this need to be const
         const grid_t* g,
-        const float qsp
+        const float qsp,
+        const size_t s,
+        const size_t i
     )
 {
 
@@ -23,10 +25,10 @@ int move_p(
     auto velocity_y = particles.slice<VelocityY>();
     auto velocity_z = particles.slice<VelocityZ>();
 
+    // Charge or weight?
     auto charge = particles.slice<Charge>();
-    auto cell = particles.slice<Cell_Index>();
 
-    auto cell = particles.slice<Weight>();
+    auto cell = particles.slice<Cell_Index>();
 
     // Kernel variables
     float s_dir[3];
@@ -36,9 +38,9 @@ int move_p(
     float *a;
 
     //particle_t* p = p0 + pm->i;
-    int index = pm->i;
+    //int index = pm->i;
 
-    q = qsp * weight.access(index);
+    q = qsp * charge.access(s, i);
 
     for(;;) {
         /*
@@ -47,13 +49,13 @@ int move_p(
         s_midz = p->dz;
         */
 
-        float s_midx = position_x.access(index);
-        float s_midy = position_y.access(index);
-        float s_midz = position_z.access(index);
+        float s_midx = position_x.access(s, i);
+        float s_midy = position_y.access(s, i);
+        float s_midz = position_z.access(s, i);
 
-        float s_dispx = pm->dispx;
-        float s_dispy = pm->dispy;
-        float s_dispz = pm->dispz;
+        float s_dispx = pm.dispx;
+        float s_dispy = pm.dispy;
+        float s_dispz = pm.dispz;
 
         s_dir[0] = (s_dispx>0) ? 1 : -1;
         s_dir[1] = (s_dispy>0) ? 1 : -1;
@@ -90,10 +92,11 @@ int move_p(
         // current quadrant in a time-step
         v5 = q*s_dispx*s_dispy*s_dispz*(1./3.);
 
-        int ii = cell.access(i);
-        a = (float *)(a0 + ii);
+        int ii = cell.access(s, i);
 
-#   define accumulate_j(X,Y,Z)                                        \
+        //a = (float *)(a0 + ii);
+
+#   define accumulate_j(X,Y,Z, offset)                                    \
         v4  = q*s_disp##X;    /* v2 = q ux                            */  \
         v1  = v4*s_mid##Y;    /* v1 = q ux dy                         */  \
         v0  = v4-v1;          /* v0 = q ux (1-dy)                     */  \
@@ -108,19 +111,19 @@ int move_p(
         v1 -= v5;             /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */  \
         v2 -= v5;             /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */  \
         v3 += v5;             /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */  \
-        a[0] += v0;                                                       \
-        a[1] += v1;                                                       \
-        a[2] += v2;                                                       \
-        a[3] += v3
-        accumulate_j(x,y,z); a += 4;
-        accumulate_j(y,z,x); a += 4;
-        accumulate_j(z,x,y);
+        a0.slice<0>()(ii,offset+0) += v0; \
+        a0.slice<0>()(ii,offset+1) += v1; \
+        a0.slice<0>()(ii,offset+2) += v2; \
+        a0.slice<0>()(ii,offset+3) += v3;
+        accumulate_j(x,y,z, 0); a += 4;
+        accumulate_j(y,z,x, 4); a += 4;
+        accumulate_j(z,x,y, 8);
 #   undef accumulate_j
 
         // Compute the remaining particle displacment
-        pm->dispx -= s_dispx;
-        pm->dispy -= s_dispy;
-        pm->dispz -= s_dispz;
+        pm.dispx -= s_dispx;
+        pm.dispy -= s_dispy;
+        pm.dispz -= s_dispz;
 
         // Compute the new particle offset
         /*
@@ -128,9 +131,9 @@ int move_p(
         p->dy += s_dispy+s_dispy;
         p->dz += s_dispz+s_dispz;
         */
-        position_x.access(index) += s_dispx+s_dispx;
-        position_y.access(index) += s_dispy+s_dispy;
-        position_z.access(index) += s_dispz+s_dispz;
+        position_x.access(s, i) += s_dispx+s_dispx;
+        position_y.access(s, i) += s_dispy+s_dispy;
+        position_z.access(s, i) += s_dispz+s_dispz;
 
 
         // If an end streak, return success (should be ~50% of the time)
@@ -148,43 +151,74 @@ int move_p(
 
         // TODO: do branching based on axis
 
-        (&(p->dx))[axis] = v0; // Avoid roundoff fiascos--put the particle
+        //(&(p->dx))[axis] = v0; // Avoid roundoff fiascos--put the particle
+
+        // TODO: this conditional could be better
+        if (axis == 0) position_x.access(s, i) = v0;
+        if (axis == 1) position_y.access(s, i) = v0;
+        if (axis == 2) position_z.access(s, i) = v0;
 
         // _exactly_ on the boundary.
         face = axis;
         if( v0>0 ) face += 3;
 
-        neighbor = g->neighbor[ 6* ii + face ];
+        //neighbor = g->neighbor[ 6* ii + face ];
 
-        if ( neighbor==reflect_particles ) {
+        //if ( neighbor==reflect_particles ) {
+        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect) {
             // Hit a reflecting boundary condition.  Reflect the particle
             // momentum and remaining displacement and keep moving the
             // particle.
-            (&(p->ux    ))[axis] = -(&(p->ux    ))[axis];
-            (&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
+
+            logger << "Reflecting " << s << " " << i << " on axis " << axis << std::endl;
+
+            //(&(p->ux    ))[axis] = -(&(p->ux    ))[axis];
+            //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
+            if (axis == 0)
+            {
+                position_x.access(s, i) = -1.0f * position_x.access(s, i);
+                pm.dispx = -1.0f * s_dispx;
+            }
+            if (axis == 1)
+            {
+                position_y.access(s, i) = -1.0f * position_y.access(s, i);
+                pm.dispy = -1.0f * s_dispy;
+            }
+            if (axis == 2)
+            {
+                position_z.access(s, i) = -1.0f * position_z.access(s, i);
+                pm.dispz = -1.0f * s_dispz;
+            }
             continue;
         }
 
+        // TODO: this nieghbor stuff can be removed by going to more simple
+        // boundaries
+        /*
         if ( neighbor<g->rangel || neighbor>g->rangeh ) {
             // Cannot handle the boundary condition here.  Save the updated
             // particle position, face it hit and update the remaining
             // displacement in the particle mover.
             //p->i = 8*p->i + face;
-            cell.access(i) = 8 * ii + face;
+            cell.access(s, i) = 8 * ii + face;
 
             return 1; // Return "mover still in use"
         }
+        */
 
         // Crossed into a normal voxel.  Update the voxel index, convert the
         // particle coordinate system and keep moving the particle.
 
         //p->i = neighbor - g->rangel; // Compute local index of neighbor
-        cell.access(i) = neighbor - g->rangel;
-
-        // TODO: port the macros from the Kokkos port
+        //cell.access(s, i) = neighbor - g->rangel;
+        // TODO: I still need to update the cell we're in
 
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
-        (&(p->dx))[axis] = -v0;      // Convert coordinate system
+        //(&(p->dx))[axis] = -v0;      // Convert coordinate system
+        // TODO: this conditional could be better
+        if (axis == 0) position_x.access(s, i) = -v0;
+        if (axis == 1) position_y.access(s, i) = -v0;
+        if (axis == 2) position_z.access(s, i) = -v0;
     }
 
     return 0; // Return "mover not in use"

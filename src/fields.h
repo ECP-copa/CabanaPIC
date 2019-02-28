@@ -1,5 +1,5 @@
-#ifndef pic_fields_h
-#define pic_fields_h
+#ifndef pic_EM_fields_h
+#define pic_EM_fields_h
 
 class Field_Solver
 {
@@ -149,6 +149,18 @@ class EM_Field_Solver : Field_Solver
                 float tcax = ( py*(cbz(i)) - pz*(cby(i))) - old_tcax;
                 ex(i) = ex(i) +  tcax;
 
+                //f0->tcax = ( py*(f0->cbz*m[f0->fmatz].rmuz-fy->cbz*m[fy->fmatz].rmuz) - pz*(f0->cby*m[f0->fmaty].rmuy-fz->cby*m[fz->fmaty].rmuy) ) - damp*f0->tcax;
+
+                /*
+                const float cj   = g->dt/g->eps0;
+                f0->ex   = f0->ex + ( - cj*f0->jfx ) ;
+
+                f0->tcay = ( pz*(f0->cbx*m[f0->fmatx].rmux-fz->cbx*m[fz->fmatx].rmux) - px*(f0->cbz*m[f0->fmatz].rmuz-fx->cbz*m[fx->fmatz].rmuz) ) - damp*f0->tcay;
+                f0->ey   = m[f0->ematy].decayy*f0->ey + m[f0->ematy].drivey*( f0->tcay - cj*f0->jfy );
+
+                f0->tcaz = ( px*(f0->cby*m[f0->fmaty].rmuy-fx->cby*m[fx->fmaty].rmuy) - py*(f0->cbx*m[f0->fmatx].rmux-fy->cbx*m[fy->fmatx].rmux) ) - damp*f0->tcaz;
+                f0->ez   = m[f0->ematz].decayz*f0->ez + m[f0->ematz].drivez*( f0->tcaz - cj*f0->jfz );
+                */
                 /*
                 // UPDATE_EX()
                 f0->tcax = ( py*(f0->cbz*m[f0->fmatz].rmuz-fy->cbz*m[fy->fmatz].rmuz) - pz*(f0->cby*m[f0->fmaty].rmuy-fz->cby*m[fz->fmaty].rmuy) ) - damp*f0->tcax;
@@ -211,4 +223,58 @@ class EM_Field_Solver : Field_Solver
         }
 };
 
-#endif // pic_fields_h
+class ES_Field_Solver : Field_Solver
+{
+    public:
+
+        void advance_b(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+                )
+        {
+            // No-op
+        }
+
+        void advance_e(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+        )
+        {
+            auto ex = fields.slice<FIELD_EX>();
+            auto ey = fields.slice<FIELD_EY>();
+            auto ez = fields.slice<FIELD_EZ>();
+
+            auto cbx = fields.slice<FIELD_CBX>();
+            auto cby = fields.slice<FIELD_CBY>();
+            auto cbz = fields.slice<FIELD_CBZ>();
+
+            auto jfx = fields.slice<FIELD_JFX>();
+            auto jfy = fields.slice<FIELD_JFY>();
+            auto jfz = fields.slice<FIELD_JFZ>();
+
+
+            auto _advance_e = KOKKOS_LAMBDA( const int i )
+            {
+                const float cj   = 1; // TODO: g->dt/g->eps0;
+                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
+                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
+                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
+        }
+};
+
+
+#endif // pic_EM_fields_h
