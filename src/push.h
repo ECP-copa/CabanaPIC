@@ -33,6 +33,26 @@ void push(
     const real_t one_third      = 1./3.;
     const real_t two_fifteenths = 2./15.;
 
+    // We prefer making slices out side of the llambda
+    auto _ex = f0.slice<EX>();
+    auto _dexdy = f0.slice<DEXDY>();
+    auto _dexdz = f0.slice<DEXDZ>();
+    auto _d2exdydz = f0.slice<D2EXDYDZ>();
+    auto _ey = f0.slice<EY>();
+    auto _deydz = f0.slice<DEYDZ>();
+    auto _deydx = f0.slice<DEYDX>();
+    auto _d2eydzdx = f0.slice<D2EYDZDX>();
+    auto _ez = f0.slice<EZ>();
+    auto _dezdx = f0.slice<DEZDX>();
+    auto _dezdy = f0.slice<DEZDY>();
+    auto _d2ezdxdy = f0.slice<D2EZDXDY>();
+    auto _cbx = f0.slice<CBX>();
+    auto _dcbxdx = f0.slice<DCBXDX>();
+    auto _cby = f0.slice<CBY>();
+    auto _dcbydy = f0.slice<DCBYDY>();
+    auto _cbz = f0.slice<CBZ>();
+    auto _dcbzdz = f0.slice<DCBZDZ>();
+
     auto _push =
         KOKKOS_LAMBDA( const int s, const int i )
         {
@@ -42,24 +62,24 @@ void push(
                 // This may be cleaner if we hoisted it?
                 int ii = cell.access(s,i);
 
-                auto ex = f0.slice<EX>()(ii);
-                auto dexdy = f0.slice<DEXDY>()(ii);
-                auto dexdz = f0.slice<DEXDZ>()(ii);
-                auto d2exdydz = f0.slice<D2EXDYDZ>()(ii);
-                auto ey = f0.slice<EY>()(ii);
-                auto deydz = f0.slice<DEYDZ>()(ii);
-                auto deydx = f0.slice<DEYDX>()(ii);
-                auto d2eydzdx = f0.slice<D2EYDZDX>()(ii);
-                auto ez = f0.slice<EZ>()(ii);
-                auto dezdx = f0.slice<DEZDX>()(ii);
-                auto dezdy = f0.slice<DEZDY>()(ii);
-                auto d2ezdxdy = f0.slice<D2EZDXDY>()(ii);
-                auto cbx = f0.slice<CBX>()(ii);
-                auto dcbxdx = f0.slice<DCBXDX>()(ii);
-                auto cby = f0.slice<CBY>()(ii);
-                auto dcbydy = f0.slice<DCBYDY>()(ii);
-                auto cbz = f0.slice<CBZ>()(ii);
-                auto dcbzdz = f0.slice<DCBZDZ>()(ii);
+                auto ex = _ex(ii);
+                auto dexdy = _dexdy(ii);
+                auto dexdz = _dexdz(ii);
+                auto d2exdydz = _d2exdydz(ii);
+                auto ey = _ey(ii);
+                auto deydz = _deydz(ii);
+                auto deydx = _deydx(ii);
+                auto d2eydzdx = _d2eydzdx(ii);
+                auto ez = _ez(ii);
+                auto dezdx = _dezdx(ii);
+                auto dezdy = _dezdy(ii);
+                auto d2ezdxdy = _d2ezdxdy(ii);
+                auto cbx = _cbx(ii);
+                auto dcbxdx = _dcbxdx(ii);
+                auto cby = _cby(ii);
+                auto dcbydy = _dcbydy(ii);
+                auto cbz = _cbz(ii);
+                auto dcbzdz = _dcbzdz(ii);
                 /*
                 auto ex  = f0.get<EX>(ii);
                 auto dexdy  = f0.get<DEXDY>(ii);

@@ -109,6 +109,7 @@ enum InterpolatorFields
         float , // dezdx,
         float , // dezdy,
         float , // d2ezdxdy,
+        // Below here is not need for ES? EM only?
         float , // cbx,
         float , // dcbxdx,
         float , // cby,

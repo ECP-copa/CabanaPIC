@@ -137,6 +137,7 @@ class EM_Field_Solver
                    f0->cby -= ( pz*( fz->ex-f0->ex ) - px*( fx->ez-f0->ez ) );
                    f0->cbz -= ( px*( fx->ey-f0->ey ) - py*( fy->ex-f0->ex ) );
                 */
+
                 cbx(i) -= ( py*( ez(fy_index) - ez(f0_index) ) - pz*( ey(fz_index) - ey(f0_index) ) );
                 cby(i) -= ( pz*( ex(fz_index) - ex(f0_index) ) - px*( ez(fx_index) - ez(f0_index) ) );
                 cbz(i) -= ( px*( ey(fx_index) - ey(f0_index) ) - py*( ex(fy_index) - ex(f0_index) ) );
