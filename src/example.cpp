@@ -88,7 +88,7 @@ int main( int argc, char* argv[] )
         std::cout << "Step " << step << std::endl;
 
         // Convert fields to interpolators
-        load_interpolator_array();
+        load_interpolator_array(fields, interpolators, nx, ny, nz);
 
         // TODO: Make the frequency of this configurable (every step is not
         // required for this incarnation)
@@ -139,3 +139,8 @@ int main( int argc, char* argv[] )
 }
 
 //---------------------------------------------------------------------------//
+//
+
+////// Known Possible Improvements /////
+// I pass nx/ny/nz round a lot more than I could
+

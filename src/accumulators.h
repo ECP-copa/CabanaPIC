@@ -1,7 +1,6 @@
 #ifndef pic_accumulators_h
 #define pic_accumulators_h
 
-// TODO: right now
 void unload_accumulator_array(
                 field_array_t fields,
                 accumulator_array_t a0,
@@ -24,16 +23,6 @@ void unload_accumulator_array(
     const size_t JX_OFFSET = 0;
     const size_t JY_OFFSET = 4;
     const size_t JZ_OFFSET = 8;
-
-    /* // Crib sheet for variable names
-    a0  = &a(x,  y,  z  );
-    ax  = &a(x-1,y,  z  );
-    ay  = &a(x,  y-1,z  );
-    az  = &a(x,  y,  z-1);
-    ayz = &a(x,  y-1,z-1);
-    azx = &a(x-1,y,  z-1);
-    axy = &a(x-1,y-1,z  )
-    */
 
     size_t x_offset = 1; // VOXEL(x+1,y,  z,   nx,ny,nz);
     size_t y_offset = (1*nx); // VOXEL(x,  y+1,z,   nx,ny,nz);
@@ -67,6 +56,15 @@ void unload_accumulator_array(
                 );
     };
 
-}
+    /* // Crib sheet for old variable names
+    a0  = &a(x,  y,  z  );
+    ax  = &a(x-1,y,  z  );
+    ay  = &a(x,  y-1,z  );
+    az  = &a(x,  y,  z-1);
+    ayz = &a(x,  y-1,z-1);
+    azx = &a(x-1,y,  z-1);
+    axy = &a(x-1,y-1,z  )
+    */
 
+}
 #endif // end guard
