@@ -156,9 +156,12 @@ void push(
                 uy  += hay;
                 uz  += haz;
 
+                logger << "x ux = " << ux << " to " <<  velocity_x.access(s,i)  << std::endl;
+
                 velocity_x.access(s,i) = ux;
                 velocity_y.access(s,i) = uy;
                 velocity_z.access(s,i) = uz;
+
 
                 v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
                 /**/                                      // Get norm displacement

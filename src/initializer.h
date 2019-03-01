@@ -88,7 +88,7 @@ class Initializer {
                     velocity_z.access(s,i) = 0.3;
 
                     charge.access(s,i) = 1.0;
-                    cell.access(s,i) = s;
+                    cell.access(s,i) = s % Parameters::instance().num_cells;
                     //}
                 };
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -122,24 +122,24 @@ class Initializer {
             for (size_t i = 0; i < f0.size(); i++)
             {
                 // Throw in some place holder values
-                ex(i) = 0.01;
-                dexdy(i) = 0.02;
-                dexdz(i) = 0.03;
-                d2exdydz(i) = 0.04;
-                ey(i) = 0.05;
-                deydz(i) = 0.06;
-                deydx(i) = 0.07;
-                d2eydzdx(i) = 0.08;
-                ez(i) = 0.09;
-                dezdx(i) = 0.10;
-                dezdy(i) = 0.11;
-                d2ezdxdy(i) = 0.12;
-                cbx(i) = 0.13;
-                dcbxdx(i) = 0.14;
-                cby(i) = 0.15;
-                dcbydy(i) = 0.16;
-                cbz(i) = 0.17;
-                dcbzdz(i) = 0.18;
+                ex(i) = 0.1;
+                dexdy(i) = 0.0;
+                dexdz(i) = 0.0;
+                d2exdydz(i) = 0.0;
+                ey(i) = 0.0;
+                deydz(i) = 0.0;
+                deydx(i) = 0.0;
+                d2eydzdx(i) = 0.0;
+                ez(i) = 0.0;
+                dezdx(i) = 0.0;
+                dezdy(i) = 0.0;
+                d2ezdxdy(i) = 0.0;
+                cbx(i) = 0.0;
+                dcbxdx(i) = 0.0;
+                cby(i) = 0.0;
+                dcbydy(i) = 0.0;
+                cbz(i) = 0.0;
+                dcbzdz(i) = 0.0;
             }
         }
 };

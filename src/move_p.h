@@ -175,17 +175,17 @@ int move_p(
             //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
             if (axis == 0)
             {
-                position_x.access(s, i) = -1.0f * position_x.access(s, i);
+                velocity_x.access(s, i) = -1.0f * velocity_x.access(s, i);
                 pm.dispx = -1.0f * s_dispx;
             }
             if (axis == 1)
             {
-                position_y.access(s, i) = -1.0f * position_y.access(s, i);
+                velocity_y.access(s, i) = -1.0f * velocity_y.access(s, i);
                 pm.dispy = -1.0f * s_dispy;
             }
             if (axis == 2)
             {
-                position_z.access(s, i) = -1.0f * position_z.access(s, i);
+                velocity_z.access(s, i) = -1.0f * velocity_z.access(s, i);
                 pm.dispz = -1.0f * s_dispz;
             }
             continue;
