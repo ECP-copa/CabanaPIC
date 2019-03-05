@@ -3,7 +3,7 @@
 
 void unload_accumulator_array(
                 field_array_t fields,
-                accumulator_array_t a0,
+                accumulator_array_t accumulators,
                 size_t nx, // TODO: we can probably pull these out of global params..
                 size_t ny,
                 size_t nz
@@ -28,6 +28,8 @@ void unload_accumulator_array(
     size_t y_offset = (1*nx); // VOXEL(x,  y+1,z,   nx,ny,nz);
     size_t z_offset = (1*nx*ny); // VOXEL(x,  y,  z+1, nx,ny,nz);
 
+    auto a0 = accumulators.slice<0>();
+
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _unload_accumulator = KOKKOS_LAMBDA( const int i )
     {
@@ -35,24 +37,25 @@ void unload_accumulator_array(
         // f0->jfx += cx*( a0->jx[0] + ay->jx[1] + az->jx[2] + ayz->jx[3] );
 
         jfx(i) += cx*(
-                    a0.slice<0>()(i,JX_OFFSET+0) +
-                    a0.slice<0>()(i+y_offset,JX_OFFSET+1) +
-                    a0.slice<0>()(i+z_offset,JX_OFFSET+2) +
-                    a0.slice<0>()(i+y_offset+z_offset,JX_OFFSET+3)
+                    a0(i,JX_OFFSET+0) +
+                    a0(i+y_offset,JX_OFFSET+1) +
+                    a0(i+z_offset,JX_OFFSET+2) +
+                    a0(i+y_offset+z_offset,JX_OFFSET+3)
                 );
 
+        logger 
         jfy(i) += cy*(
-                    a0.slice<0>()(i,JY_OFFSET+0) +
-                    a0.slice<0>()(i+z_offset,JY_OFFSET+1) +
-                    a0.slice<0>()(i+y_offset,JY_OFFSET+2) +
-                    a0.slice<0>()(i+y_offset+z_offset,JY_OFFSET+3)
+                    a0(i,JY_OFFSET+0) +
+                    a0(i+z_offset,JY_OFFSET+1) +
+                    a0(i+y_offset,JY_OFFSET+2) +
+                    a0(i+y_offset+z_offset,JY_OFFSET+3)
                 );
 
         jfz(i) += cz*(
-                    a0.slice<0>()(i,JZ_OFFSET+0) +
-                    a0.slice<0>()(i+x_offset,JZ_OFFSET+1) +
-                    a0.slice<0>()(i+y_offset,JZ_OFFSET+2) +
-                    a0.slice<0>()(i+x_offset+y_offset,JZ_OFFSET+3)
+                    a0(i,JZ_OFFSET+0) +
+                    a0(i+x_offset,JZ_OFFSET+1) +
+                    a0(i+y_offset,JZ_OFFSET+2) +
+                    a0(i+x_offset+y_offset,JZ_OFFSET+3)
                 );
     };
 
