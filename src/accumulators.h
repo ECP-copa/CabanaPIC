@@ -43,7 +43,6 @@ void unload_accumulator_array(
                     a0(i+y_offset+z_offset,JX_OFFSET+3)
                 );
 
-        logger 
         jfy(i) += cy*(
                     a0(i,JY_OFFSET+0) +
                     a0(i+z_offset,JY_OFFSET+1) +

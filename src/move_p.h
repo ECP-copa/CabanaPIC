@@ -163,8 +163,16 @@ int move_p(
 
         //neighbor = g->neighbor[ 6* ii + face ];
 
+        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Periodic)
+        {
+            std::cout << "face" << std::endl;
+            // If we hit the periodic boundary, try and put the article in the right place
+
+        }
+
         //if ( neighbor==reflect_particles ) {
-        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect) {
+        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
+        {
             // Hit a reflecting boundary condition.  Reflect the particle
             // momentum and remaining displacement and keep moving the
             // particle.

@@ -2,7 +2,8 @@
 #define SIMULATION_PARAMETERS_H
 
 enum Boundary {
-    Reflect = 0
+    Reflect = 0,
+    Periodic
 };
 
 
@@ -34,7 +35,8 @@ template <class real_> class Parameters_
         double dt;
         int num_steps;
 
-        Boundary BOUNDARY_TYPE = Boundary::Reflect;
+        //Boundary BOUNDARY_TYPE = Boundary::Reflect;
+        Boundary BOUNDARY_TYPE = Boundary::Periodic;
 
         // Assume domain starts at [0,0,0] and goes to [len,len,len]
         real_ len_x_global = 1.0;
