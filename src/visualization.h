@@ -67,6 +67,17 @@ class Visualizer {
             vis_file << "LOOKUP_TABLE default" << std::endl;
         }
 
+        void write_particles_index(particle_list_t& particles)
+        {
+            auto cell = particles.slice<Cell_Index>();
+
+            for ( std::size_t idx = 0; idx != particles.size(); ++idx )
+            {
+                        real_t w = cell(idx);
+
+                        vis_file << w << std::endl;
+            }
+        }
         void write_particles_w(particle_list_t& particles)
         {
             auto weight = particles.slice<Charge>();
@@ -103,7 +114,7 @@ class Visualizer {
                int particle_count = species[sn].num_particles;
                total_num_particles += particle_count;
                }
-               */
+            */
 
             write_header(total_num_particles, step);
 
@@ -124,6 +135,8 @@ class Visualizer {
             write_particles_w(particles);
             //}
             //*/
+            write_particles_property_header("cells", total_num_particles);
+            write_particles_index(particles);
 
             write_particles_property_header("species", total_num_particles);
 
