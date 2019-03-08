@@ -161,42 +161,45 @@ int move_p(
         face = axis;
         if( v0>0 ) face += 3;
 
-        //neighbor = g->neighbor[ 6* ii + face ];
+        bool is_leaving_domain = false;
 
-        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Periodic)
-        {
-            std::cout << "face" << std::endl;
-            // If we hit the periodic boundary, try and put the article in the right place
+        // TODO: how should we best check this?
 
-        }
-
-        //if ( neighbor==reflect_particles ) {
-        if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
-        {
-            // Hit a reflecting boundary condition.  Reflect the particle
-            // momentum and remaining displacement and keep moving the
-            // particle.
-
-            logger << "Reflecting " << s << " " << i << " on axis " << axis << std::endl;
-
-            //(&(p->ux    ))[axis] = -(&(p->ux    ))[axis];
-            //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
-            if (axis == 0)
+        if (is_leaving_domain) {
+            if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Periodic)
             {
-                velocity_x.access(s, i) = -1.0f * velocity_x.access(s, i);
-                pm.dispx = -1.0f * s_dispx;
+                std::cout << "face" << std::endl;
+                // If we hit the periodic boundary, try and put the article in the right place
+
             }
-            if (axis == 1)
+
+            if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
             {
-                velocity_y.access(s, i) = -1.0f * velocity_y.access(s, i);
-                pm.dispy = -1.0f * s_dispy;
+                // Hit a reflecting boundary condition.  Reflect the particle
+                // momentum and remaining displacement and keep moving the
+                // particle.
+
+                logger << "Reflecting " << s << " " << i << " on axis " << axis << std::endl;
+
+                //(&(p->ux    ))[axis] = -(&(p->ux    ))[axis];
+                //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
+                if (axis == 0)
+                {
+                    velocity_x.access(s, i) = -1.0f * velocity_x.access(s, i);
+                    pm.dispx = -1.0f * s_dispx;
+                }
+                if (axis == 1)
+                {
+                    velocity_y.access(s, i) = -1.0f * velocity_y.access(s, i);
+                    pm.dispy = -1.0f * s_dispy;
+                }
+                if (axis == 2)
+                {
+                    velocity_z.access(s, i) = -1.0f * velocity_z.access(s, i);
+                    pm.dispz = -1.0f * s_dispz;
+                }
+                continue;
             }
-            if (axis == 2)
-            {
-                velocity_z.access(s, i) = -1.0f * velocity_z.access(s, i);
-                pm.dispz = -1.0f * s_dispz;
-            }
-            continue;
         }
 
         // TODO: this nieghbor stuff can be removed by going to more simple
