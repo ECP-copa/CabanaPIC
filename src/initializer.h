@@ -25,6 +25,9 @@ class Initializer {
                 (Parameters::instance().ny + Parameters::instance().num_ghosts*2) *
                 (Parameters::instance().nz + Parameters::instance().num_ghosts*2);
 
+            Parameters::instance().num_real_cells =
+                Parameters::instance().nx * Parameters::instance().ny * Parameters::instance().nz;
+
             Parameters::instance().NPPC = _nppc;
 
             Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_cells;
@@ -54,8 +57,10 @@ class Initializer {
         }
 
         // Function to intitialize the particles.
-        static void initialize_particles( particle_list_t particles )
+        static void initialize_particles( particle_list_t particles)
         {
+            // TODO: this doesnt currently do anything with nppc/num_cells
+
             auto position_x = particles.slice<PositionX>();
             auto position_y = particles.slice<PositionY>();
             auto position_z = particles.slice<PositionZ>();
@@ -71,12 +76,8 @@ class Initializer {
             srand (static_cast <unsigned> (time(0)));
 
             auto _init =
-                //KOKKOS_LAMBDA( const int s )
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
-                    // Much more likely to vectroize and give good performance
-                    //for ( int i = 0; i < particle_list_t::vector_length; ++i )
-                    //{
                     // Initialize position.
                     position_x.access(s,i) = rand_float(-1.0f, 1.0f);
                     position_y.access(s,i) = rand_float(-1.0f, 1.0f);
@@ -88,9 +89,13 @@ class Initializer {
                     velocity_z.access(s,i) = 0.3;
 
                     charge.access(s,i) = 1.0;
-                    cell.access(s,i) = s % Parameters::instance().num_cells;
-                    //}
+
+                    // gives me a num in the range 0..num_real_cells
+                    int pre_ghost = (s % Parameters::instance().num_real_cells);
+
+                    cell.access(s,i) = allow_for_ghosts(pre_ghost);
                 };
+
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
                 vec_policy( 0, particles.size() );
             Cabana::simd_parallel_for( vec_policy, _init, "init()" );

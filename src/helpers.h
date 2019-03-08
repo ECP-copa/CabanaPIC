@@ -3,6 +3,38 @@
 
 #include "logger.h"
 
+// TODO: this may be a bad name?
+# define RANK_TO_INDEX(rank,ix,iy,iz,_x,_y) \
+    int _ix, _iy, _iz;                                                    \
+    _ix  = (rank);                        /* ix = ix+gpx*( iy+gpy*iz ) */ \
+    _iy  = _ix/int(_x);   /* iy = iy+gpy*iz */            \
+    _ix -= _iy*int(_x);   /* ix = ix */                   \
+    _iz  = _iy/int(_y);   /* iz = iz */                   \
+    _iy -= _iz*int(_y);   /* iy = iy */                   \
+    (ix) = _ix;                                                           \
+    (iy) = _iy;                                                           \
+    (iz) = _iz;                                                           \
+
+#define VOXEL(x,y,z, nx,ny,nz, NG) ((x) + ((nx)+(NG*2))*((y) + ((ny)+(NG*2))*(z)))
+
+// Converts from an index that doesn't know about ghosts to one that does
+int allow_for_ghosts(int pre_ghost)
+{
+
+    size_t ix, iy, iz;
+    RANK_TO_INDEX(pre_ghost, ix, iy, iz,
+            Parameters::instance().nx,
+            Parameters::instance().ny);
+
+    int with_ghost = VOXEL(ix, iy, iz,
+            Parameters::instance().nx,
+            Parameters::instance().ny,
+            Parameters::instance().nz,
+            Parameters::instance().num_ghosts);
+
+    return with_ghost;
+}
+
 // Function to print out the data for every particle.
 void print_particles( const particle_list_t particles )
 {
@@ -31,7 +63,8 @@ void print_particles( const particle_list_t particles )
                 std::cout << "Velocity "
                     << velocity_x.access(s,i) << " "
                     << velocity_y.access(s,i) << " "
-                    << velocity_z.access(s,i) << " ";
+                    << velocity_z.access(s,i) << " "
+                    << ". Cell: " << cell.access(s,i);
                 std::cout << std::endl;
         };
 

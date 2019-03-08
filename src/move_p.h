@@ -3,6 +3,58 @@
 
 #include <types.h>
 
+
+// I make no claims that this is a sensible way to do this.. I just want it working ASAP
+// THIS DEALS WITH GHOSTS ITSELF
+bool detect_leaving_domain(size_t ii, size_t face, size_t nx, size_t ny, size_t nz)
+{
+    size_t ix, iy, iz;
+    RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
+    std::cout << "i " << ii << " ix " << ix << " iy " << iy << " iz " << iz << std::endl;
+
+    int leaving = -1;
+
+    if (face == 0) { // x - 1
+        if (ix == 0)
+        {
+            leaving = 0;
+        }
+    }
+    else if (face == 1) { // y - 1
+        if (iy == 0)
+        {
+            leaving = 1;
+        }
+    }
+    else if (face == 2) { // z - 1
+        if (iz == 0)
+        {
+            leaving = 2;
+        }
+    }
+    else if (face == 3) { // x+1
+        if (ix == nx)
+        {
+            leaving = 3;
+        }
+    }
+    else if (face == 4) { // y+1
+        if (iy == ny)
+        {
+            leaving = 4;
+        }
+    }
+    else if (face == 5) { // z+1
+        if (iz == nz)
+        {
+            leaving = 5;
+        }
+
+    }
+    return leaving;
+}
+
+
 // TODO: add namespace etc?
 // TODO: port this to cabana syntax
 int move_p(
@@ -12,7 +64,10 @@ int move_p(
         const grid_t* g,
         const float qsp,
         const size_t s,
-        const size_t i
+        const size_t i,
+        const size_t nx,
+        const size_t ny,
+        const size_t nz
     )
 {
 
@@ -161,16 +216,34 @@ int move_p(
         face = axis;
         if( v0>0 ) face += 3;
 
-        bool is_leaving_domain = false;
+        int is_leaving_domain = detect_leaving_domain(ii, face, nx, ny, nz);
+        if (is_leaving_domain >= 0) {
+        std::cout << s << ", " << i << " leaving on " << face << std::endl;
 
-        // TODO: how should we best check this?
+        std::cout <<
+            " x " << position_x.access(s,i) <<
+            " y " << position_y.access(s,i) <<
+            " z " << position_z.access(s,i) <<
+            " cell " << cell.access(s,i) <<
+            std::endl;
 
-        if (is_leaving_domain) {
             if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Periodic)
             {
                 std::cout << "face" << std::endl;
                 // If we hit the periodic boundary, try and put the article in the right place
+                if (is_leaving_domain == 0) { // -1 on x face
 
+                }
+                else if (is_leaving_domain == 1) { // -1 on y face
+                }
+                else if (is_leaving_domain == 2) { // -1 on z face
+                }
+                else if (is_leaving_domain == 3) { // 1 on x face
+                }
+                else if (is_leaving_domain == 4) { // 1 on y face
+                }
+                else if (is_leaving_domain == 5) { // 1 on z face
+                }
             }
 
             if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
@@ -223,9 +296,28 @@ int move_p(
         //cell.access(s, i) = neighbor - g->rangel;
         // TODO: I still need to update the cell we're in
 
+        size_t ix, iy, iz;
+        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
+
+        if (face == 0) { ix--; }
+        if (face == 1) { iy--; }
+        if (face == 2) { iz--; }
+        if (face == 3) { ix++; }
+        if (face == 4) { iy++; }
+        if (face == 5) { iz++; }
+
+        int updated_ii = VOXEL(ix, iy, iz,
+                Parameters::instance().nx,
+                Parameters::instance().ny,
+                Parameters::instance().nz,
+                Parameters::instance().num_ghosts);
+
+        cell.access(s, i) = updated_ii;
+        std::cout << "Moving from cell " << ii << " to " << updated_ii << std::endl;
+
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         //(&(p->dx))[axis] = -v0;      // Convert coordinate system
-        // TODO: this conditional could be better
+        // TODO: this conditional/branching could be better
         if (axis == 0) position_x.access(s, i) = -v0;
         if (axis == 1) position_y.access(s, i) = -v0;
         if (axis == 2) position_z.access(s, i) = -v0;

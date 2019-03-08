@@ -25,35 +25,40 @@ template <class real_> class Parameters_
         size_t NX_global;
         size_t NY_global;
         size_t NZ_global;
-        size_t nx = NX_global;
-        size_t ny = NY_global;
-        size_t nz = NZ_global;
-        size_t num_cells; // This should *include* the ghost cells
+        size_t nx;
+        size_t ny;
+        size_t nz;
+
         size_t num_ghosts;
+        size_t num_cells; // This should *include* the ghost cells
         size_t NPPC;
         size_t num_particles;
         double dt;
         int num_steps;
 
+        // Assume domain starts at [0,0,0] and goes to [len,len,len]
+        real_ len_x_global;
+        real_ len_y_global;
+        real_ len_z_global;
+        real_ len_x;
+        real_ len_y;
+        real_ len_z;
+        real_ local_x_min;
+        real_ local_y_min;
+        real_ local_z_min;
+        real_ local_x_max;
+        real_ local_y_max;
+        real_ local_z_max;
+        real_ dx;
+        real_ dy;
+        real_ dz;
+
+        size_t ghost_offset; // Where the cell id needs to start for a "real" cell, basically nx
+        size_t num_real_cells;
+
         //Boundary BOUNDARY_TYPE = Boundary::Reflect;
         Boundary BOUNDARY_TYPE = Boundary::Periodic;
 
-        // Assume domain starts at [0,0,0] and goes to [len,len,len]
-        real_ len_x_global = 1.0;
-        real_ len_y_global = 1.0;
-        real_ len_z_global = 1.0;
-        real_ len_x = len_x_global;
-        real_ len_y = len_y_global;
-        real_ len_z = len_z_global;
-        real_ local_x_min = 0.0;
-        real_ local_y_min = 0.0;
-        real_ local_z_min = 0.0;
-        real_ local_x_max = len_x;
-        real_ local_y_max = len_y;
-        real_ local_z_max = len_z;
-        real_ dx = len_x/nx;
-        real_ dy = len_y/ny;
-        real_ dz = len_z/nz;
 
         // TODO: how useful are these arguments now its a singleton?
         Parameters_(size_t _nc = 16, size_t _nppc = 32) :
@@ -67,8 +72,8 @@ template <class real_> class Parameters_
             nx(NX_global),
             ny(NY_global),
             nz(NZ_global),
-            num_cells(NX_global * NY_global * NZ_global),
             num_ghosts(1),
+            num_cells( ((num_ghosts*2)+NX_global) * ((num_ghosts*2)+NY_global) * ((num_ghosts*2)+NZ_global)),
             NPPC(_nppc),
             num_particles(NPPC*num_cells),
             dt(0.1),
@@ -87,7 +92,9 @@ template <class real_> class Parameters_
             local_z_max(len_z),
             dx(len_x/nx),
             dy(len_y/ny),
-            dz(len_z/nz)
+            dz(len_z/nz),
+            ghost_offset(nx*num_ghosts),
+            num_real_cells(NX_global * NY_global * NZ_global)
         {
             std::cout << "Singleton Constructor" << std::endl;
         }

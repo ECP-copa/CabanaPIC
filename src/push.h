@@ -13,7 +13,10 @@ void push(
         real_t cdt_dz,
         real_t qsp,
         accumulator_array_t& a0,
-        grid_t* g
+        grid_t* g,
+        const size_t nx,
+        const size_t ny,
+        const size_t nz
     )
 {
 
@@ -235,7 +238,7 @@ void push(
                     local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
                     // Handle particles that cross cells
-                    move_p( particles, local_pm, a0, g, qsp, s, i );
+                    move_p( particles, local_pm, a0, g, qsp, s, i, nx, ny, nz );
 
                     // TODO: renable this
                     //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely

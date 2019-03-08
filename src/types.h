@@ -34,7 +34,7 @@ enum UserParticleFields
     VelocityY,
     VelocityZ,
     Charge,
-    Cell_Index,
+    Cell_Index, // This is stored as per VPIC, such that it includes ghost_offsets
 };
 
 // Designate the types that the particles will hold.

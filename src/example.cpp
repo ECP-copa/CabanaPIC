@@ -113,7 +113,10 @@ int main( int argc, char* argv[] )
             cdt_dz,
             qsp,
             accumulators,
-            grid
+            grid,
+            nx,
+            ny,
+            nz
         );
 
         // TODO: boundaries?
