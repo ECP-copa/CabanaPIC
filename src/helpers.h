@@ -1,6 +1,8 @@
 #ifndef pic_helper_h
 #define pic_helper_h
 
+#include "logger.h"
+
 // Function to print out the data for every particle.
 void print_particles( const particle_list_t particles )
 {

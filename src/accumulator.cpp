@@ -1,12 +1,13 @@
-#ifndef pic_accumulators_h
-#define pic_accumulators_h
+// TODO: add namespace?
+
+#include "accumulator.h"
 
 void unload_accumulator_array(
-                field_array_t fields,
-                accumulator_array_t accumulators,
-                size_t nx, // TODO: we can probably pull these out of global params..
-                size_t ny,
-                size_t nz
+        field_array_t fields,
+        accumulator_array_t accumulators,
+        size_t nx, // TODO: we can probably pull these out of global params..
+        size_t ny,
+        size_t nz
 )
 {
 
@@ -69,4 +70,3 @@ void unload_accumulator_array(
     */
 
 }
-#endif // end guard

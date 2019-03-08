@@ -1,7 +1,16 @@
 #ifndef ACCUMULATOR_T
 #define ACCUMULATOR_T
 
+#include <cstdint>
+#include <cstddef>
+
+#include <Cabana_Types.hpp>
+#include <Cabana_AoSoA.hpp>
+#include <Cabana_Slice.hpp>
+
+#include "types.h"
 #include "grid.h"
+#include "fields.h"
 
 class accumulator_t {
     public:
@@ -18,21 +27,12 @@ class accumulator_t {
       }
 };
 
-// TODO: this can be replaced by a view
-class accumulator_array_t {
-    public:
-        accumulator_t* a;
-        size_t size;
-        //int n_pipeline; // Number of pipelines supported by this accumulator
-        //int stride;     // Stride be each pipeline's accumulator array
-        //grid_t* g;
-        accumulator_array_t(size_t size)
-        {
-            this->size = size;
-            // TODO: obviously this will fail on non CPU, but works as a place holder
-            // TODO: NEW
-            a = (accumulator_t*)malloc( sizeof(accumulator_t) * size );
-        }
-};
+void unload_accumulator_array(
+        field_array_t fields,
+        accumulator_array_t accumulators,
+        size_t nx, // TODO: we can probably pull these out of global params..
+        size_t ny,
+        size_t nz
+);
 
 #endif // header guard

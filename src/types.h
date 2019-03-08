@@ -3,14 +3,6 @@
 
 #define real_t float
 
-
-#define ENABLE_DEBUG 1
-#if ENABLE_DEBUG
-  #define logger std::cout << "LOG:" << __FILE__ << ":" << __LINE__ << " \t :: \t "
-#else
-  #define logger while(0) std::cout
-#endif /* ENABLE_DEBUG */
-
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
 #define VLEN 16
@@ -28,8 +20,6 @@ using ExecutionSpace = Kokkos::Serial;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
 
 ///// END ESSENTIALS ///
-
-
 
 #include "simulation_parameters.h"
 

@@ -12,7 +12,7 @@
 #include "initializer.h"
 
 #include "fields.h"
-#include "accumulators.h"
+#include "accumulator.h"
 #include "interpolators.h"
 
 #include "push.h"
