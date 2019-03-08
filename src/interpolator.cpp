@@ -1,5 +1,4 @@
-#ifndef pic_interpolators_h
-#define pic_interpolators_h
+#include "interpolator.h"
 
 void load_interpolator_array(
         field_array_t fields,
@@ -109,5 +108,3 @@ void load_interpolator_array(
         */
 
 }
-
-#endif // end guard

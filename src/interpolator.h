@@ -1,6 +1,16 @@
 #ifndef INTERPOLATOR_H
 #define INTERPOLATOR_H
 
+#include <cstdint>
+#include <cstddef>
+
+#include <Cabana_Types.hpp>
+#include <Cabana_AoSoA.hpp>
+#include <Cabana_Slice.hpp>
+
+#include "types.h"
+#include "fields.h"
+
 /**
  * @brief Class to store interpolator data for use in kernels
  */
@@ -27,20 +37,12 @@ class interpolator_t {
         //float _pad[2];  // 16-byte align
 };
 
-/**
- * @brief Class to hold a pointer to the interpolator array data
- */
-class interpolator_array_t {
-    public:
-        interpolator_t* i;
-        size_t size;
-        interpolator_array_t(size_t size)
-        {
-            this->size = size;
-            // TODO: obviously this will fail on non CPU, but works as a place holder
-            i = (interpolator_t*)malloc( sizeof(interpolator_t) * size );
-        }
-        //grid_t * g; // TODO: Do we need a grid here? It's just a holder for some metadata
-};
+void load_interpolator_array(
+        field_array_t fields,
+        interpolator_array_t interpolators,
+        size_t nx, // TODO: we can probably pull these out of global params..
+        size_t ny,
+        size_t nz
+);
 
 #endif
