@@ -231,19 +231,37 @@ int move_p(
             {
                 std::cout << "face" << std::endl;
                 // If we hit the periodic boundary, try and put the article in the right place
-                if (is_leaving_domain == 0) { // -1 on x face
 
+                // TODO: we can do this in 1d just fine
+
+                size_t ix, iy, iz;
+                RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
+
+                size_t NG = Parameters::instance().num_ghosts;
+                if (is_leaving_domain == 0) { // -1 on x face
+                    ix = (nx-1) + NG;
                 }
                 else if (is_leaving_domain == 1) { // -1 on y face
+                    iy = (ny-1) + NG;
                 }
                 else if (is_leaving_domain == 2) { // -1 on z face
+                    iz = (nz-1) + NG;
                 }
                 else if (is_leaving_domain == 3) { // 1 on x face
+                    ix = NG;
                 }
                 else if (is_leaving_domain == 4) { // 1 on y face
+                    iy = NG;
                 }
                 else if (is_leaving_domain == 5) { // 1 on z face
+                    iz = NG;
                 }
+                int updated_ii = VOXEL(ix, iy, iz,
+                        Parameters::instance().nx,
+                        Parameters::instance().ny,
+                        Parameters::instance().nz,
+                        Parameters::instance().num_ghosts);
+                cell.access(s, i) = updated_ii;
             }
 
             if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
@@ -288,6 +306,7 @@ int move_p(
             return 1; // Return "mover still in use"
         }
         */
+        else {
 
         // Crossed into a normal voxel.  Update the voxel index, convert the
         // particle coordinate system and keep moving the particle.
@@ -314,6 +333,7 @@ int move_p(
 
         cell.access(s, i) = updated_ii;
         std::cout << "Moving from cell " << ii << " to " << updated_ii << std::endl;
+    }
 
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         //(&(p->dx))[axis] = -v0;      // Convert coordinate system
