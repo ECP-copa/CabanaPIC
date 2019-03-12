@@ -27,6 +27,9 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
+    printf ("On Kokkos execution space %s\n",
+          typeid (Kokkos::DefaultExecutionSpace).name ());
+
     // Cabana scoping block
     {
 
@@ -35,7 +38,7 @@ int main( int argc, char* argv[] )
     // Initialize input deck params.
 
     // num_cells (without ghosts), num_particles_per_cell
-    Initializer::initialize_params(4, 2);
+    Initializer::initialize_params(1, 10);
 
     // Cache some values locally for printing
     const size_t num_cells = Parameters::instance().num_cells;
@@ -43,8 +46,8 @@ int main( int argc, char* argv[] )
 
     // Create the particle list.
     particle_list_t particles( num_particles );
-    logger << "size " << particles.size() << std::endl;
-    logger << "numSoA " << particles.numSoA() << std::endl;
+    //logger << "size " << particles.size() << std::endl;
+    //logger << "numSoA " << particles.numSoA() << std::endl;
 
     // Initialize particles.
     Initializer::initialize_particles( particles );
@@ -59,7 +62,7 @@ int main( int argc, char* argv[] )
     real_t qsp = 1.0f;
 
     // Print initial particle positions
-    logger << "Initial:" << std::endl;
+    //logger << "Initial:" << std::endl;
     print_particles( particles );
 
     // Allocate Cabana Data
@@ -77,11 +80,13 @@ int main( int argc, char* argv[] )
     const size_t nx = Parameters::instance().nx;
     const size_t ny = Parameters::instance().ny;
     const size_t nz = Parameters::instance().nz;
+    const size_t num_ghosts = Parameters::instance().num_particles;
+    const Boundary boundary = Parameters::instance().BOUNDARY_TYPE;
 
-    logger << "nx " << Parameters::instance().nx << std::endl;
-    logger << "num_particles " << num_particles << std::endl;
-    logger << "num_cells " << num_cells << std::endl;
-    logger << "Actual NPPC " << Parameters::instance().NPPC << std::endl;
+    //logger << "nx " << Parameters::instance().nx << std::endl;
+    //logger << "num_particles " << num_particles << std::endl;
+    //logger << "num_cells " << num_cells << std::endl;
+    //logger << "Actual NPPC " << Parameters::instance().NPPC << std::endl;
 
     // TODO: give these a real value
     const real_t px = 0.9; // (nx>1) ? frac*g->cvac*g->dt*g->rdx : 0;
@@ -89,19 +94,19 @@ int main( int argc, char* argv[] )
     const real_t pz = 0.9; // (nz>1) ? frac*g->cvac*g->dt*g->rdz : 0;
 
     // simulation loop
-    const size_t num_steps = Parameters::instance().num_steps;
-    for (size_t step = 0; step < num_steps; step++)
+     const size_t num_steps = Parameters::instance().num_steps;
+     for (size_t step = 0; step < num_steps; step++)
     {
-        std::cout << "Step " << step << std::endl;
+    //     //std::cout << "Step " << step << std::endl;
+         printf("Step %d \n", step);
+    //     // Convert fields to interpolators
+    //     load_interpolator_array(fields, interpolators, nx, ny, nz);
 
-        // Convert fields to interpolators
-        load_interpolator_array(fields, interpolators, nx, ny, nz);
-
-        // TODO: Make the frequency of this configurable (every step is not
-        // required for this incarnation)
-        // Sort by cell index
-        auto keys = particles.slice<Cell_Index>();
-        auto bin_data = Cabana::sortByKey( keys );
+    //     // TODO: Make the frequency of this configurable (every step is not
+    //     // required for this incarnation)
+    //     // Sort by cell index
+    //     auto keys = particles.slice<Cell_Index>();
+    //     auto bin_data = Cabana::sortByKey( keys );
 
         // Move
         push(
@@ -116,33 +121,36 @@ int main( int argc, char* argv[] )
             grid,
             nx,
             ny,
-            nz
+            nz,
+            num_ghosts,
+            boundary
         );
 
-        // TODO: boundaries?
-        // boundary_p(); // Implies Parallel?
+    //     // TODO: boundaries?
+    //     // boundary_p(); // Implies Parallel?
 
-        // Map accumulator current back onto the fields
-        unload_accumulator_array(fields, accumulators, nx, ny, nz);
+    //     // Map accumulator current back onto the fields
+    //     unload_accumulator_array(fields, accumulators, nx, ny, nz);
 
-        // Half advance the magnetic field from B_0 to B_{1/2}
-        field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
+    //     // Half advance the magnetic field from B_0 to B_{1/2}
+    //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
-        // Advance the electric field from E_0 to E_1
-        field_solver.advance_e(fields, px, py, pz, nx, ny, nz);
+    //     // Advance the electric field from E_0 to E_1
+    //     field_solver.advance_e(fields, px, py, pz, nx, ny, nz);
 
-        // Half advance the magnetic field from B_{1/2} to B_1
-        field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
+    //     // Half advance the magnetic field from B_{1/2} to B_1
+    //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
-        // Print particles.
-        print_particles( particles );
+    //     // Print particles.
+    //     print_particles( particles );
 
-        // Output vis
-        vis.write_vis(particles, step);
+    //     // Output vis
+    //     vis.write_vis(particles, step);
 
-    }
+     }
     } // End Scoping block
 
+    printf("Good!\n");
     // Finalize.
     Cabana::finalize();
     return 0;

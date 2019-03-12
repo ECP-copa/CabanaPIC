@@ -16,9 +16,13 @@ void push(
         grid_t* g,
         const size_t nx,
         const size_t ny,
-        const size_t nz
+        const size_t nz,
+        const size_t num_ghosts,
+        Boundary boundary
     )
 {
+
+    auto _a = a0.slice<0>();
 
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
@@ -159,7 +163,7 @@ void push(
                 uy  += hay;
                 uz  += haz;
 
-                logger << "x ux = " << ux << " to " <<  velocity_x.access(s,i)  << std::endl;
+                //logger << "x ux = " << ux << " to " <<  velocity_x.access(s,i)  << std::endl;
 
                 velocity_x.access(s,i) = ux;
                 velocity_y.access(s,i) = uy;
@@ -217,10 +221,10 @@ void push(
                     v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */        \
                     v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */        \
                     v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */        \
-                    a0.slice<0>()(ii,offset+0) += v0; \
-                    a0.slice<0>()(ii,offset+1) += v1; \
-                    a0.slice<0>()(ii,offset+2) += v2; \
-                    a0.slice<0>()(ii,offset+3) += v3;
+                    _a(ii,offset+0) += v0; \
+                    _a(ii,offset+1) += v1; \
+                    _a(ii,offset+2) += v2; \
+                    _a(ii,offset+3) += v3;
 
                     ACCUMULATE_J( x,y,z, 0 );
                     ACCUMULATE_J( y,z,x, 4 );
@@ -238,7 +242,7 @@ void push(
                     local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
                     // Handle particles that cross cells
-                    move_p( particles, local_pm, a0, g, qsp, s, i, nx, ny, nz );
+                    move_p( position_x, position_y, position_z, cell, charge, local_pm, _a, g, qsp, s, i, nx, ny, nz, num_ghosts, boundary );
 
                     // TODO: renable this
                     //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely

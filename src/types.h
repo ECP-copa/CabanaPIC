@@ -15,8 +15,10 @@ const std::size_t array_size = VLEN;
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::Serial;
+using MemorySpace = Kokkos::CudaUVMSpace;
+using ExecutionSpace = Kokkos::Cuda;
+//using MemorySpace = Cabana::HostSpace;
+//using ExecutionSpace = Kokkos::Serial;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
 
 ///// END ESSENTIALS ///

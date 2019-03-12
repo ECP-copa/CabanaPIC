@@ -1,4 +1,4 @@
-#define ENABLE_DEBUG 1
+//#define ENABLE_DEBUG 0
 #if ENABLE_DEBUG
   #define logger std::cout << "LOG:" << __FILE__ << ":" << __LINE__ << " \t :: \t "
 #else

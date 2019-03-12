@@ -7,7 +7,7 @@ class Initializer {
         static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
         {
 
-            logger << "Importing Default Input Deck" << std::endl;
+            //logger << "Importing Default Input Deck" << std::endl;
             const real_t default_grid_len = 1.0;
 
             Parameters::instance().NX_global = _nc;
@@ -73,15 +73,15 @@ class Initializer {
             auto cell = particles.slice<Cell_Index>();
 
             // TODO: sensible way to do rand in parallel?
-            srand (static_cast <unsigned> (time(0)));
+            //srand (static_cast <unsigned> (time(0)));
 
             auto _init =
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
                     // Initialize position.
-                    position_x.access(s,i) = rand_float(-1.0f, 1.0f);
-                    position_y.access(s,i) = rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = rand_float(-1.0f, 1.0f);
+                    position_x.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
+                    position_y.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
 
                     // Initialize velocity.
                     velocity_x.access(s,i) = 0.1;
@@ -91,9 +91,11 @@ class Initializer {
                     charge.access(s,i) = 1.0;
 
                     // gives me a num in the range 0..num_real_cells
-                    int pre_ghost = (s % Parameters::instance().num_real_cells);
+                    //int pre_ghost = (s % Parameters::instance().num_real_cells);
+                    //   size_t ix, iy, iz;
 
-                    cell.access(s,i) = allow_for_ghosts(pre_ghost);
+ 
+                    cell.access(s,i) = 1; //allow_for_ghosts(pre_ghost);
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

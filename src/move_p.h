@@ -6,11 +6,11 @@
 
 // I make no claims that this is a sensible way to do this.. I just want it working ASAP
 // THIS DEALS WITH GHOSTS ITSELF
-bool detect_leaving_domain(size_t ii, size_t face, size_t nx, size_t ny, size_t nz)
+KOKKOS_INLINE_FUNCTION bool detect_leaving_domain(size_t ii, size_t face, size_t nx, size_t ny, size_t nz, size_t num_ghosts)
 {
     size_t ix, iy, iz;
-    RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
-    std::cout << "i " << ii << " ix " << ix << " iy " << iy << " iz " << iz << std::endl;
+    RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+    //std::cout << "i " << ii << " ix " << ix << " iy " << iy << " iz " << iz << std::endl;
 
     int leaving = -1;
 
@@ -57,59 +57,51 @@ bool detect_leaving_domain(size_t ii, size_t face, size_t nx, size_t ny, size_t 
 
 // TODO: add namespace etc?
 // TODO: port this to cabana syntax
-int move_p(
-        particle_list_t particles,
+template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6> KOKKOS_INLINE_FUNCTION int move_p(
+        //particle_list_t particles,
+        T1 position_x,
+        T2 position_y,
+        T3 position_z,
+        T4 cell,
+        T5 charge,
         particle_mover_t& pm,
-        const accumulator_array_t& a0, // TODO: does this need to be const
+        T6 a0, // TODO: does this need to be const
         const grid_t* g,
         const float qsp,
         const size_t s,
         const size_t i,
         const size_t nx,
         const size_t ny,
-        const size_t nz
+        const size_t nz,
+        const size_t num_ghosts,
+        const Boundary boundary
     )
 {
-
-    // Grab accessors
-    auto position_x = particles.slice<PositionX>();
-    auto position_y = particles.slice<PositionY>();
-    auto position_z = particles.slice<PositionZ>();
-
-    auto velocity_x = particles.slice<VelocityX>();
-    auto velocity_y = particles.slice<VelocityY>();
-    auto velocity_z = particles.slice<VelocityZ>();
-
-    // Charge or weight?
-    auto charge = particles.slice<Charge>();
-
-    auto cell = particles.slice<Cell_Index>();
-
-    // Kernel variables
+    /* // Kernel variables */
     float s_dir[3];
     float v0, v1, v2, v3, v4, v5, q;
     int axis, face;
-    float *a;
 
-    //particle_t* p = p0 + pm->i;
-    //int index = pm->i;
+    /* //particle_t* p = p0 + pm->i; */
+    /* //int index = pm->i; */
 
-    q = qsp * charge.access(s, i);
+     q = qsp * charge.access(s, i); 
 
-    for(;;) {
-        /*
+    //for(;;) 
+    {
+      /*
         s_midx = p->dx;
         s_midy = p->dy;
         s_midz = p->dz;
-        */
+      */
 
-        float s_midx = position_x.access(s, i);
-        float s_midy = position_y.access(s, i);
-        float s_midz = position_z.access(s, i);
+         float s_midx = position_x.access(s, i);
+         float s_midy = position_y.access(s, i);
+         float s_midz = position_z.access(s, i);
 
-        float s_dispx = pm.dispx;
-        float s_dispy = pm.dispy;
-        float s_dispz = pm.dispz;
+         float s_dispx = pm.dispx;
+         float s_dispy = pm.dispy;
+         float s_dispz = pm.dispz;
 
         s_dir[0] = (s_dispx>0) ? 1 : -1;
         s_dir[1] = (s_dispy>0) ? 1 : -1;
@@ -165,12 +157,12 @@ int move_p(
         v1 -= v5;             /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */  \
         v2 -= v5;             /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */  \
         v3 += v5;             /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */  \
-        a0.slice<0>()(ii,offset+0) += v0; \
-        a0.slice<0>()(ii,offset+1) += v1; \
-        a0.slice<0>()(ii,offset+2) += v2; \
-        a0.slice<0>()(ii,offset+3) += v3;
-        accumulate_j(x,y,z, 0); a += 4;
-        accumulate_j(y,z,x, 4); a += 4;
+       a0(ii,offset+0) += v0; \
+       a0(ii,offset+1) += v1; \
+       a0(ii,offset+2) += v2; \
+       a0(ii,offset+3) += v3;
+        accumulate_j(x,y,z, 0); //a += 4;
+        accumulate_j(y,z,x, 4); //a += 4;
         accumulate_j(z,x,y, 8);
 #   undef accumulate_j
 
@@ -180,11 +172,6 @@ int move_p(
         pm.dispz -= s_dispz;
 
         // Compute the new particle offset
-        /*
-        p->dx += s_dispx+s_dispx;
-        p->dy += s_dispy+s_dispy;
-        p->dz += s_dispz+s_dispz;
-        */
         position_x.access(s, i) += s_dispx+s_dispx;
         position_y.access(s, i) += s_dispy+s_dispy;
         position_z.access(s, i) += s_dispz+s_dispz;
@@ -192,7 +179,7 @@ int move_p(
 
         // If an end streak, return success (should be ~50% of the time)
 
-        if( axis==3 ) break;
+        //if( axis==3 ) break;
 
         // Determine if the particle crossed into a local cell or if it
         // hit a boundary and convert the coordinate system accordingly.
@@ -201,7 +188,7 @@ int move_p(
         // entry / exit coordinate for the particle is guaranteed to be
         // +/-1 _exactly_ for the particle.
 
-        v0 = s_dir[axis];
+        v0 = s_dir[axis]; 
 
         // TODO: do branching based on axis
 
@@ -209,138 +196,140 @@ int move_p(
 
         // TODO: this conditional could be better
         if (axis == 0) position_x.access(s, i) = v0;
-        if (axis == 1) position_y.access(s, i) = v0;
-        if (axis == 2) position_z.access(s, i) = v0;
+        /* if (axis == 1) position_y.access(s, i) = v0; */
+        /* if (axis == 2) position_z.access(s, i) = v0; */
 
         // _exactly_ on the boundary.
         face = axis;
         if( v0>0 ) face += 3;
 
-        int is_leaving_domain = detect_leaving_domain(ii, face, nx, ny, nz);
-        if (is_leaving_domain >= 0) {
-        std::cout << s << ", " << i << " leaving on " << face << std::endl;
+        int is_leaving_domain = detect_leaving_domain(ii, face, nx, ny, nz, num_ghosts); 
+	if (is_leaving_domain >= 0) { 
+    /*     //std::cout << s << ", " << i << " leaving on " << face << std::endl; */
 
-        std::cout <<
-            " x " << position_x.access(s,i) <<
-            " y " << position_y.access(s,i) <<
-            " z " << position_z.access(s,i) <<
-            " cell " << cell.access(s,i) <<
-            std::endl;
+    /*     //std::cout << */
+    /*         //" x " << position_x.access(s,i) << */
+    /*         //" y " << position_y.access(s,i) << */
+    /*         //" z " << position_z.access(s,i) << */
+    /*         //" cell " << cell.access(s,i) << */
+    /*         //std::endl; */
 
-            if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Periodic)
+            if ( boundary == Boundary::Periodic)
             {
-                std::cout << "face" << std::endl;
+                //std::cout << "face" << std::endl;
                 // If we hit the periodic boundary, try and put the article in the right place
 
                 // TODO: we can do this in 1d just fine
 
                 size_t ix, iy, iz;
-                RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
 
-                size_t NG = Parameters::instance().num_ghosts;
-                if (is_leaving_domain == 0) { // -1 on x face
-                    ix = (nx-1) + NG;
-                }
-                else if (is_leaving_domain == 1) { // -1 on y face
-                    iy = (ny-1) + NG;
-                }
-                else if (is_leaving_domain == 2) { // -1 on z face
-                    iz = (nz-1) + NG;
-                }
+                RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+
+                 if (is_leaving_domain == 0) { // -1 on x face 
+                     ix = (nx-1) + num_ghosts; 
+                 } 
+                /* else if (is_leaving_domain == 1) { // -1 on y face */
+                /*     iy = (ny-1) + num_ghosts; */
+                /* } */
+                /* else if (is_leaving_domain == 2) { // -1 on z face */
+                /*     iz = (nz-1) + num_ghosts; */
+                /* } */
                 else if (is_leaving_domain == 3) { // 1 on x face
-                    ix = NG;
+                    ix = num_ghosts;
                 }
-                else if (is_leaving_domain == 4) { // 1 on y face
-                    iy = NG;
-                }
-                else if (is_leaving_domain == 5) { // 1 on z face
-                    iz = NG;
-                }
+                /* else if (is_leaving_domain == 4) { // 1 on y face */
+                /*     iy = num_ghosts; */
+                /* } */
+                /* else if (is_leaving_domain == 5) { // 1 on z face */
+                /*     iz = num_ghosts; */
+                /* } */
                 int updated_ii = VOXEL(ix, iy, iz,
-                        Parameters::instance().nx,
-                        Parameters::instance().ny,
-                        Parameters::instance().nz,
-                        Parameters::instance().num_ghosts);
-                cell.access(s, i) = updated_ii;
+                        nx,
+                        ny,
+                        nz,
+                        num_ghosts);
+
+                 cell.access(s, i) = updated_ii; 
+
             }
 
-            if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect)
-            {
-                // Hit a reflecting boundary condition.  Reflect the particle
-                // momentum and remaining displacement and keep moving the
-                // particle.
+    /*         if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect) */
+    /*         { */
+    /*             // Hit a reflecting boundary condition.  Reflect the particle */
+    /*             // momentum and remaining displacement and keep moving the */
+    /*             // particle. */
 
-                logger << "Reflecting " << s << " " << i << " on axis " << axis << std::endl;
+    /*             //logger << "Reflecting " << s << " " << i << " on axis " << axis << std::endl; */
 
-                //(&(p->ux    ))[axis] = -(&(p->ux    ))[axis];
-                //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis];
-                if (axis == 0)
-                {
-                    velocity_x.access(s, i) = -1.0f * velocity_x.access(s, i);
-                    pm.dispx = -1.0f * s_dispx;
-                }
-                if (axis == 1)
-                {
-                    velocity_y.access(s, i) = -1.0f * velocity_y.access(s, i);
-                    pm.dispy = -1.0f * s_dispy;
-                }
-                if (axis == 2)
-                {
-                    velocity_z.access(s, i) = -1.0f * velocity_z.access(s, i);
-                    pm.dispz = -1.0f * s_dispz;
-                }
-                continue;
-            }
-        }
+    /*             //(&(p->ux    ))[axis] = -(&(p->ux    ))[axis]; */
+    /*             //(&(pm->dispx))[axis] = -(&(pm->dispx))[axis]; */
+    /*             if (axis == 0) */
+    /*             { */
+    /*                 velocity_x.access(s, i) = -1.0f * velocity_x.access(s, i); */
+    /*                 pm.dispx = -1.0f * s_dispx; */
+    /*             } */
+    /*             if (axis == 1) */
+    /*             { */
+    /*                 velocity_y.access(s, i) = -1.0f * velocity_y.access(s, i); */
+    /*                 pm.dispy = -1.0f * s_dispy; */
+    /*             } */
+    /*             if (axis == 2) */
+    /*             { */
+    /*                 velocity_z.access(s, i) = -1.0f * velocity_z.access(s, i); */
+    /*                 pm.dispz = -1.0f * s_dispz; */
+    /*             } */
+    /*             continue; */
+    /*         } */
+         } 
 
-        // TODO: this nieghbor stuff can be removed by going to more simple
-        // boundaries
-        /*
-        if ( neighbor<g->rangel || neighbor>g->rangeh ) {
-            // Cannot handle the boundary condition here.  Save the updated
-            // particle position, face it hit and update the remaining
-            // displacement in the particle mover.
-            //p->i = 8*p->i + face;
-            cell.access(s, i) = 8 * ii + face;
+    /*     // TODO: this nieghbor stuff can be removed by going to more simple */
+    /*     // boundaries */
+    /*     /\* */
+    /*     if ( neighbor<g->rangel || neighbor>g->rangeh ) { */
+    /*         // Cannot handle the boundary condition here.  Save the updated */
+    /*         // particle position, face it hit and update the remaining */
+    /*         // displacement in the particle mover. */
+    /*         //p->i = 8*p->i + face; */
+    /*         cell.access(s, i) = 8 * ii + face; */
 
-            return 1; // Return "mover still in use"
-        }
-        */
-        else {
+    /*         return 1; // Return "mover still in use" */
+    /*     } */
+    /*     *\/ */
+    /*     else { */
 
-        // Crossed into a normal voxel.  Update the voxel index, convert the
-        // particle coordinate system and keep moving the particle.
+    /*     // Crossed into a normal voxel.  Update the voxel index, convert the */
+    /*     // particle coordinate system and keep moving the particle. */
 
-        //p->i = neighbor - g->rangel; // Compute local index of neighbor
-        //cell.access(s, i) = neighbor - g->rangel;
-        // TODO: I still need to update the cell we're in
+    /*     //p->i = neighbor - g->rangel; // Compute local index of neighbor */
+    /*     //cell.access(s, i) = neighbor - g->rangel; */
+    /*     // TODO: I still need to update the cell we're in */
 
         size_t ix, iy, iz;
-        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*Parameters::instance().num_ghosts)), (ny+(2*Parameters::instance().num_ghosts)));
+        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
 
         if (face == 0) { ix--; }
-        if (face == 1) { iy--; }
-        if (face == 2) { iz--; }
+        /* if (face == 1) { iy--; } */
+        /* if (face == 2) { iz--; } */
         if (face == 3) { ix++; }
-        if (face == 4) { iy++; }
-        if (face == 5) { iz++; }
+        /* if (face == 4) { iy++; } */
+        /* if (face == 5) { iz++; } */
 
         int updated_ii = VOXEL(ix, iy, iz,
-                Parameters::instance().nx,
-                Parameters::instance().ny,
-                Parameters::instance().nz,
-                Parameters::instance().num_ghosts);
+                nx,
+                ny,
+                nz,
+                num_ghosts);
 
         cell.access(s, i) = updated_ii;
-        std::cout << "Moving from cell " << ii << " to " << updated_ii << std::endl;
-    }
+    /*     //std::cout << "Moving from cell " << ii << " to " << updated_ii << std::endl; */
+    /* } */
 
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         //(&(p->dx))[axis] = -v0;      // Convert coordinate system
         // TODO: this conditional/branching could be better
-        if (axis == 0) position_x.access(s, i) = -v0;
-        if (axis == 1) position_y.access(s, i) = -v0;
-        if (axis == 2) position_z.access(s, i) = -v0;
+        if (axis == 0) 	  position_x.access(s, i) = -v0;
+        /* if (axis == 1) position_y.access(s, i) = -v0; */
+        /* if (axis == 2) position_z.access(s, i) = -v0; */
     }
 
     return 0; // Return "mover not in use"

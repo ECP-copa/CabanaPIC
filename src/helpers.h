@@ -18,14 +18,14 @@
 #define VOXEL(x,y,z, nx,ny,nz, NG) ((x) + ((nx)+(NG*2))*((y) + ((ny)+(NG*2))*(z)))
 
 // Converts from an index that doesn't know about ghosts to one that does
-int allow_for_ghosts(int pre_ghost)
+KOKKOS_INLINE_FUNCTION int allow_for_ghosts(int pre_ghost)
 {
 
     size_t ix, iy, iz;
     RANK_TO_INDEX(pre_ghost, ix, iy, iz,
             Parameters::instance().nx,
             Parameters::instance().ny);
-
+    //    printf("%ld\n",ix);
     int with_ghost = VOXEL(ix, iy, iz,
             Parameters::instance().nx,
             Parameters::instance().ny,
@@ -52,20 +52,15 @@ void print_particles( const particle_list_t particles )
     auto _print =
         KOKKOS_LAMBDA( const int s, const int i )
         {
-                std::cout << "Struct id: " << s;
-                std::cout << " Struct offset: " << i;
-                std::cout << " Position: "
-                    << position_x.access(s,i) << " "
-                    << position_y.access(s,i) << " "
-                    << position_z.access(s,i) << " ";
-                std::cout << std::endl;
+                printf("Struct id %d offset %d \n", s, i);
+                printf("Position x %e y %e z %e \n", position_x.access(s,i), position_y.access(s,i), position_z.access(s,i) );
 
-                std::cout << "Velocity "
-                    << velocity_x.access(s,i) << " "
-                    << velocity_y.access(s,i) << " "
-                    << velocity_z.access(s,i) << " "
-                    << ". Cell: " << cell.access(s,i);
-                std::cout << std::endl;
+                //std::cout << "Velocity "
+                    //<< velocity_x.access(s,i) << " "
+                    //<< velocity_y.access(s,i) << " "
+                    //<< velocity_z.access(s,i) << " "
+                    //<< ". Cell: " << cell.access(s,i);
+                //std::cout << std::endl;
         };
 
     // TODO: How much sense does printing in parallel make???
