@@ -95,7 +95,7 @@ class Initializer {
                     //   size_t ix, iy, iz;
 
  
-                    cell.access(s,i) = 1; //allow_for_ghosts(pre_ghost);
+                    cell.access(s,i) = 13; //allow_for_ghosts(pre_ghost);
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

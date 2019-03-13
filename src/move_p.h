@@ -9,48 +9,53 @@
 KOKKOS_INLINE_FUNCTION bool detect_leaving_domain(size_t ii, size_t face, size_t nx, size_t ny, size_t nz, size_t num_ghosts)
 {
     size_t ix, iy, iz;
-    RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+    //RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
     //std::cout << "i " << ii << " ix " << ix << " iy " << iy << " iz " << iz << std::endl;
+    ix = ii-12;
+    iy = 1;
+    iz = 1;
+    //printf("nx,ny,nz=%ld,%ld,%ld, i=%ld, ix=%ld, iy=%ld, iz=%ld\n",nx,ny,nz,ii,ix,iy,iz);
 
     int leaving = -1;
 
-    if (face == 0) { // x - 1
+    //    if (face == 0) { // x - 1
         if (ix == 0)
         {
             leaving = 0;
         }
-    }
-    else if (face == 1) { // y - 1
+	//}
+    else 
+      //if (face == 1) { // y - 1
         if (iy == 0)
         {
             leaving = 1;
         }
-    }
-    else if (face == 2) { // z - 1
-        if (iz == 0)
+	//}
+	//else if (face == 2) { // z - 1
+  if (iz == 0)
         {
             leaving = 2;
         }
-    }
-    else if (face == 3) { // x+1
-        if (ix == nx)
+  //}
+    else //if (face == 3) { // x+1
+        if (ix == nx+1)
         {
             leaving = 3;
         }
-    }
-    else if (face == 4) { // y+1
-        if (iy == ny)
+	//}
+	//else if (face == 4) { // y+1
+  if (iy == ny+1)
         {
             leaving = 4;
         }
-    }
-    else if (face == 5) { // z+1
-        if (iz == nz)
+  //}
+    else //if (face == 5) { // z+1
+        if (iz == nz+1)
         {
             leaving = 5;
         }
 
-    }
+	//}
     return leaving;
 }
 
@@ -87,25 +92,25 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
 
      q = qsp * charge.access(s, i); 
 
-    //for(;;) 
-    {
+     for(;;) 
+     {
       /*
         s_midx = p->dx;
         s_midy = p->dy;
         s_midz = p->dz;
       */
+      
+       float s_midx = position_x.access(s, i);
+       float s_midy = position_y.access(s, i);
+       float s_midz = position_z.access(s, i);
+       
+       float s_dispx = pm.dispx;
+       float s_dispy = pm.dispy;
+       float s_dispz = pm.dispz;
 
-         float s_midx = position_x.access(s, i);
-         float s_midy = position_y.access(s, i);
-         float s_midz = position_z.access(s, i);
-
-         float s_dispx = pm.dispx;
-         float s_dispy = pm.dispy;
-         float s_dispz = pm.dispz;
-
-        s_dir[0] = (s_dispx>0) ? 1 : -1;
-        s_dir[1] = (s_dispy>0) ? 1 : -1;
-        s_dir[2] = (s_dispz>0) ? 1 : -1;
+       s_dir[0] = (s_dispx>0) ? 1 : -1;
+       s_dir[1] = (s_dispy>0) ? 1 : -1;
+       s_dir[2] = (s_dispz>0) ? 1 : -1;
 
         // Compute the twice the fractional distance to each potential
         // streak/cell face intersection.
@@ -157,10 +162,10 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
         v1 -= v5;             /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */  \
         v2 -= v5;             /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */  \
         v3 += v5;             /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */  \
-       a0(ii,offset+0) += v0; \
-       a0(ii,offset+1) += v1; \
-       a0(ii,offset+2) += v2; \
-       a0(ii,offset+3) += v3;
+	a0(ii,offset+0) += v0;						\
+	a0(ii,offset+1) += v1;						\
+	a0(ii,offset+2) += v2;						\
+	a0(ii,offset+3) += v3;
         accumulate_j(x,y,z, 0); //a += 4;
         accumulate_j(y,z,x, 4); //a += 4;
         accumulate_j(z,x,y, 8);
@@ -179,7 +184,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
 
         // If an end streak, return success (should be ~50% of the time)
 
-        //if( axis==3 ) break;
+        if( axis==3 ) break;
 
         // Determine if the particle crossed into a local cell or if it
         // hit a boundary and convert the coordinate system accordingly.
@@ -196,12 +201,25 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
 
         // TODO: this conditional could be better
         if (axis == 0) position_x.access(s, i) = v0;
-        /* if (axis == 1) position_y.access(s, i) = v0; */
-        /* if (axis == 2) position_z.access(s, i) = v0; */
+        if (axis == 1) position_y.access(s, i) = v0;
+        if (axis == 2) position_z.access(s, i) = v0;
 
         // _exactly_ on the boundary.
         face = axis;
         if( v0>0 ) face += 3;
+
+        size_t ix, iy, iz;
+        //RANK_TO_INDEX(ii, ix, iy, iz, (nx-1+(2*num_ghosts)), (ny-1+(2*num_ghosts)));
+	ix = ii-12;
+	iy = 1;
+	iz = 1;
+
+        if (face == 0) { ix--; }
+        if (face == 1) { iy--; }
+        if (face == 2) { iz--; }
+        if (face == 3) { ix++; }
+        if (face == 4) { iy++; }
+        if (face == 5) { iz++; }
 
         int is_leaving_domain = detect_leaving_domain(ii, face, nx, ny, nz, num_ghosts); 
 	if (is_leaving_domain >= 0) { 
@@ -221,35 +239,38 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
 
                 // TODO: we can do this in 1d just fine
 
-                size_t ix, iy, iz;
+                //size_t ix, iy, iz;
 
-                RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+                //RANK_TO_INDEX(ii, ix, iy, iz, (nx-1+(2*num_ghosts)), (ny-1+(2*num_ghosts)));
+		/* ix = ii-12; */
+		/* iy = 1; */
+		/* iz = 1; */
 
                  if (is_leaving_domain == 0) { // -1 on x face 
                      ix = (nx-1) + num_ghosts; 
                  } 
-                /* else if (is_leaving_domain == 1) { // -1 on y face */
-                /*     iy = (ny-1) + num_ghosts; */
-                /* } */
-                /* else if (is_leaving_domain == 2) { // -1 on z face */
-                /*     iz = (nz-1) + num_ghosts; */
-                /* } */
+                else if (is_leaving_domain == 1) { // -1 on y face
+                    iy = (ny-1) + num_ghosts;
+                }
+                else if (is_leaving_domain == 2) { // -1 on z face
+                    iz = (nz-1) + num_ghosts;
+                }
                 else if (is_leaving_domain == 3) { // 1 on x face
                     ix = num_ghosts;
                 }
-                /* else if (is_leaving_domain == 4) { // 1 on y face */
-                /*     iy = num_ghosts; */
-                /* } */
-                /* else if (is_leaving_domain == 5) { // 1 on z face */
-                /*     iz = num_ghosts; */
-                /* } */
-                int updated_ii = VOXEL(ix, iy, iz,
-                        nx,
-                        ny,
-                        nz,
-                        num_ghosts);
+                else if (is_leaving_domain == 4) { // 1 on y face
+                    iy = num_ghosts;
+                }
+                else if (is_leaving_domain == 5) { // 1 on z face
+                    iz = num_ghosts;
+                }
+                /* int updated_ii = VOXEL(ix, iy, iz, */
+                /*         nx, */
+                /*         ny, */
+                /*         nz, */
+                /*         num_ghosts); */
 
-                 cell.access(s, i) = updated_ii; 
+                 cell.access(s, i) = 13; //updated_ii; 
 
             }
 
@@ -304,32 +325,24 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5, typena
     /*     //cell.access(s, i) = neighbor - g->rangel; */
     /*     // TODO: I still need to update the cell we're in */
 
-        size_t ix, iy, iz;
-        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
 
-        if (face == 0) { ix--; }
-        /* if (face == 1) { iy--; } */
-        /* if (face == 2) { iz--; } */
-        if (face == 3) { ix++; }
-        /* if (face == 4) { iy++; } */
-        /* if (face == 5) { iz++; } */
 
-        int updated_ii = VOXEL(ix, iy, iz,
-                nx,
-                ny,
-                nz,
-                num_ghosts);
+        /* int updated_ii = VOXEL(ix, iy, iz, */
+        /*         nx, */
+        /*         ny, */
+        /*         nz, */
+        /*         num_ghosts); */
 
-        cell.access(s, i) = updated_ii;
+        /* cell.access(s, i) = updated_ii; */
     /*     //std::cout << "Moving from cell " << ii << " to " << updated_ii << std::endl; */
     /* } */
 
         /**/                         // Note: neighbor - g->rangel < 2^31 / 6
         //(&(p->dx))[axis] = -v0;      // Convert coordinate system
         // TODO: this conditional/branching could be better
-        if (axis == 0) 	  position_x.access(s, i) = -v0;
-        /* if (axis == 1) position_y.access(s, i) = -v0; */
-        /* if (axis == 2) position_z.access(s, i) = -v0; */
+        if (axis == 0) position_x.access(s, i) = -v0;
+        if (axis == 1) position_y.access(s, i) = -v0;
+        if (axis == 2) position_z.access(s, i) = -v0;
     }
 
     return 0; // Return "mover not in use"

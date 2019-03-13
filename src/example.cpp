@@ -38,7 +38,7 @@ int main( int argc, char* argv[] )
     // Initialize input deck params.
 
     // num_cells (without ghosts), num_particles_per_cell
-    Initializer::initialize_params(1, 10);
+    Initializer::initialize_params(1, 1000);
 
     // Cache some values locally for printing
     const size_t num_cells = Parameters::instance().num_cells;
