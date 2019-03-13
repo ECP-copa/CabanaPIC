@@ -126,7 +126,9 @@ class Initializer {
             auto cbz  = f0.slice<CBZ>();
             auto dcbzdz  = f0.slice<DCBZDZ>();
 
-            for (size_t i = 0; i < f0.size(); i++)
+	    //             for (size_t i = 0; i < f0.size(); i++)
+            auto _init_interpolator =
+	      KOKKOS_LAMBDA( const int i )	      
             {
                 // Throw in some place holder values
                 ex(i) = 0.1;
@@ -147,7 +149,10 @@ class Initializer {
                 dcbydy(i) = 0.0;
                 cbz(i) = 0.0;
                 dcbzdz(i) = 0.0;
-            }
+            };
+
+	    Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
+
         }
 };
 

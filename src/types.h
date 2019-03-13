@@ -15,7 +15,7 @@ const std::size_t array_size = VLEN;
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-using MemorySpace = Kokkos::CudaUVMSpace;
+using MemorySpace = Kokkos::CudaSpace;
 using ExecutionSpace = Kokkos::Cuda;
 //using MemorySpace = Cabana::HostSpace;
 //using ExecutionSpace = Kokkos::Serial;
