@@ -142,11 +142,11 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 
         //a = (float *)(a0 + ii);
 
-	//1D only
-	a0(ii,0) += q*s_dispx;
-	a0(ii,1) = 0;
-	a0(ii,2) = 0;
-	a0(ii,3) = 0;
+        //1D only
+        a0(ii,0) += q*s_dispx;
+        a0(ii,1) = 0;
+        a0(ii,2) = 0;
+        a0(ii,3) = 0;
 
 // #   define accumulate_j(X,Y,Z, offset)                                    \
 //         v4  = q*s_disp##X;    /* v2 = q ux                            */  \

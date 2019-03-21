@@ -22,11 +22,10 @@ void push(
     )
 {
 
-    auto _a = a0.slice<0>();
+    //auto _a = a0.slice<0>();
 
-  //auto slice = a0.slice<0>();
-
-    //decltype(slice)::atomic_access_slice _a = slice;
+    auto slice = a0.slice<0>();
+    decltype(slice)::atomic_access_slice _a = slice;
 
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
