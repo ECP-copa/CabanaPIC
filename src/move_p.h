@@ -46,7 +46,7 @@ KOKKOS_INLINE_FUNCTION int detect_leaving_domain( size_t face, size_t nx, size_t
             leaving = 5;
         }
 
-	
+
 	// if(leaving>=0){
 	//   printf("%d %d %d %d\n", ix,iy,iz,leaving);
 	// }
@@ -62,7 +62,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         T2 position_y,
         T3 position_z,
         T4 cell,
-        T5 a0, // TODO: does this need to be const	
+        T5 a0, // TODO: does this need to be const
         real_t q,
         particle_mover_t& pm,
         const grid_t* g,
@@ -77,7 +77,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 {
     /* // Kernel variables */
   real_t s_dir[3];
-  real_t v0, v1, v2, v3, v4, v5;
+  real_t v0, v1, v2, v3; //, v4, v5;
   size_t axis, face;
   // if(s==1 && i==0){
   //   printf("%d %d\n",s,i);
@@ -85,20 +85,20 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
     /* //particle_t* p = p0 + pm->i; */
     /* //int index = pm->i; */
 
-    //q = qsp * weight.access(s, i); 
+    //q = qsp * weight.access(s, i);
 
-     for(;;) 
+     for(;;)
      {
       /*
         s_midx = p->dx;
         s_midy = p->dy;
         s_midz = p->dz;
       */
-      
+
        float s_midx = position_x.access(s, i);
        float s_midy = position_y.access(s, i);
        float s_midz = position_z.access(s, i);
-       
+
        float s_dispx = pm.dispx;
        float s_dispy = pm.dispy;
        float s_dispz = pm.dispz;
@@ -136,18 +136,18 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         // Accumulate the streak.  Note: accumulator values are 4 times
         // the total physical charge that passed through the appropriate
         // current quadrant in a time-step
-        v5 = q*s_dispx*s_dispy*s_dispz*(1./3.);
+        //v5 = q*s_dispx*s_dispy*s_dispz*(1./3.);
 
         int ii = cell.access(s, i);
 
         //a = (float *)(a0 + ii);
-	
+
 	//1D only
 	a0(ii,0) += q*s_dispx;
 	a0(ii,1) = 0;
 	a0(ii,2) = 0;
 	a0(ii,3) = 0;
-	
+
 // #   define accumulate_j(X,Y,Z, offset)                                    \
 //         v4  = q*s_disp##X;    /* v2 = q ux                            */  \
 //         v1  = v4*s_mid##Y;    /* v1 = q ux dy                         */  \
@@ -196,7 +196,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         // entry / exit coordinate for the particle is guaranteed to be
         // +/-1 _exactly_ for the particle.
 
-        v0 = s_dir[axis]; 
+        v0 = s_dir[axis];
 
         // TODO: do branching based on axis
 
@@ -224,8 +224,8 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         if (face == 4) { iy++; }
         if (face == 5) { iz++; }
 
-        int is_leaving_domain = detect_leaving_domain(face, nx, ny, nz, ix, iy, iz, num_ghosts); 
-	if (is_leaving_domain >= 0) { 
+        int is_leaving_domain = detect_leaving_domain(face, nx, ny, nz, ix, iy, iz, num_ghosts);
+	if (is_leaving_domain >= 0) {
     /*     //std::cout << s << ", " << i << " leaving on " << face << std::endl; */
 
     /*     //std::cout << */
@@ -249,9 +249,9 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 		/* iy = 1; */
 		/* iz = 1; */
 
-                 if (is_leaving_domain == 0) { // -1 on x face 
-                     ix = (nx-1) + num_ghosts; 
-                 } 
+                 if (is_leaving_domain == 0) { // -1 on x face
+                     ix = (nx-1) + num_ghosts;
+                 }
                 else if (is_leaving_domain == 1) { // -1 on y face
                     iy = (ny-1) + num_ghosts;
                 }
@@ -275,7 +275,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 
             }
 
-	    
+
     /*         if ( Parameters::instance().BOUNDARY_TYPE == Boundary::Reflect) */
     /*         { */
     /*             // Hit a reflecting boundary condition.  Reflect the particle */
@@ -303,7 +303,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
     /*             } */
     /*             continue; */
     /*         } */
-         } 
+         }
 
     /*     // TODO: this nieghbor stuff can be removed by going to more simple */
     /*     // boundaries */
@@ -328,8 +328,8 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
     /*     // TODO: I still need to update the cell we're in */
 
 	//1D only
-	int updated_ii = ix+(nx+2)*(ny+2) + (nx+2); 
-	cell.access(s, i) = updated_ii; 
+	int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
+	cell.access(s, i) = updated_ii;
 
 
         /* int updated_ii = VOXEL(ix, iy, iz, */

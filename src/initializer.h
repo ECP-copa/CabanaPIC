@@ -53,7 +53,7 @@ class Initializer {
             Parameters::instance().print_run_details();
         }
 
-        static const float rand_float(float min = 0, float max = 1)
+        static float rand_float(float min = 0, float max = 1)
         {
             return min + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max-min)));
         }
@@ -74,6 +74,8 @@ class Initializer {
             auto weight = particles.slice<Weight>();
             auto cell = particles.slice<Cell_Index>();
 
+            float v0 = Parameters::instance().v0;
+
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
 
@@ -81,42 +83,42 @@ class Initializer {
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
                     // Initialize position.
-                  int sign =  -1;
-		  size_t pi2 = (s)*particle_list_t::vector_length+i;
-		  size_t pi = ((pi2) / 2);
-		  if (i%2 == 0) {
-		    sign = 1;		  
-                  }
-		  size_t pic = (2*pi)%nppc;
+                    int sign =  -1;
+                    size_t pi2 = (s)*particle_list_t::vector_length+i;
+                    size_t pi = ((pi2) / 2);
+                    if (i%2 == 0) {
+                        sign = 1;
+                    }
+                    size_t pic = (2*pi)%nppc;
 
-		  real_t x = pic*dxp+0.5f*dxp-1.f; //rand_float(-1.0f, 1.0f);
-		  position_x.access(s,i) = x;
-		  position_y.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
-		  position_z.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
-		  
+                    real_t x = pic*dxp+0.5f*dxp-1.f; //rand_float(-1.0f, 1.0f);
+                    position_x.access(s,i) = x;
+                    position_y.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
 
-		    weight.access(s,i) = w; 
+
+                    weight.access(s,i) = w;
 
                     // gives me a num in the range 0..num_real_cells
                     //int pre_ghost = (s % Parameters::instance().num_real_cells);
                     //   size_t ix, iy, iz;
-		    
-		  size_t pre_ghost = (2*pi/nppc)+1;
-		    
-		  cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) ; //13; //allow_for_ghosts(pre_ghost);
+
+                    size_t pre_ghost = (2*pi/nppc)+1;
+
+                    cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) ; //13; //allow_for_ghosts(pre_ghost);
 
                     // Initialize velocity.
-		  real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
-		  //		  
-		  if (pi2%2 == 1) { sign = -1; }
-		  real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
-		  velocity_x.access(s,i) = sign *Parameters::instance().v0 *gam*(1.0+na); //0.1;
-		  velocity_y.access(s,i) = 0;
-		  velocity_z.access(s,i) = 0;
-		  // printf("%d %f\n", pi2,velocity_x.access(s,i));		  
-/* #ifdef __CUDA_ARCH__		     */
-/* 		  printf("%d %d %d, %d %ld %f %f\n",blockDim.x * blockIdx.x + threadIdx.x,blockDim.y * blockIdx.y + threadIdx.y,blockDim.z * blockIdx.z + threadIdx.z,(s)*particle_list_t::vector_length+i, pre_ghost, position_x.access(s,i),velocity_x.access(s,i)); */
-/* #endif */
+                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
+                    //
+                    if (pi2%2 == 1) { sign = -1; }
+                    real_t gam = 1.0/sqrt(1.0-v0*v0);
+                    velocity_x.access(s,i) = sign * v0 *gam*(1.0+na); //0.1;
+                    velocity_y.access(s,i) = 0;
+                    velocity_z.access(s,i) = 0;
+                    // printf("%d %f\n", pi2,velocity_x.access(s,i));
+                    /* #ifdef __CUDA_ARCH__		     */
+                    /* 		  printf("%d %d %d, %d %ld %f %f\n",blockDim.x * blockIdx.x + threadIdx.x,blockDim.y * blockIdx.y + threadIdx.y,blockDim.z * blockIdx.z + threadIdx.z,(s)*particle_list_t::vector_length+i, pre_ghost, position_x.access(s,i),velocity_x.access(s,i)); */
+                    /* #endif */
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -149,7 +151,7 @@ class Initializer {
 
 	    //             for (size_t i = 0; i < f0.size(); i++)
             auto _init_interpolator =
-	      KOKKOS_LAMBDA( const int i )	      
+	      KOKKOS_LAMBDA( const int i )
             {
                 // Throw in some place holder values
                 ex(i) = 0.1;
