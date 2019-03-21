@@ -46,7 +46,7 @@ void print_particles( const particle_list_t particles )
     auto velocity_y = particles.slice<VelocityY>();
     auto velocity_z = particles.slice<VelocityZ>();
 
-    auto charge = particles.slice<Charge>();
+    auto weight = particles.slice<Weight>();
     auto cell = particles.slice<Cell_Index>();
 
     auto _print =

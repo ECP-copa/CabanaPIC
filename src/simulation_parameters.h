@@ -16,9 +16,13 @@ template <class real_> class Parameters_
         // NOTE: It would be nice to standardize the units used here?
 
         // Define Consts
+        const real_ de; // Length normalization (electron inertial length)
+        const real_ ec; // Charge normalization
+        const real_ me; // Mass normalization
         const real_ mu; // permeability of free space
         const real_ c; // Speed of light
         const real_ eps; // permittivity of free space
+        const real_ n0; // Background plasma density
 
         // Params
         size_t num_species;
@@ -52,7 +56,8 @@ template <class real_> class Parameters_
         real_ dx;
         real_ dy;
         real_ dz;
-
+	real_ v0; //drift velocity
+	
         size_t ghost_offset; // Where the cell id needs to start for a "real" cell, basically nx
         size_t num_real_cells;
 
@@ -62,20 +67,25 @@ template <class real_> class Parameters_
 
         // TODO: how useful are these arguments now its a singleton?
         Parameters_(size_t _nc = 16, size_t _nppc = 32) :
-            mu(4.0 * M_PI * 1.0e-7),
-            c(299792458),
-            eps( 1.0 / (c * c * mu)),
-            num_species(0),
+	  de(1.0),
+	  ec(1.0),
+	  me(1.0),
+	  c(1.0),
+	  eps( 1.0),
+	  mu(1.0),
+	  n0(1.0),
+	  num_species(1),
             NX_global(_nc),
-            NY_global(_nc),
-            NZ_global(_nc),
+            NY_global(1),
+            NZ_global(1),
             nx(NX_global),
             ny(NY_global),
             nz(NZ_global),
             num_ghosts(1),
             num_cells( ((num_ghosts*2)+NX_global) * ((num_ghosts*2)+NY_global) * ((num_ghosts*2)+NZ_global)),
             NPPC(_nppc),
-            num_particles(NPPC*num_cells),
+	    num_real_cells(NX_global * NY_global * NZ_global),
+            num_particles(NPPC*num_real_cells),
             dt(0.1),
             num_steps(10),
             len_x_global(1.0),
@@ -93,13 +103,20 @@ template <class real_> class Parameters_
             dx(len_x/nx),
             dy(len_y/ny),
             dz(len_z/nz),
-            ghost_offset(nx*num_ghosts),
-            num_real_cells(NX_global * NY_global * NZ_global)
+	  ghost_offset(nx*num_ghosts),
+	  v0(0)
         {
-            std::cout << "Singleton Constructor" << std::endl;
+	  /* v0 = 0.0866025403784439*4.0; */
+	  /* real_ gam = 1.0/sqrt(1.0-v0*v0); */
+	  /* len_x_global =  0.628318530717959*(gam*sqrt(gam))*4.0; */
+	  /* len_x = len_x_global; */
+	  /* std::cout<<num_particles<<std::endl; */
+	  /* std::cout<<NPPC<<std::endl; */
+	  /* std::cout<<num_real_cells<<std::endl; */
+            std::cout << "#Singeton Constructor" << std::endl;
         }
 
-        static Parameters_& instance()
+        static  Parameters_& instance()
         {
             static Parameters_ instance_;
             return instance_;
@@ -108,11 +125,11 @@ template <class real_> class Parameters_
 
         void print_run_details()
         {
-            std::cout << "~~~ Run Specifications ~~~ " << std::endl;
-            std::cout << "Nx: " << nx << " Ny: " << ny << " Nz: " << nz << " Num Ghosts: " << num_ghosts << ". Cells Total: " << num_cells << std::endl;
-            std::cout << "Len X: " << len_x << " Len Y: " << len_y << " Len Z: " << len_z << num_ghosts << std::endl;
-            std::cout << "Approx Particle Count: " << NPPC*num_cells << " (NPPC: " << NPPC << ")" << std::endl;
-            std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
+            std::cout << "#~~~ Run Specifications ~~~ " << std::endl;
+            std::cout << "#Nx: " << nx << " Ny: " << ny << " Nz: " << nz << " Num Ghosts: " << num_ghosts << ". Cells Total: " << num_cells << std::endl;
+            std::cout << "#Len X: " << len_x << " Len Y: " << len_y << " Len Z: " << len_z << "number of ghosts: "<<num_ghosts << std::endl;
+            std::cout << "#Approx Particle Count: " << num_particles << " (NPPC: " << NPPC << ")" << std::endl;
+            std::cout << "#~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
             std::cout << std::endl;
         }
 };

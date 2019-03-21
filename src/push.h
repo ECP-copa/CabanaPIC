@@ -24,6 +24,10 @@ void push(
 
     auto _a = a0.slice<0>();
 
+  //auto slice = a0.slice<0>();
+
+    //decltype(slice)::atomic_access_slice _a = slice;
+
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
     auto position_z = particles.slice<PositionZ>();
@@ -32,7 +36,7 @@ void push(
     auto velocity_y = particles.slice<VelocityY>();
     auto velocity_z = particles.slice<VelocityZ>();
 
-    auto charge = particles.slice<Charge>();
+    auto weight = particles.slice<Weight>();
     auto cell = particles.slice<Cell_Index>();
 
     //const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
@@ -125,13 +129,17 @@ void push(
                 real_t haz  = qdt_2mc*(    ( f.ez    + dx*f.dezdx    ) +
                         dy*( f.dezdy + dx*f.d2ezdxdy ) );
                 */
-                real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
-                        dz*( dexdz + dy*d2exdydz ) );
-                real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
-                        dx*( deydx + dz*d2eydzdx ) );
-                real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
-                        dy*( dezdy + dx*d2ezdxdy ) );
-
+                // real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
+                //         dz*( dexdz + dy*d2exdydz ) );
+                // real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
+                //         dx*( deydx + dz*d2eydzdx ) );
+                // real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
+                //         dy*( dezdy + dx*d2ezdxdy ) );
+		//1D only
+		real_t hax = qdt_2mc*ex;
+		real_t hay = 0;
+		real_t haz = 0;
+		
                 cbx  = cbx + dx*dcbxdx;             // Interpolate B
                 cby  = cby + dy*dcbydy;
                 cbz  = cbz + dz*dcbzdz;
@@ -139,8 +147,6 @@ void push(
                 real_t ux = velocity_x.access(s,i);   // Load velocity
                 real_t uy = velocity_y.access(s,i);   // Load velocity
                 real_t uz = velocity_z.access(s,i);   // Load velocity
-
-                real_t q = charge.access(s,i);   // Load velocity
 
                 ux  += hax;                               // Half advance E
                 uy  += hay;
@@ -185,6 +191,8 @@ void push(
                 v4   = v1 + uy;
                 real_t v5   = v2 + uz;
 
+		real_t q = weight.access(s,i)*qsp;   // Load charge
+		
                 // Check if inbnds
                 if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
                 {
@@ -192,7 +200,7 @@ void push(
                     // Common case (inbnds).  Note: accumulator values are 4 times
                     // the total physical charge that passed through the appropriate
                     // current quadrant in a time-step
-                    q *= qsp;
+
 
                     // Store new position
                     position_x.access(s,i) = v3;
@@ -205,32 +213,38 @@ void push(
                     v5 = q*ux*uy*uz*one_third;              // Compute correction
 
                     //real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
+		    
+		    //1D only
+		    _a(ii,0) += q*ux;
+		    _a(ii,1) = 0;
+		    _a(ii,2) = 0;
+		    _a(ii,3) = 0;
+		    
+// #     define ACCUMULATE_J(X,Y,Z,offset)                                 \
+//                     v4  = q*u##X;   /* v2 = q ux                            */        \
+//                     v1  = v4*d##Y;  /* v1 = q ux dy                         */        \
+//                     v0  = v4-v1;    /* v0 = q ux (1-dy)                     */        \
+//                     v1 += v4;       /* v1 = q ux (1+dy)                     */        \
+//                     v4  = one+d##Z; /* v4 = 1+dz                            */        \
+//                     v2  = v0*v4;    /* v2 = q ux (1-dy)(1+dz)               */        \
+//                     v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */        \
+//                     v4  = one-d##Z; /* v4 = 1-dz                            */        \
+//                     v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */        \
+//                     v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */        \
+//                     v0 += v5;       /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */        \
+//                     v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */        \
+//                     v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */        \
+//                     v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */        \
+//                     _a(ii,offset+0) += v0; \
+//                     _a(ii,offset+1) += v1; \
+//                     _a(ii,offset+2) += v2; \
+//                     _a(ii,offset+3) += v3;
 
-#     define ACCUMULATE_J(X,Y,Z,offset)                                 \
-                    v4  = q*u##X;   /* v2 = q ux                            */        \
-                    v1  = v4*d##Y;  /* v1 = q ux dy                         */        \
-                    v0  = v4-v1;    /* v0 = q ux (1-dy)                     */        \
-                    v1 += v4;       /* v1 = q ux (1+dy)                     */        \
-                    v4  = one+d##Z; /* v4 = 1+dz                            */        \
-                    v2  = v0*v4;    /* v2 = q ux (1-dy)(1+dz)               */        \
-                    v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */        \
-                    v4  = one-d##Z; /* v4 = 1-dz                            */        \
-                    v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */        \
-                    v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */        \
-                    v0 += v5;       /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */        \
-                    v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */        \
-                    v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */        \
-                    v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */        \
-                    _a(ii,offset+0) += v0; \
-                    _a(ii,offset+1) += v1; \
-                    _a(ii,offset+2) += v2; \
-                    _a(ii,offset+3) += v3;
+//                     ACCUMULATE_J( x,y,z, 0 );
+//                     ACCUMULATE_J( y,z,x, 4 );
+//                     ACCUMULATE_J( z,x,y, 8 );
 
-                    ACCUMULATE_J( x,y,z, 0 );
-                    ACCUMULATE_J( y,z,x, 4 );
-                    ACCUMULATE_J( z,x,y, 8 );
-
-#     undef ACCUMULATE_J
+// #     undef ACCUMULATE_J
 
                 }
                 else
@@ -242,7 +256,7 @@ void push(
                     local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
                     // Handle particles that cross cells
-                    move_p( position_x, position_y, position_z, cell, charge, local_pm, _a, g, qsp, s, i, nx, ny, nz, num_ghosts, boundary );
+                    move_p( position_x, position_y, position_z, cell, _a, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
 
                     // TODO: renable this
                     //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely

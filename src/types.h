@@ -5,20 +5,22 @@
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
-#define VLEN 16
+#define VLEN 1 //32
 #endif
 const std::size_t array_size = VLEN;
 
 #ifndef CELL_BLOCK_FACTOR
-#define CELL_BLOCK_FACTOR 16
+#define CELL_BLOCK_FACTOR 32
 #endif
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-using MemorySpace = Kokkos::CudaSpace;
-using ExecutionSpace = Kokkos::Cuda;
-//using MemorySpace = Cabana::HostSpace;
-//using ExecutionSpace = Kokkos::Serial;
+//gpu
+//using MemorySpace = Kokkos::CudaSpace;
+//using ExecutionSpace = Kokkos::Cuda;
+//cpu
+using MemorySpace = Cabana::HostSpace;
+using ExecutionSpace = Kokkos::Serial;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
 
 ///// END ESSENTIALS ///
@@ -35,7 +37,7 @@ enum UserParticleFields
     VelocityX,
     VelocityY,
     VelocityZ,
-    Charge,
+    Weight,
     Cell_Index, // This is stored as per VPIC, such that it includes ghost_offsets
 };
 
@@ -48,7 +50,7 @@ Cabana::MemberTypes<
     float,                        // (3) x-velocity
     float,                        // (4) y-velocity
     float,                        // (5) z-velocity
-    float,                        // (6) charge
+    float,                        // (6) weight
     int                           // (7) Cell index
 >;
 

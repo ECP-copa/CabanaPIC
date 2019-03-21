@@ -51,7 +51,8 @@ void load_interpolator_array(
         real_t w2 = field_ex(i + z_offset);            // pfz->ex;
         real_t w3 = field_ex(i + y_offset + z_offset); // pfyz->ex;
 
-        interp_ex(i)       = fourth*( (w3 + w0) + (w1 + w2) );
+	//1D only
+        interp_ex(i)       = w0; //fourth*( (w3 + w0) + (w1 + w2) );
         interp_dexdy(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_dexdz(i)    = fourth*( (w3 - w0) - (w1 - w2) );
         interp_d2exdydz(i) = fourth*( (w3 + w0) - (w1 + w2) );
@@ -96,6 +97,9 @@ void load_interpolator_array(
         interp_dcbzdz(i) = half*( w1 - w0 );
     };
 
+    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+    Kokkos::parallel_for( exec_policy, _load_interpolator, "load_interpolator()" );
+    
         /*
         pi   = &fi(x,  y,  z  );
         pf0  =  &f(x,  y,  z  );
