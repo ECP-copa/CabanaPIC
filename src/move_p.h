@@ -16,40 +16,40 @@ KOKKOS_INLINE_FUNCTION int detect_leaving_domain( size_t face, size_t nx, size_t
 
     int leaving = -1;
 
-        if (ix == 0)
-        {
-            leaving = 0;
-        }
+    if (ix == 0)
+    {
+        leaving = 0;
+    }
 
-        if (iy == 0)
-        {
-            leaving = 1;
-        }
+    if (iy == 0)
+    {
+        leaving = 1;
+    }
 
-	if (iz == 0)
-        {
-            leaving = 2;
-        }
+    if (iz == 0)
+    {
+        leaving = 2;
+    }
 
-        if (ix == nx+1)
-        {
-            leaving = 3;
-        }
+    if (ix == nx+1)
+    {
+        leaving = 3;
+    }
 
-	if (iy == ny+1)
-        {
-            leaving = 4;
-        }
+    if (iy == ny+1)
+    {
+        leaving = 4;
+    }
 
-        if (iz == nz+1)
-        {
-            leaving = 5;
-        }
+    if (iz == nz+1)
+    {
+        leaving = 5;
+    }
 
 
-	// if(leaving>=0){
-	//   printf("%d %d %d %d\n", ix,iy,iz,leaving);
-	// }
+    // if(leaving>=0){
+    //   printf("%d %d %d %d\n", ix,iy,iz,leaving);
+    // }
     return leaving;
 }
 

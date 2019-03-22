@@ -5,7 +5,8 @@ void load_interpolator_array(
         interpolator_array_t interpolators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
-        size_t nz
+        size_t nz,
+        size_t ng
         )
 {
     size_t x_offset = 1; // VOXEL(x+1,y,  z,   nx,ny,nz);
@@ -43,15 +44,21 @@ void load_interpolator_array(
     const real_t half = 1.0 / 2.0;
 
     // TODO: we have to be careful we don't reach past the ghosts here
-    auto _load_interpolator = KOKKOS_LAMBDA( const int i )
+    auto _load_interpolator = KOKKOS_LAMBDA( const int x, const int y, const int z)
     {
+        // Try avoid doing stencil operations on ghost cells
+        //if ( is_ghost(i) ) continue;
+
+        int i = VOXEL(x,y,z, nx,ny,nz,ng);
+
         // ex interpolation
         real_t w0 = field_ex(i);                       // pf0->ex;
         real_t w1 = field_ex(i + y_offset);            // pfy->ex;
         real_t w2 = field_ex(i + z_offset);            // pfz->ex;
         real_t w3 = field_ex(i + y_offset + z_offset); // pfyz->ex;
 
-	//1D only
+        //1D only
+        // TODO: make this not use only w0
         interp_ex(i)       = w0; //fourth*( (w3 + w0) + (w1 + w2) );
         interp_dexdy(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_dexdz(i)    = fourth*( (w3 - w0) - (w1 - w2) );
@@ -62,6 +69,7 @@ void load_interpolator_array(
         w1 = field_ey(i + z_offset); // pfz->ey;
         w2 = field_ey(i + x_offset); //pfx->ey;
         w3 = field_ey(i + x_offset + z_offset); // pfzx->ey;
+
         interp_ey(i)       = fourth*( (w3 + w0) + (w1 + w2) );
         interp_deydz(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_deydx(i)    = fourth*( (w3 - w0) - (w1 - w2) );
@@ -73,6 +81,7 @@ void load_interpolator_array(
         w1 = field_ez(i + x_offset); //pfx->ez;
         w2 = field_ez(i + y_offset); //pfy->ez;
         w3 = field_ez(i + x_offset + y_offset); //pfxy->ez;
+
         interp_ez(i)       = fourth*( (w3 + w0) + (w1 + w2) );
         interp_dezdx(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_dezdy(i)    = fourth*( (w3 - w0) - (w1 - w2) );
@@ -97,9 +106,10 @@ void load_interpolator_array(
         interp_dcbzdz(i) = half*( w1 - w0 );
     };
 
-    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-    Kokkos::parallel_for( exec_policy, _load_interpolator, "load_interpolator()" );
-    
+    //Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() ); // All cells
+    Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng, ny+ng, nz+ng} ); // Try not to into ghosts // TODO: dry this
+    Kokkos::parallel_for( non_ghost_policy, _load_interpolator, "load_interpolator()" );
+
         /*
         pi   = &fi(x,  y,  z  );
         pf0  =  &f(x,  y,  z  );

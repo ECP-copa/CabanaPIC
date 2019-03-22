@@ -12,6 +12,7 @@
 #include "grid.h"
 #include "fields.h"
 
+/*
 class accumulator_t {
     public:
       float jx[4];   // jx0@(0,-1,-1),jx1@(0,1,-1),jx2@(0,-1,1),jx3@(0,1,1)
@@ -26,8 +27,9 @@ class accumulator_t {
           // empty
       }
 };
+*/
 
-void clean_accumulator_array(
+void clear_accumulator_array(
         field_array_t fields,
         accumulator_array_t accumulators,
         size_t nx, // TODO: we can probably pull these out of global params..
@@ -41,10 +43,11 @@ void unload_accumulator_array(
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
         size_t nz,
-	real_t dx,
-	real_t dy,
-	real_t dz,
-	real_t dt	
+        size_t ng,
+        real_t dx,
+        real_t dy,
+        real_t dz,
+        real_t dt
 );
 
 #endif // header guard

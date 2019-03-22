@@ -42,7 +42,8 @@ void load_interpolator_array(
         interpolator_array_t interpolators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
-        size_t nz
+        size_t nz,
+        size_t ng
 );
 
 #endif

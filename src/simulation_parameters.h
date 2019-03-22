@@ -56,8 +56,8 @@ template <class real_> class Parameters_
         real_ dx;
         real_ dy;
         real_ dz;
-	real_ v0; //drift velocity
-	
+        real_ v0; //drift velocity
+
         size_t ghost_offset; // Where the cell id needs to start for a "real" cell, basically nx
         size_t num_real_cells;
 
@@ -67,14 +67,14 @@ template <class real_> class Parameters_
 
         // TODO: how useful are these arguments now its a singleton?
         Parameters_(size_t _nc = 16, size_t _nppc = 32) :
-	  de(1.0),
-	  ec(1.0),
-	  me(1.0),
-	  c(1.0),
-	  eps( 1.0),
-	  mu(1.0),
-	  n0(1.0),
-	  num_species(1),
+            de(1.0),
+            ec(1.0),
+            me(1.0),
+            c(1.0),
+            eps( 1.0),
+            mu(1.0),
+            n0(1.0),
+            num_species(1),
             NX_global(_nc),
             NY_global(1),
             NZ_global(1),
@@ -84,7 +84,7 @@ template <class real_> class Parameters_
             num_ghosts(1),
             num_cells( ((num_ghosts*2)+NX_global) * ((num_ghosts*2)+NY_global) * ((num_ghosts*2)+NZ_global)),
             NPPC(_nppc),
-	    num_real_cells(NX_global * NY_global * NZ_global),
+            num_real_cells(NX_global * NY_global * NZ_global),
             num_particles(NPPC*num_real_cells),
             dt(0.1),
             num_steps(10),
@@ -103,18 +103,18 @@ template <class real_> class Parameters_
             dx(len_x/nx),
             dy(len_y/ny),
             dz(len_z/nz),
-	  ghost_offset(nx*num_ghosts),
-	  v0(0)
-        {
-	  /* v0 = 0.0866025403784439*4.0; */
-	  /* real_ gam = 1.0/sqrt(1.0-v0*v0); */
-	  /* len_x_global =  0.628318530717959*(gam*sqrt(gam))*4.0; */
-	  /* len_x = len_x_global; */
-	  /* std::cout<<num_particles<<std::endl; */
-	  /* std::cout<<NPPC<<std::endl; */
-	  /* std::cout<<num_real_cells<<std::endl; */
-            std::cout << "#Singeton Constructor" << std::endl;
-        }
+            ghost_offset(nx*num_ghosts),
+            v0(0)
+    {
+        /* v0 = 0.0866025403784439*4.0; */
+        /* real_ gam = 1.0/sqrt(1.0-v0*v0); */
+        /* len_x_global =  0.628318530717959*(gam*sqrt(gam))*4.0; */
+        /* len_x = len_x_global; */
+        /* std::cout<<num_particles<<std::endl; */
+        /* std::cout<<NPPC<<std::endl; */
+        /* std::cout<<num_real_cells<<std::endl; */
+        std::cout << "#Singeton Constructor" << std::endl;
+    }
 
         static  Parameters_& instance()
         {

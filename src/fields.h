@@ -90,7 +90,7 @@ class ES_Field_Solver
 class ES_Field_Solver_1D
 {
     public:
-         
+
         real_t e_energy(
                 field_array_t fields,
                 real_t px,
@@ -101,16 +101,16 @@ class ES_Field_Solver_1D
                 size_t nz
                 )
         {
-	  auto ex = fields.slice<FIELD_EX>();
-	  auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
-	    {
-	      lsum += ex(i)*ex(i);
-	      //	      printf("%d %f\n",i,ex(i));
-	    };
-	  real_t e_tot_energy=0;
-	  Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );	  
-	  Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
-	  return e_tot_energy;
+            auto ex = fields.slice<FIELD_EX>();
+            auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+            {
+                lsum += ex(i) * ex(i);
+            };
+
+            real_t e_tot_energy=0;
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
+            return e_tot_energy;
         }
 
         void advance_e(
@@ -140,7 +140,7 @@ class ES_Field_Solver_1D
 };
 
 // EM HERE: UNFINISHED
-// TODO: Finished
+// TODO: Finish
 
 class EM_Field_Solver
 {

@@ -36,8 +36,9 @@ class Initializer {
 
             Parameters::instance().num_steps = 2500;
 
-	    Parameters::instance().v0 = 0.0866025403784439*4.0;
-	    real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
+            Parameters::instance().v0 = 0.0866025403784439*4.0;
+            real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
+
             Parameters::instance().len_x_global = 0.628318530717959*(gam*sqrt(gam))*4.0; //default_grid_len;
             Parameters::instance().len_y_global = default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
@@ -59,7 +60,7 @@ class Initializer {
         }
 
         // Function to intitialize the particles.
-  static void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
+        static void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
 
@@ -115,17 +116,12 @@ class Initializer {
                     velocity_x.access(s,i) = sign * v0 *gam*(1.0+na); //0.1;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0;
-                    // printf("%d %f\n", pi2,velocity_x.access(s,i));
-                    /* #ifdef __CUDA_ARCH__		     */
-                    /* 		  printf("%d %d %d, %d %ld %f %f\n",blockDim.x * blockIdx.x + threadIdx.x,blockDim.y * blockIdx.y + threadIdx.y,blockDim.z * blockIdx.z + threadIdx.z,(s)*particle_list_t::vector_length+i, pre_ghost, position_x.access(s,i),velocity_x.access(s,i)); */
-                    /* #endif */
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
                 vec_policy( 0, particles.size() );
             Cabana::simd_parallel_for( vec_policy, _init, "init()" );
         }
-
 
 
         static void initialize_interpolator(interpolator_array_t& f0)
@@ -149,32 +145,31 @@ class Initializer {
             auto cbz  = f0.slice<CBZ>();
             auto dcbzdz  = f0.slice<DCBZDZ>();
 
-	    //             for (size_t i = 0; i < f0.size(); i++)
             auto _init_interpolator =
-	      KOKKOS_LAMBDA( const int i )
-            {
-                // Throw in some place holder values
-                ex(i) = 0.1;
-                dexdy(i) = 0.0;
-                dexdz(i) = 0.0;
-                d2exdydz(i) = 0.0;
-                ey(i) = 0.0;
-                deydz(i) = 0.0;
-                deydx(i) = 0.0;
-                d2eydzdx(i) = 0.0;
-                ez(i) = 0.0;
-                dezdx(i) = 0.0;
-                dezdy(i) = 0.0;
-                d2ezdxdy(i) = 0.0;
-                cbx(i) = 0.0;
-                dcbxdx(i) = 0.0;
-                cby(i) = 0.0;
-                dcbydy(i) = 0.0;
-                cbz(i) = 0.0;
-                dcbzdz(i) = 0.0;
-            };
+                KOKKOS_LAMBDA( const int i )
+                {
+                    // Throw in some place holder values
+                    ex(i) = 0.1;
+                    dexdy(i) = 0.0;
+                    dexdz(i) = 0.0;
+                    d2exdydz(i) = 0.0;
+                    ey(i) = 0.0;
+                    deydz(i) = 0.0;
+                    deydx(i) = 0.0;
+                    d2eydzdx(i) = 0.0;
+                    ez(i) = 0.0;
+                    dezdx(i) = 0.0;
+                    dezdy(i) = 0.0;
+                    d2ezdxdy(i) = 0.0;
+                    cbx(i) = 0.0;
+                    dcbxdx(i) = 0.0;
+                    cby(i) = 0.0;
+                    dcbydy(i) = 0.0;
+                    cbz(i) = 0.0;
+                    dcbzdz(i) = 0.0;
+                };
 
-	    Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
+            Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
 
         }
 };

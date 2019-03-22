@@ -16,12 +16,18 @@ const std::size_t array_size = VLEN;
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
 //gpu
-//using MemorySpace = Kokkos::CudaSpace;
-//using ExecutionSpace = Kokkos::Cuda;
+using MemorySpace = Kokkos::CudaUVMSpace;
+using ExecutionSpace = Kokkos::Cuda;
+
 //cpu
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::Serial;
+//using MemorySpace = Cabana::HostSpace;
+//using ExecutionSpace = Kokkos::Serial;
+//using ExecutionSpace = Kokkos::OpenMP;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
+
+// Defaults
+//using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
+//using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 ///// END ESSENTIALS ///
 
@@ -162,5 +168,19 @@ class particle_mover_t {
 };
 
 /////////////// END VPIC TYPE ////////////
+//
+// TODO: this may be a bad name?
+# define RANK_TO_INDEX(rank,ix,iy,iz,_x,_y) \
+    int _ix, _iy, _iz;                                                    \
+    _ix  = (rank);                        /* ix = ix+gpx*( iy+gpy*iz ) */ \
+    _iy  = _ix/int(_x);   /* iy = iy+gpy*iz */            \
+    _ix -= _iy*int(_x);   /* ix = ix */                   \
+    _iz  = _iy/int(_y);   /* iz = iz */                   \
+    _iy -= _iz*int(_y);   /* iy = iy */                   \
+    (ix) = _ix;                                                           \
+    (iy) = _iy;                                                           \
+    (iz) = _iz;                                                           \
+
+#define VOXEL(x,y,z, nx,ny,nz, NG) ((x) + ((nx)+(NG*2))*((y) + ((ny)+(NG*2))*(z)))
 
 #endif // pic_types_h
