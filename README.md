@@ -10,7 +10,7 @@ This code has two major dependencies:
 1. Kokkos
 2. Cabana
 
-Instructions on how to obtain and install both can be found (here)[https://github.com/ECP-copa/Cabana/wiki/Build-Instructions]
+Instructions on how to obtain and install both can be found [here](https://github.com/ECP-copa/Cabana/wiki/Build-Instructions)
 
 Once these are installed, you can configurable and build this project using
 cmake. To do so, the user should manually set the following two variables:
