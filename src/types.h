@@ -5,21 +5,29 @@
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
-#define VLEN 16
+#define VLEN 1 //32
 #endif
 const std::size_t array_size = VLEN;
 
 #ifndef CELL_BLOCK_FACTOR
-#define CELL_BLOCK_FACTOR 16
+#define CELL_BLOCK_FACTOR 32
 #endif
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-using MemorySpace = Kokkos::CudaSpace;
+//gpu
+using MemorySpace = Kokkos::CudaUVMSpace;
 using ExecutionSpace = Kokkos::Cuda;
+
+//cpu
 //using MemorySpace = Cabana::HostSpace;
 //using ExecutionSpace = Kokkos::Serial;
+//using ExecutionSpace = Kokkos::OpenMP;
 //using parallel_algorithm_tag = Cabana::StructParallelTag;
+
+// Defaults
+//using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
+//using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 ///// END ESSENTIALS ///
 
@@ -35,7 +43,7 @@ enum UserParticleFields
     VelocityX,
     VelocityY,
     VelocityZ,
-    Charge,
+    Weight,
     Cell_Index, // This is stored as per VPIC, such that it includes ghost_offsets
 };
 
@@ -48,7 +56,7 @@ Cabana::MemberTypes<
     float,                        // (3) x-velocity
     float,                        // (4) y-velocity
     float,                        // (5) z-velocity
-    float,                        // (6) charge
+    float,                        // (6) weight
     int                           // (7) Cell index
 >;
 
@@ -160,5 +168,19 @@ class particle_mover_t {
 };
 
 /////////////// END VPIC TYPE ////////////
+//
+// TODO: this may be a bad name?
+# define RANK_TO_INDEX(rank,ix,iy,iz,_x,_y) \
+    int _ix, _iy, _iz;                                                    \
+    _ix  = (rank);                        /* ix = ix+gpx*( iy+gpy*iz ) */ \
+    _iy  = _ix/int(_x);   /* iy = iy+gpy*iz */            \
+    _ix -= _iy*int(_x);   /* ix = ix */                   \
+    _iz  = _iy/int(_y);   /* iz = iz */                   \
+    _iy -= _iz*int(_y);   /* iy = iy */                   \
+    (ix) = _ix;                                                           \
+    (iy) = _iy;                                                           \
+    (iz) = _iz;                                                           \
+
+#define VOXEL(x,y,z, nx,ny,nz, NG) ((x) + ((nx)+(NG*2))*((y) + ((ny)+(NG*2))*(z)))
 
 #endif // pic_types_h

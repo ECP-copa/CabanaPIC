@@ -81,7 +81,7 @@ class Visualizer {
 
         void write_particles_w(particle_list_t& particles)
         {
-            auto weight = particles.slice<Charge>();
+            auto weight = particles.slice<Weight>();
 
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
             {

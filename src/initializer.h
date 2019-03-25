@@ -4,15 +4,15 @@
 
 class Initializer {
     public:
-        static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
+  static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
         {
 
             //logger << "Importing Default Input Deck" << std::endl;
             const real_t default_grid_len = 1.0;
-
+	    //1D
             Parameters::instance().NX_global = _nc;
-            Parameters::instance().NY_global = _nc;
-            Parameters::instance().NZ_global = _nc;
+            Parameters::instance().NY_global = 1; //_nc;
+            Parameters::instance().NZ_global = 1; //_nc;
 
             Parameters::instance().nx = Parameters::instance().NX_global;
             Parameters::instance().ny = Parameters::instance().NY_global;
@@ -30,17 +30,20 @@ class Initializer {
 
             Parameters::instance().NPPC = _nppc;
 
-            Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_cells;
+            Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_real_cells;
 
-            Parameters::instance().dt = 0.1;
+            Parameters::instance().dt = 0.0863562;
 
-            Parameters::instance().num_steps = 5;
+            Parameters::instance().num_steps = 2500;
 
-            Parameters::instance().len_x_global = default_grid_len;
+            Parameters::instance().v0 = 0.0866025403784439*4.0;
+            real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
+
+            Parameters::instance().len_x_global = 0.628318530717959*(gam*sqrt(gam))*4.0; //default_grid_len;
             Parameters::instance().len_y_global = default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
 
-            Parameters::instance().len_x = default_grid_len;
+            Parameters::instance().len_x = Parameters::instance().len_x_global; //default_grid_len;
             Parameters::instance().len_y = default_grid_len;
             Parameters::instance().len_z = default_grid_len;
 
@@ -51,13 +54,13 @@ class Initializer {
             Parameters::instance().print_run_details();
         }
 
-        static const float rand_float(float min = 0, float max = 1)
+        static float rand_float(float min = 0, float max = 1)
         {
             return min + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max-min)));
         }
 
         // Function to intitialize the particles.
-        static void initialize_particles( particle_list_t particles)
+        static void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
 
@@ -69,8 +72,10 @@ class Initializer {
             auto velocity_y = particles.slice<VelocityY>();
             auto velocity_z = particles.slice<VelocityZ>();
 
-            auto charge = particles.slice<Charge>();
+            auto weight = particles.slice<Weight>();
             auto cell = particles.slice<Cell_Index>();
+
+            float v0 = Parameters::instance().v0;
 
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
@@ -79,30 +84,44 @@ class Initializer {
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
                     // Initialize position.
-                    position_x.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
-                    position_y.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0.5f; //rand_float(-1.0f, 1.0f);
+                    int sign =  -1;
+                    size_t pi2 = (s)*particle_list_t::vector_length+i;
+                    size_t pi = ((pi2) / 2);
+                    if (i%2 == 0) {
+                        sign = 1;
+                    }
+                    size_t pic = (2*pi)%nppc;
 
-                    // Initialize velocity.
-                    velocity_x.access(s,i) = 0.1;
-                    velocity_y.access(s,i) = 0.2;
-                    velocity_z.access(s,i) = 0.3;
+                    real_t x = pic*dxp+0.5f*dxp-1.f; //rand_float(-1.0f, 1.0f);
+                    position_x.access(s,i) = x;
+                    position_y.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
 
-                    charge.access(s,i) = 1.0;
+
+                    weight.access(s,i) = w;
 
                     // gives me a num in the range 0..num_real_cells
                     //int pre_ghost = (s % Parameters::instance().num_real_cells);
                     //   size_t ix, iy, iz;
 
- 
-                    cell.access(s,i) = 13; //allow_for_ghosts(pre_ghost);
+                    size_t pre_ghost = (2*pi/nppc)+1;
+
+                    cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) ; //13; //allow_for_ghosts(pre_ghost);
+
+                    // Initialize velocity.
+                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
+                    //
+                    if (pi2%2 == 1) { sign = -1; }
+                    real_t gam = 1.0/sqrt(1.0-v0*v0);
+                    velocity_x.access(s,i) = sign * v0 *gam*(1.0+na); //0.1;
+                    velocity_y.access(s,i) = 0;
+                    velocity_z.access(s,i) = 0;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
                 vec_policy( 0, particles.size() );
             Cabana::simd_parallel_for( vec_policy, _init, "init()" );
         }
-
 
 
         static void initialize_interpolator(interpolator_array_t& f0)
@@ -126,32 +145,31 @@ class Initializer {
             auto cbz  = f0.slice<CBZ>();
             auto dcbzdz  = f0.slice<DCBZDZ>();
 
-	    //             for (size_t i = 0; i < f0.size(); i++)
             auto _init_interpolator =
-	      KOKKOS_LAMBDA( const int i )	      
-            {
-                // Throw in some place holder values
-                ex(i) = 0.1;
-                dexdy(i) = 0.0;
-                dexdz(i) = 0.0;
-                d2exdydz(i) = 0.0;
-                ey(i) = 0.0;
-                deydz(i) = 0.0;
-                deydx(i) = 0.0;
-                d2eydzdx(i) = 0.0;
-                ez(i) = 0.0;
-                dezdx(i) = 0.0;
-                dezdy(i) = 0.0;
-                d2ezdxdy(i) = 0.0;
-                cbx(i) = 0.0;
-                dcbxdx(i) = 0.0;
-                cby(i) = 0.0;
-                dcbydy(i) = 0.0;
-                cbz(i) = 0.0;
-                dcbzdz(i) = 0.0;
-            };
+                KOKKOS_LAMBDA( const int i )
+                {
+                    // Throw in some place holder values
+                    ex(i) = 0.1;
+                    dexdy(i) = 0.0;
+                    dexdz(i) = 0.0;
+                    d2exdydz(i) = 0.0;
+                    ey(i) = 0.0;
+                    deydz(i) = 0.0;
+                    deydx(i) = 0.0;
+                    d2eydzdx(i) = 0.0;
+                    ez(i) = 0.0;
+                    dezdx(i) = 0.0;
+                    dezdy(i) = 0.0;
+                    d2ezdxdy(i) = 0.0;
+                    cbx(i) = 0.0;
+                    dcbxdx(i) = 0.0;
+                    cby(i) = 0.0;
+                    dcbydy(i) = 0.0;
+                    cbz(i) = 0.0;
+                    dcbzdz(i) = 0.0;
+                };
 
-	    Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
+            Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
 
         }
 };

@@ -86,8 +86,61 @@ class ES_Field_Solver
         }
 };
 
+
+class ES_Field_Solver_1D
+{
+    public:
+
+        real_t e_energy(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+                )
+        {
+            auto ex = fields.slice<FIELD_EX>();
+            auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+            {
+                lsum += ex(i) * ex(i);
+            };
+
+            real_t e_tot_energy=0;
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
+            return e_tot_energy;
+        }
+
+        void advance_e(
+                field_array_t fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz
+        )
+        {
+            auto ex = fields.slice<FIELD_EX>();
+            auto jfx = fields.slice<FIELD_JFX>();
+
+            // NOTE: this does work on ghosts that is extra, but it simplifies
+            // the logic and is fairly cheap
+            auto _advance_e = KOKKOS_LAMBDA( const int i )
+            {
+                const float cj = 1; // TODO: g->dt/g->eps0;
+                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e_1d()" );
+        }
+};
+
 // EM HERE: UNFINISHED
-// TODO: Finished
+// TODO: Finish
 
 class EM_Field_Solver
 {
