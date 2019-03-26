@@ -24,6 +24,13 @@ An example build line will look something like this:
 cmake -DKOKKOS_DIR=$HOME/tools/kokkos -DCABANA_DIR=$HOME/tools/cabana ..
 ```
 
+For GPU builds, you additionally need to point the CXX compiler to the Kokkos
+Cuda wrapper, you can do this by doing something like:
+
+```
+CXX=$HOME/tools/kokkos/bin/nvcc_wrapper cmake -DKOKKOS_DIR=$HOME/tools/kokkos -DCABANA_DIR=$HOME/tools/cabana ..
+```
+
 ## Feature Wishlist
 
 1. Configurable to run in different precisions (real_t to configure float/double)
