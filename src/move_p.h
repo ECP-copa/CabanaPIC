@@ -58,11 +58,11 @@ KOKKOS_INLINE_FUNCTION int detect_leaving_domain( size_t face, size_t nx, size_t
 // TODO: port this to cabana syntax
 template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS_INLINE_FUNCTION int move_p(
         //particle_list_t particles,
-        T1 position_x,
-        T2 position_y,
-        T3 position_z,
-        T4 cell,
-        T5 a0, // TODO: does this need to be const
+        T1& position_x,
+        T2& position_y,
+        T3& position_z,
+        T4& cell,
+        T5& a0, // TODO: does this need to be const
         real_t q,
         particle_mover_t& pm,
         const grid_t* g,
@@ -75,6 +75,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         const Boundary boundary
     )
 {
+    auto _a = a0.access();
     /* // Kernel variables */
   real_t s_dir[3];
   real_t v0, v1, v2, v3; //, v4, v5;
@@ -143,10 +144,10 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         //a = (float *)(a0 + ii);
 
         //1D only
-        a0(ii,0) += q*s_dispx;
-        a0(ii,1) = 0;
-        a0(ii,2) = 0;
-        a0(ii,3) = 0;
+        _a(ii,accumulator_var::jx, 0) += q*s_dispx;
+        _a(ii,accumulator_var::jx, 1) += 0;
+        _a(ii,accumulator_var::jx, 2) += 0;
+        _a(ii,accumulator_var::jx, 3) += 0;
 
 // #   define accumulate_j(X,Y,Z, offset)                                    \
 //         v4  = q*s_disp##X;    /* v2 = q ux                            */  \

@@ -10,7 +10,6 @@ void clear_accumulator_array(
         size_t nz
 )
 {
-    auto a0 = accumulators.slice<0>();
     auto _clean_accumulator = KOKKOS_LAMBDA(const int i)
     {
         /*
@@ -29,11 +28,18 @@ void clear_accumulator_array(
            a0(i+y_offset,JZ_OFFSET+2) = 0;
            a0(i+x_offset+y_offset,JZ_OFFSET+3) = 0;
          */
-      for (int z = 0; z < 12; z++) // TODO: dry this 12
+
+      for (int j = 0; j < ACCUMULATOR_VAR_COUNT; j++)
       {
-          a0(i, z) = 0.0;
+          for (int k = 0; k < ACCUMULATOR_VAR_COUNT; k++)
+          {
+              accumulators(i, j, k) = 0.0;
+              //accumulators() = 0.0;
+          }
       }
 
+      //k_accumulators_scatter_access(ii, accumulator_var::jx, 3) += v3;
+      //Kokkos::Experimental::contribute(accumulator_array->k_a_d, accumulator_array->k_a_sa);
     };
 
     Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
@@ -73,8 +79,6 @@ void unload_accumulator_array(
     size_t y_offset = (1*nx); // VOXEL(x,  y+1,z,   nx,ny,nz);
     size_t z_offset = (1*nx*ny); // VOXEL(x,  y,  z+1, nx,ny,nz);
 
-    auto a0 = accumulators.slice<0>();
-
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _unload_accumulator = KOKKOS_LAMBDA( const int x, const int y, const int z )
     {
@@ -83,26 +87,25 @@ void unload_accumulator_array(
         int i = VOXEL(x,y,z, nx,ny,nz,ng);
 
         jfx(i) = cx*(
-                    a0(i,JX_OFFSET+0) +
-                    a0(i+y_offset,JX_OFFSET+1) +
-                    a0(i+z_offset,JX_OFFSET+2) +
-                    a0(i+y_offset+z_offset,JX_OFFSET+3)
+                    accumulators(i,                   accumulator_var::jx, 0) +
+                    accumulators(i+y_offset,          accumulator_var::jx, 1) +
+                    accumulators(i+z_offset,          accumulator_var::jx, 2) +
+                    accumulators(i+y_offset+z_offset, accumulator_var::jx, 3)
                 );
 
         jfy(i) = cy*(
-                    a0(i,JY_OFFSET+0) +
-                    a0(i+z_offset,JY_OFFSET+1) +
-                    a0(i+y_offset,JY_OFFSET+2) +
-                    a0(i+y_offset+z_offset,JY_OFFSET+3)
+                    accumulators(i,                   accumulator_var::jy, 0) +
+                    accumulators(i+z_offset,          accumulator_var::jy, 1) +
+                    accumulators(i+y_offset,          accumulator_var::jy, 2) +
+                    accumulators(i+y_offset+z_offset, accumulator_var::jy, 3)
                 );
 
         jfz(i) = cz*(
-                    a0(i,JZ_OFFSET+0) +
-                    a0(i+x_offset,JZ_OFFSET+1) +
-                    a0(i+y_offset,JZ_OFFSET+2) +
-                    a0(i+x_offset+y_offset,JZ_OFFSET+3)
+                    accumulators(i,                   accumulator_var::jz, 0) +
+                    accumulators(i+x_offset,          accumulator_var::jz, 1) +
+                    accumulators(i+y_offset,          accumulator_var::jz, 2) +
+                    accumulators(i+x_offset+y_offset, accumulator_var::jz, 3)
                 );
-        //printf("%d, %f %f %f %f\n",i, a0(i,0),jfx(i),jfy(i),jfz(i));
     };
 
     std::cout << "Looping from " << ng << " to " << nx+ng << std::endl;

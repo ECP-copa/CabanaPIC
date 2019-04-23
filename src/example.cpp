@@ -90,7 +90,15 @@ int main( int argc, char* argv[] )
 
         // Allocate Cabana Data
         interpolator_array_t interpolators(num_cells);
-        accumulator_array_t accumulators(num_cells); // TODO: this should become a kokkos scatter add
+
+        accumulator_array_t accumulators("Accumulator View", num_cells);
+
+        accumulator_array_sa_t scatter_add =
+            Kokkos::Experimental::create_scatter_view
+            <Kokkos::Experimental::ScatterSum,
+             KOKKOS_SCATTER_DUPLICATED,
+             KOKKOS_SCATTER_ATOMIC>(accumulators);
+
         field_array_t fields(num_cells);
 
         Initializer::initialize_interpolator(interpolators);
@@ -155,7 +163,7 @@ int main( int argc, char* argv[] )
                     cdt_dy,
                     cdt_dz,
                     qsp,
-                    accumulators,
+                    scatter_add,
                     grid,
                     nx,
                     ny,
@@ -163,6 +171,9 @@ int main( int argc, char* argv[] )
                     num_ghosts,
                     boundary
                 );
+
+            Kokkos::Experimental::contribute(accumulators, scatter_add);
+            scatter_add.reset_except(accumulators);
 
             // TODO: boundaries? MPI
             // boundary_p(); // Implies Parallel?

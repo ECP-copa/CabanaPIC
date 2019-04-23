@@ -4,15 +4,16 @@
 #include <types.h>
 #include "move_p.h"
 
+template <class _accumulator>
 void push(
-        particle_list_t particles,
+        particle_list_t& particles,
         interpolator_array_t& f0,
         real_t qdt_2mc,
         real_t cdt_dx,
         real_t cdt_dy,
         real_t cdt_dz,
         real_t qsp,
-        accumulator_array_t& a0,
+        _accumulator& a0,
         grid_t* g,
         const size_t nx,
         const size_t ny,
@@ -22,10 +23,8 @@ void push(
         )
 {
 
-    //auto _a = a0.slice<0>();
-
-    auto slice = a0.slice<0>();
-    decltype(slice)::atomic_access_slice _a = slice;
+    //auto slice = a0.slice<0>();
+    //decltype(slice)::atomic_access_slice _a = slice;
 
     auto position_x = particles.slice<PositionX>();
     auto position_y = particles.slice<PositionY>();
@@ -66,6 +65,8 @@ void push(
     auto _push =
         KOKKOS_LAMBDA( const int s, const int i )
         {
+            auto accumulators_scatter_access = a0.access();
+
             //for ( int i = 0; i < particle_list_t::vector_length; ++i )
             //{
             // Setup data accessors
@@ -204,10 +205,15 @@ void push(
                 //real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
 
                 //1D only
-                _a(ii,0) += q*ux;
-                _a(ii,1) = 0;
-                _a(ii,2) = 0;
-                _a(ii,3) = 0;
+                //_a(ii,0) += q*ux;
+                //_a(ii,1) = 0;
+                //_a(ii,2) = 0;
+                //_a(ii,3) = 0;
+
+                accumulators_scatter_access(ii, accumulator_var::jx, 0) += q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jx, 1) += 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;
 
                 // #     define ACCUMULATE_J(X,Y,Z,offset)                                 \
                 //                     v4  = q*u##X;   /* v2 = q ux                            */        \
@@ -245,7 +251,8 @@ void push(
                 local_pm.i = s*particle_list_t::vector_length + i; //i + itmp; //p_ - p0;
 
                 // Handle particles that cross cells
-                move_p( position_x, position_y, position_z, cell, _a, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
+                //move_p( position_x, position_y, position_z, cell, _a, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
+                move_p( position_x, position_y, position_z, cell, a0, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
 
                 // TODO: renable this
                 //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
