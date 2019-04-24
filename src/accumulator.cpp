@@ -3,8 +3,8 @@
 #include "accumulator.h"
 
 void clear_accumulator_array(
-        field_array_t fields,
-        accumulator_array_t accumulators,
+        field_array_t& fields,
+        accumulator_array_t& accumulators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
         size_t nz
@@ -34,12 +34,8 @@ void clear_accumulator_array(
           for (int k = 0; k < ACCUMULATOR_VAR_COUNT; k++)
           {
               accumulators(i, j, k) = 0.0;
-              //accumulators() = 0.0;
           }
       }
-
-      //k_accumulators_scatter_access(ii, accumulator_var::jx, 3) += v3;
-      //Kokkos::Experimental::contribute(accumulator_array->k_a_d, accumulator_array->k_a_sa);
     };
 
     Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
@@ -48,8 +44,8 @@ void clear_accumulator_array(
 
 
 void unload_accumulator_array(
-        field_array_t fields,
-        accumulator_array_t accumulators,
+        field_array_t& fields,
+        accumulator_array_t& accumulators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
         size_t nz,
@@ -108,7 +104,7 @@ void unload_accumulator_array(
                 );
     };
 
-    std::cout << "Looping from " << ng << " to " << nx+ng << std::endl;
+    //std::cout << "Looping from " << ng << " to " << nx+ng << std::endl;
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng, ny+ng, nz+ng} ); // Try not to into ghosts // TODO: dry this
     Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );
 

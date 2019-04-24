@@ -173,6 +173,12 @@ int main( int argc, char* argv[] )
                 );
 
             Kokkos::Experimental::contribute(accumulators, scatter_add);
+            //for ( int zz = 0; zz < num_cells; zz++)
+            //{
+                //std::cout << "post accum " << zz << " = " << accumulators(zz, 0, 0) << std::endl;
+            //}
+
+            // Only reset the data if these two are not the same arrays
             scatter_add.reset_except(accumulators);
 
             // TODO: boundaries? MPI

@@ -122,20 +122,20 @@ using AccumulatorDataTypes =
 
 //using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
 
-/*
-#ifdef KOKKOS_ENABLE_CUDA
+//#ifdef USE_GPU
   #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterNonDuplicated
   #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterAtomic
-  #define KOKKOS_LAYOUT Kokkos::LayoutLeft
-#else
-*/
-  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterDuplicated
-  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterNonAtomic
+  //#define KOKKOS_LAYOUT Kokkos::LayoutLeft
   #define KOKKOS_LAYOUT Kokkos::LayoutRight
+//#else
+  //#define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterDuplicated
+  //#define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterNonAtomic
+  //#define KOKKOS_LAYOUT Kokkos::LayoutRight
 //#endif
 
 #define ACCUMULATOR_VAR_COUNT 3
 #define ACCUMULATOR_ARRAY_LENGTH 4
+
 // TODO: should we flatten this out to 1D 12 big?
 using accumulator_array_t = Kokkos::View<float* [ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>;
 

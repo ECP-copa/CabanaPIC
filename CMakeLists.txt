@@ -13,12 +13,15 @@ if (OPENMP_FOUND)
 endif()
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
+option(USE_GPU OFF)
 
-find_package(CUDA)
-if (CUDA_FOUND)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda -g")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored") # supress express cuda warnings
-endif(CUDA_FOUND)
+if (USE_GPU)
+    find_package(CUDA)
+    if (CUDA_FOUND)
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda -g")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored") # supress express cuda warnings
+    endif(CUDA_FOUND)
+endif(USE_GPU)
 
 # Try guess where Cabana lives..
 if(NOT DEFINED CABANA_DIR)
