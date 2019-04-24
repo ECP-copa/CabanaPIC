@@ -5,7 +5,7 @@
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
-#define VLEN 1 //32
+#define VLEN 32
 #endif
 const std::size_t array_size = VLEN;
 
@@ -15,15 +15,19 @@ const std::size_t array_size = VLEN;
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-//gpu
+#ifdef USE_GPU
 using MemorySpace = Kokkos::CudaUVMSpace;
 using ExecutionSpace = Kokkos::Cuda;
-
+#else
+#ifdef USE_SERIAL_CPU
 //cpu
-//using MemorySpace = Cabana::HostSpace;
-//using ExecutionSpace = Kokkos::Serial;
-//using ExecutionSpace = Kokkos::OpenMP;
-//using parallel_algorithm_tag = Cabana::StructParallelTag;
+using MemorySpace = Cabana::HostSpace;
+using ExecutionSpace = Kokkos::Serial;
+#else
+using MemorySpace = Cabana::HostSpace;
+using ExecutionSpace = Kokkos::OpenMP;
+#endif
+#endif
 
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
