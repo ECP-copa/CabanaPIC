@@ -1,4 +1,10 @@
 from git import Repo
+import subprocess
+import os, shutil
+
+# I use this later to lazily generate an error with a message
+class CustomError(Exception):
+    pass
 
 repo_path = "../../"
 r = Repo(repo_path)
@@ -6,31 +12,89 @@ repo_heads = r.heads # or it's alias: r.branches
 repo_heads_names = [h.name for h in repo_heads]
 
 kokkos_src = '/Users/bird/kokkos/'
-kokkos_install = '/Users/bird/kokkos/build/install'
-cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
+#kokkos_install = '/Users/bird/kokkos/build/install'
+#cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
+
+platforms = ["Serial", "CPU", "GPU", "UVM"]
+
+arch = 'Volta70'
+
+subprocess.check_call(['./timing_lib.sh'])
+
+this_build_dir = 'build'
+
+kokkos_dirs = {}
+cabana_dirs = {}
+
+home_dir = os.environ['HOME']
+
+# Build Dependencies
+kokkos_root = os.path.join(home_dir,'kokkos')
+cabana_root = os.path.join(home_dir,'Cabana')
+
+# Check we can find Kokkos and Cabana
+if not os.path.isdir(kokkos_root):
+    raise CustomError("Can't find kokkos")
+if not os.path.isdir(cabana_root):
+    raise CustomError("Can't find Cabana")
+
+# Copy Kokkos and Cabana to be inside this dir
+def copy_and_overwrite(from_path, to_path):
+    if os.path.exists(to_path):
+        shutil.rmtree(to_path)
+    shutil.copytree(from_path, to_path)
+
+def copy_if_safe(from_path, to_path):
+    if not os.path.isdir(to_path):
+        shutil.copytree(from_path, to_path)
+
+# only copy if they don't exist already
+kokkos_new = os.path.join(this_build_dir,'kokkos')
+copy_if_safe(kokkos_root, kokkos_new)
+
+cabana_new = os.path.join(this_build_dir,'cabana')
+copy_if_safe(cabana_root, cabana_new)
+
+
+# Build Dependencies
+for plat in platforms:
+    install_dir = "build-" + plat
+
+    # Do Build
+    subprocess.check_call(['./build_kokkos.sh', kokkos_new, install_dir, plat, arch])
+    subprocess.check_call(['./build_cabana.sh', cabana_new, install_dir, plat])
+
+    # Save dirs
+    cabana_dirs[plat] = target_dir
+    kokkos_dirs[plat] = target_dir
+
 
 # Iterate over *local* git branches
 for branch in repo_heads_names:
+    for plat in platforms:
 
-    # For each repo, check it out into a new folder and build it
-    clone_path = './' + branch
+        print(plat)
+        cabana_install = cabana_dirs[plat]
+        kokkos_install = kokkos_dirs[plat]
 
-    # look to see if the folder already exists:
-    import os, shutil
-    if os.path.isdir(clone_path):
-        # if it does... delete it (!)
-        shutil.rmtree(clone_path)
+        # For each repo, check it out into a new folder and build it
+        #clone_path = './' + branch
+        clone_path = os.join('./', this_build_dir, branch)
 
-        # if it does... skip
-        #continue
+        # look to see if the folder already exists:
+        if os.path.isdir(clone_path):
+            # if it does... delete it (!)
+            shutil.rmtree(clone_path)
 
-    cloned = Repo.clone_from(
-        repo_path,
-        clone_path,
-        branch=branch
-    )
+            # OR if it does... skip
+            #continue
 
-    import subprocess
-    subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_install, cabana_install])
+        cloned = Repo.clone_from(
+            repo_path,
+            clone_path,
+            branch=branch
+        )
 
-    print branch
+        subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_install, cabana_install])
+
+        print branch
