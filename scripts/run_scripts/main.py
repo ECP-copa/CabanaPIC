@@ -15,8 +15,11 @@ kokkos_src = '/Users/bird/kokkos/'
 #kokkos_install = '/Users/bird/kokkos/build/install'
 #cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
 
-platforms = ["Serial", "CPU", "GPU", "UVM"]
+#platforms = ["Serial", "CPU", "GPU", "UVM"]
+platforms = ["Serial", "CPU", "GPU"]
+platforms = ["GPU"]
 
+CXX = "g++"
 arch = 'Volta70'
 
 subprocess.check_call(['./timing_lib.sh'])
@@ -61,12 +64,12 @@ for plat in platforms:
     install_dir = "build-" + plat
 
     # Do Build
-    subprocess.check_call(['./build_kokkos.sh', kokkos_new, install_dir, plat, arch])
-    subprocess.check_call(['./build_cabana.sh', cabana_new, install_dir, plat])
+    subprocess.check_call(['./build_kokkos.sh', CXX, kokkos_new, install_dir, plat, arch])
+    subprocess.check_call(['./build_cabana.sh', CXX, os.path.join(kokkos_new,install_dir,'install'), cabana_new, install_dir, plat])
 
     # Save dirs
-    cabana_dirs[plat] = target_dir
-    kokkos_dirs[plat] = target_dir
+    cabana_dirs[plat] = install_dir
+    kokkos_dirs[plat] = install_dir
 
 
 # Iterate over *local* git branches
