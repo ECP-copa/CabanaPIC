@@ -11,7 +11,7 @@ r = Repo(repo_path)
 repo_heads = r.heads # or it's alias: r.branches
 repo_heads_names = [h.name for h in repo_heads]
 
-kokkos_src = '/Users/bird/kokkos/'
+#kokkos_src = '/Users/bird/kokkos/'
 #kokkos_install = '/Users/bird/kokkos/build/install'
 #cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
 
@@ -32,6 +32,7 @@ cabana_dirs = {}
 home_dir = os.environ['HOME']
 
 # Build Dependencies
+# TODO: make this configurable
 kokkos_root = os.path.join(home_dir,'kokkos')
 cabana_root = os.path.join(home_dir,'Cabana')
 
@@ -58,7 +59,6 @@ copy_if_safe(kokkos_root, kokkos_new)
 cabana_new = os.path.join(this_build_dir,'cabana')
 copy_if_safe(cabana_root, cabana_new)
 
-
 # Build Dependencies
 for plat in platforms:
     install_dir = "build-" + plat
@@ -67,7 +67,7 @@ for plat in platforms:
     subprocess.check_call(['./build_kokkos.sh', CXX, kokkos_new, install_dir, plat, arch])
     subprocess.check_call(['./build_cabana.sh', CXX, os.path.join(kokkos_new,install_dir,'install'), cabana_new, install_dir, plat])
 
-    # Save dirs
+    # Save dirs, relative to root
     cabana_dirs[plat] = install_dir
     kokkos_dirs[plat] = install_dir
 
@@ -77,12 +77,13 @@ for branch in repo_heads_names:
     for plat in platforms:
 
         print(plat)
-        cabana_install = cabana_dirs[plat]
-        kokkos_install = kokkos_dirs[plat]
+        # TODO: throughout these scripts we assume ./instal is the install dir! abstract it.
+        cabana_install = os.path.join( cabana_dirs[plat], 'install')
+        kokkos_install = os.path.join( kokkos_dirs[plat], 'install')
 
         # For each repo, check it out into a new folder and build it
         #clone_path = './' + branch
-        clone_path = os.join('./', this_build_dir, branch)
+        clone_path = os.path.join('./', this_build_dir, branch)
 
         # look to see if the folder already exists:
         if os.path.isdir(clone_path):
@@ -98,6 +99,12 @@ for branch in repo_heads_names:
             branch=branch
         )
 
-        subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_install, cabana_install])
+        pwd = os.getcwd()
+
+        kokkos_full_path = os.path.join(pwd, kokkos_new, kokkos_install)
+        cabana_full_path = os.path.join(pwd, cabana_new, cabana_install)
+        print("kk full path " + kokkos_full_path)
+
+        subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_full_path, cabana_full_path, plat])
 
         print branch

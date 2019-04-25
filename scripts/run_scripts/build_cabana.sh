@@ -20,16 +20,19 @@ mkdir $install_dir
 cd $install_dir
 echo `pwd`
 
-options=""
+# Default to off
+options="-D Cabana_ENABLE_Serial=OFF"
 
-#platforms = ["Serial", "CPU", "GPU", "UVM"]
+# possible platforms = ["Serial", "CPU", "GPU", "UVM"]
+
 if [[ $platform == "Serial" ]]; then
+    # Override default
     options="-D Cabana_ENABLE_Serial=ON"
 elif [[ $platform == "CPU" ]]; then
-    options="-D Cabana_ENABLE_OpenMP=ON -D Cabana_ENABLE_Serial=OFF"
+    options="-D Cabana_ENABLE_OpenMP=ON $options"
 elif [[ $platform == "GPU" ]]; then
-    options="-D CMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -D Cabana_ENABLE_Cuda:BOOL=ON"
-    cxx=$KOKKOS_SRC_DIR/bin/nvcc_wrapper
+    options="-D CMAKE_CXX_COMPILER=$kokkos_dir/bin/nvcc_wrapper -D Cabana_ENABLE_Cuda:BOOL=ON $options"
+    cxx=$kokkos_dir/bin/nvcc_wrapper
 # TODO: enable UVM build
 #elif [[ $platform == "UVM" ]] then
     #options="--"
@@ -43,9 +46,9 @@ echo $options
 CXX=$cxx cmake \
      -D CMAKE_BUILD_TYPE="Release" \
      -D CMAKE_PREFIX_PATH=$kokkos_dir \
-     -D CMAKE_INSTALL_PREFIX=$install_dir \
-     -D Cabana_ENABLE_TESTING=ON \
-     -D Cabana_ENABLE_EXAMPLES=ON \
+     -D CMAKE_INSTALL_PREFIX=`pwd`/install \
+     -D Cabana_ENABLE_TESTING=OFF \
+     -D Cabana_ENABLE_EXAMPLES=OFF \
      $options \
      .. ;
 make install
