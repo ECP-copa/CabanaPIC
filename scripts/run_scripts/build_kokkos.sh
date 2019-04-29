@@ -27,7 +27,7 @@ elif [[ $platform == "CPU" ]]; then
     options="$options --with-openmp"
 elif [[ $platform == "GPU" ]]; then
     #export NVCC_WRAPPER_DEFAULT_COMPILER=`which $CXX`
-    options="--with-openmp --with-cuda --arch=Kepler30 --with-cuda-options=enable_lambda --compiler=$kokkos_dir/bin/nvcc_wrapper ;"
+    options="--with-openmp --with-cuda --arch=$5 --with-cuda-options=enable_lambda --compiler=$kokkos_dir/bin/nvcc_wrapper ;"
 # TODO: enable UVM build
 #elif [[ $platform == "UVM" ]] then
     #options="--"

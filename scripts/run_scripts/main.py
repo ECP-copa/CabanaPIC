@@ -17,10 +17,11 @@ repo_heads_names = [h.name for h in repo_heads]
 
 #platforms = ["Serial", "CPU", "GPU", "UVM"]
 platforms = ["Serial", "CPU", "GPU"]
-platforms = ["GPU"]
+#platforms = ["GPU"]
 
 CXX = "g++"
-arch = 'Volta70'
+#arch = 'Volta70'
+arch = 'Kepler35'
 
 subprocess.check_call(['./timing_lib.sh'])
 
@@ -105,6 +106,7 @@ for branch in repo_heads_names:
         cabana_full_path = os.path.join(pwd, cabana_new, cabana_install)
         print("kk full path " + kokkos_full_path)
 
+        print("./build_and_run.sh " +  clone_path + " g++ " + kokkos_full_path + " " + cabana_full_path + " " + plat)
         subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_full_path, cabana_full_path, plat])
 
         print branch

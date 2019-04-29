@@ -19,14 +19,14 @@ const size_t cell_blocking = CELL_BLOCK_FACTOR;
 using MemorySpace = Kokkos::CudaUVMSpace;
 using ExecutionSpace = Kokkos::Cuda;
 #else
-#ifdef USE_SERIAL_CPU
-//cpu
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::Serial;
-#else
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::OpenMP;
-#endif
+  #ifdef USE_SERIAL_CPU
+    //cpu
+    using MemorySpace = Cabana::HostSpace;
+    using ExecutionSpace = Kokkos::Serial;
+  #else // CPU Parallel
+    using MemorySpace = Cabana::HostSpace;
+    using ExecutionSpace = Kokkos::OpenMP;
+  #endif
 #endif
 
 // Defaults
