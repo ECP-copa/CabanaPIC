@@ -30,6 +30,12 @@ int main( int argc, char* argv[] )
     printf ("#On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
 
+#pragma omp parallel 
+    {
+#pragma omp master
+    std::cout << "Running with " << omp_get_num_threads() << " threads " << std::endl;
+    }
+
     // Cabana scoping block
     {
 
