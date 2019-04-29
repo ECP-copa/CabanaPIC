@@ -16,9 +16,10 @@ repo_heads_names = [h.name for h in repo_heads]
 #cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
 
 #platforms = ["Serial", "CPU", "GPU", "UVM"]
-#platforms = ["Serial", "CPU", "GPU"]
-platforms = ["CPU", "GPU"]
+platforms = ["Serial", "CPU", "GPU"]
+#platforms = ["CPU", "GPU"]
 #platforms = ["GPU"]
+#platforms = ["CPU"]
 
 CXX = "g++"
 #arch = 'Volta70'
@@ -79,6 +80,7 @@ for plat in platforms:
 
 # Iterate over *local* git branches
 for branch in repo_heads_names:
+    print("Working on branch " + branch)
     for plat in platforms:
 
         print(plat)
@@ -90,19 +92,25 @@ for branch in repo_heads_names:
         #clone_path = './' + branch
         clone_path = os.path.join('./', this_build_dir, branch)
 
+        print("!!!! WORKING ON " + clone_path)
+
         # look to see if the folder already exists:
-        if os.path.isdir(clone_path):
+        if not os.path.isdir(clone_path):
             # if it does... delete it (!)
-            shutil.rmtree(clone_path)
+            #print("Deleting " + clone_path)
+            # We need to delete where it will build only one platforms worth,
+            # or hoist the clone
+            #shutil.rmtree(clone_path + build??)
 
             # OR if it does... skip
             #continue
 
-        cloned = Repo.clone_from(
-            repo_path,
-            clone_path,
-            branch=branch
-        )
+            # clone it
+            cloned = Repo.clone_from(
+                repo_path,
+                clone_path,
+                branch=branch
+            )
 
         pwd = os.getcwd()
 
@@ -113,4 +121,3 @@ for branch in repo_heads_names:
         print("./build_and_run.sh " +  clone_path + " g++ " + kokkos_full_path + " " + cabana_full_path + " " + plat)
         subprocess.check_call(['./build_and_run.sh', clone_path, "g++", kokkos_full_path, cabana_full_path, plat])
 
-        print branch
