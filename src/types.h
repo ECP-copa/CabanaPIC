@@ -31,19 +31,6 @@ using ExecutionSpace = Kokkos::Cuda;
   #endif
 #endif
 
-
-#ifdef USE_GPU
-  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterNonDuplicated
-  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterAtomic
-  //#define KOKKOS_LAYOUT Kokkos::LayoutLeft
-  #define KOKKOS_LAYOUT Kokkos::LayoutRight
-#else
-  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterDuplicated
-  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterNonAtomic
-  #define KOKKOS_LAYOUT Kokkos::LayoutRight
-#endif
-
-
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 //using ExecutionSpace = Kokkos::DefaultExecutionSpace;

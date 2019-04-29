@@ -29,7 +29,6 @@ int main( int argc, char* argv[] )
 
     printf ("#On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
-
     // Cabana scoping block
     {
 

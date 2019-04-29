@@ -104,7 +104,6 @@ void unload_accumulator_array(
                 );
     };
 
-    //std::cout << "Looping from " << ng << " to " << nx+ng << std::endl;
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng, ny+ng, nz+ng} ); // Try not to into ghosts // TODO: dry this
     Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );
 
