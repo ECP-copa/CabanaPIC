@@ -30,12 +30,6 @@ int main( int argc, char* argv[] )
     printf ("#On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
 
-#pragma omp parallel 
-    {
-#pragma omp master
-    std::cout << "Running with " << omp_get_num_threads() << " threads " << std::endl;
-    }
-
     // Cabana scoping block
     {
 
@@ -99,11 +93,10 @@ int main( int argc, char* argv[] )
 
         accumulator_array_t accumulators("Accumulator View", num_cells);
 
-        accumulator_array_sa_t scatter_add =
-            Kokkos::Experimental::create_scatter_view
-            <Kokkos::Experimental::ScatterSum,
-             KOKKOS_SCATTER_DUPLICATED,
-             KOKKOS_SCATTER_ATOMIC>(accumulators);
+        auto scatter_add = Kokkos::Experimental::create_scatter_view(accumulators);
+            //<Kokkos::Experimental::ScatterSum,
+             //KOKKOS_SCATTER_DUPLICATED,
+             //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
         field_array_t fields(num_cells);
 

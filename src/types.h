@@ -146,10 +146,10 @@ using AccumulatorDataTypes =
 using accumulator_array_t = Kokkos::View<float* [ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>;
 
 using accumulator_array_sa_t = Kokkos::Experimental::ScatterView<
-    float *[ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH], KOKKOS_LAYOUT,
-    Kokkos::DefaultExecutionSpace, Kokkos::Experimental::ScatterSum,
-    KOKKOS_SCATTER_DUPLICATED, KOKKOS_SCATTER_ATOMIC
->;
+    float *[ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>; //, KOKKOS_LAYOUT,
+    //Kokkos::DefaultExecutionSpace, Kokkos::Experimental::ScatterSum,
+    //KOKKOS_SCATTER_DUPLICATED, KOKKOS_SCATTER_ATOMIC
+//>;
 
 namespace accumulator_var {
   enum a_v { \
