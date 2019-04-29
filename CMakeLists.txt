@@ -23,8 +23,11 @@ endif(ENABLE_SERIAL)
 if (ENABLE_GPU)
     find_package(CUDA)
     if (CUDA_FOUND)
+        message("Found CUDA")
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda -g")
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored") # supress express cuda warnings
+    else()
+        message( FATAL_ERROR "Requested CUDA but cant find it!")
     endif(CUDA_FOUND)
 endif(ENABLE_GPU)
 

@@ -16,7 +16,8 @@ repo_heads_names = [h.name for h in repo_heads]
 #cabana_install = '/Users/bird/Cabana/build/build/install' # not a typo, it's in a dumb path
 
 #platforms = ["Serial", "CPU", "GPU", "UVM"]
-platforms = ["Serial", "CPU", "GPU"]
+#platforms = ["Serial", "CPU", "GPU"]
+platforms = ["CPU", "GPU"]
 #platforms = ["GPU"]
 
 CXX = "g++"
@@ -65,7 +66,10 @@ for plat in platforms:
     install_dir = "build-" + plat
 
     # Do Build
+    print("build_kokkos.sh " + CXX + " " + kokkos_new + " " + install_dir + " " + plat + " " + arch)
     subprocess.check_call(['./build_kokkos.sh', CXX, kokkos_new, install_dir, plat, arch])
+
+    print("./build_cabana.sh " + " " + CXX + " " + os.path.join(kokkos_new,install_dir,'install') + " " + cabana_new + " " + install_dir + " " + plat)
     subprocess.check_call(['./build_cabana.sh', CXX, os.path.join(kokkos_new,install_dir,'install'), cabana_new, install_dir, plat])
 
     # Save dirs, relative to root

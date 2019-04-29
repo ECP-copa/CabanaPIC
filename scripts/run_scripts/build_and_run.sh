@@ -8,8 +8,10 @@ echo '$3 = ' $3 # kokkos install dir
 echo '$4 = ' $4 # cabana install dir
 echo '$5 = ' $5 # platform
 
+export KOKKOS_PROFILE_LIBRARY=`pwd`/kokkos-tools/kp_kernel_timer.so
+
 cd $1 # CD into right folder
-echo "--> Running $5 in $1 with $"
+echo "--> Running $5 in $1 with $2"
 
 KOKKOS_INSTALL_DIR=$3
 CABANA_INSTALL_DIR=$4
@@ -23,6 +25,7 @@ if [[ $platform == "GPU" ]]; then
 elif [[ $platform == "Serial" ]]; then
     options="-D ENABLE_SERIAL=ON"
 fi
+
 
 mkdir build-$platform
 cd build-$platform
