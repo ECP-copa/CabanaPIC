@@ -29,12 +29,6 @@ int main( int argc, char* argv[] )
 
     printf ("#On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
-#ifdef USE_GPU
-    std::cout << "using gpu!" << std::endl;
-#else
-    std::cout << "using cpu!" << std::endl;
-#endif
-
     // Cabana scoping block
     {
 
