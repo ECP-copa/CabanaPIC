@@ -21,6 +21,7 @@ if (ENABLE_SERIAL)
 endif(ENABLE_SERIAL)
 
 if (ENABLE_GPU)
+    add_definitions(-DUSE_GPU=ON)
     find_package(CUDA)
     if (CUDA_FOUND)
         message("Found CUDA")
