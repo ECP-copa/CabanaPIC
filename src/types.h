@@ -31,6 +31,19 @@ using ExecutionSpace = Kokkos::Cuda;
   #endif
 #endif
 
+
+#ifdef USE_GPU
+  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterNonDuplicated
+  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterAtomic
+  //#define KOKKOS_LAYOUT Kokkos::LayoutLeft
+  #define KOKKOS_LAYOUT Kokkos::LayoutRight
+#else
+  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterDuplicated
+  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterNonAtomic
+  #define KOKKOS_LAYOUT Kokkos::LayoutRight
+#endif
+
+
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 //using ExecutionSpace = Kokkos::DefaultExecutionSpace;
@@ -125,17 +138,6 @@ using AccumulatorDataTypes =
 >;
 
 //using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
-
-//#ifdef USE_GPU
-  #define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterNonDuplicated
-  #define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterAtomic
-  //#define KOKKOS_LAYOUT Kokkos::LayoutLeft
-  #define KOKKOS_LAYOUT Kokkos::LayoutRight
-//#else
-  //#define KOKKOS_SCATTER_DUPLICATED Kokkos::Experimental::ScatterDuplicated
-  //#define KOKKOS_SCATTER_ATOMIC Kokkos::Experimental::ScatterNonAtomic
-  //#define KOKKOS_LAYOUT Kokkos::LayoutRight
-//#endif
 
 #define ACCUMULATOR_VAR_COUNT 3
 #define ACCUMULATOR_ARRAY_LENGTH 4
