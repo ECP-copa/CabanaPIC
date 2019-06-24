@@ -24,6 +24,14 @@ An example build line will look something like this:
 cmake -DKOKKOS_DIR=$HOME/tools/kokkos -DCABANA_DIR=$HOME/tools/cabana ..
 ```
 
+To build on GPU, and example build line would be:
+
+```
+cmake -DKOKKOS_DIR=$KOKKOS_INSTALL_DIR -DCABANA_DIR=$CABANA_INSTALL_DIR -D CMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -DENABLE_GPU=ON ..
+```
+
+Remember: Kokkos and Cabana need to be build with GPU support
+
 ## Feature Wishlist
 
 1. Configurable to run in different precisions (real_t to configure float/double)
