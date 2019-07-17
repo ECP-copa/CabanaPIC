@@ -27,9 +27,13 @@ cmake -DKOKKOS_DIR=$HOME/tools/kokkos -DCABANA_DIR=$HOME/tools/cabana ..
 For GPU builds, you additionally need to point the CXX compiler to the Kokkos
 Cuda wrapper, you can do this by doing something like:
 
+
 ```
-CXX=$HOME/tools/kokkos/bin/nvcc_wrapper cmake -DKOKKOS_DIR=$HOME/tools/kokkos -DCABANA_DIR=$HOME/tools/cabana ..
+cmake -DKOKKOS_DIR=$KOKKOS_INSTALL_DIR -DCABANA_DIR=$CABANA_INSTALL_DIR -D CMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -DENABLE_GPU=ON ..
 ```
+
+Remember: Kokkos and Cabana need to be build with GPU support
+
 
 ## Feature Wishlist
 
