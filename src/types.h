@@ -3,9 +3,11 @@
 
 #define real_t float
 
+#include <Kokkos_ScatterView.hpp>
+
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
-#define VLEN 32
+#define VLEN 16 //32
 #endif
 const std::size_t array_size = VLEN;
 
@@ -19,14 +21,14 @@ const size_t cell_blocking = CELL_BLOCK_FACTOR;
 using MemorySpace = Kokkos::CudaUVMSpace;
 using ExecutionSpace = Kokkos::Cuda;
 #else
-#ifdef USE_SERIAL_CPU
-//cpu
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::Serial;
-#else
-using MemorySpace = Cabana::HostSpace;
-using ExecutionSpace = Kokkos::OpenMP;
-#endif
+  #ifdef USE_SERIAL_CPU
+    //cpu
+    using MemorySpace = Cabana::HostSpace;
+    using ExecutionSpace = Kokkos::Serial;
+  #else // CPU Parallel
+    using MemorySpace = Cabana::HostSpace;
+    using ExecutionSpace = Kokkos::OpenMP;
+  #endif
 #endif
 
 // Defaults
@@ -71,11 +73,6 @@ using particle_list_t =
 /////////////// START VPIC TYPE ////////////
 
 #include <grid.h>
-
-#ifdef USE_NON_KOKKOS_TYPES // UNTESTED!
-#include <interpolator.h>
-#include <accumulator.h>
-#else
 
 enum InterpolatorFields
 { // TODO: things in here like EXYZ and CBXYZ are ambigious
@@ -126,8 +123,30 @@ using AccumulatorDataTypes =
     Cabana::MemberTypes<
     float[12] // jx[4] jy[4] jz[4]
 >;
-using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
-#endif
+
+//using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
+
+#define ACCUMULATOR_VAR_COUNT 3
+#define ACCUMULATOR_ARRAY_LENGTH 4
+
+// TODO: should we flatten this out to 1D 12 big?
+using accumulator_array_t = Kokkos::View<float* [ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>;
+
+using accumulator_array_sa_t = Kokkos::Experimental::ScatterView<
+    float *[ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>; //, KOKKOS_LAYOUT,
+    //Kokkos::DefaultExecutionSpace, Kokkos::Experimental::ScatterSum,
+    //KOKKOS_SCATTER_DUPLICATED, KOKKOS_SCATTER_ATOMIC
+//>;
+
+namespace accumulator_var {
+  enum a_v { \
+    jx = 0, \
+    jy = 1, \
+    jz = 2, \
+  };
+}
+
+
 
 enum FieldFields
 {
@@ -141,6 +160,7 @@ enum FieldFields
     FIELD_JFY,
     FIELD_JFZ
 };
+
 using FieldDataTypes = Cabana::MemberTypes<
 /*
   float ex,   ey,   ez,   div_e_err;     // Electric field and div E error

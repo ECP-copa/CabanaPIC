@@ -4,6 +4,16 @@
 
 class Initializer {
     public:
+  // Compute the Courant length on a regular mesh
+  static real_t courant_length( real_t lx, real_t ly, real_t lz,
+				size_t nx, size_t ny, size_t nz ) {
+    real_t w0, w1 = 0;
+    if( nx>1 ) w0 = nx/lx, w1 += w0*w0;
+    if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
+    if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
+    return sqrt(1/w1);
+  }
+  
   static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
         {
 
@@ -32,7 +42,6 @@ class Initializer {
 
             Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_real_cells;
 
-            Parameters::instance().dt = 0.0863562;
 
             Parameters::instance().num_steps = 2500;
 
@@ -51,6 +60,8 @@ class Initializer {
             Parameters::instance().dy = Parameters::instance().len_y / Parameters::instance().ny;
             Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
 
+            Parameters::instance().dt = 0.99*courant_length(Parameters::instance().len_x,Parameters::instance().len_y,Parameters::instance().len_z,Parameters::instance().nx,Parameters::instance().ny,Parameters::instance().nz)/Parameters::instance().c;
+	      
             Parameters::instance().print_run_details();
         }
 

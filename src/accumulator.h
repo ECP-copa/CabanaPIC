@@ -30,16 +30,16 @@ class accumulator_t {
 */
 
 void clear_accumulator_array(
-        field_array_t fields,
-        accumulator_array_t accumulators,
+        field_array_t& fields,
+        accumulator_array_t& accumulators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
         size_t nz
 );
 
 void unload_accumulator_array(
-        field_array_t fields,
-        accumulator_array_t accumulators,
+        field_array_t& fields,
+        accumulator_array_t& accumulators,
         size_t nx, // TODO: we can probably pull these out of global params..
         size_t ny,
         size_t nz,
