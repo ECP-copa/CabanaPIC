@@ -18,12 +18,12 @@
 class interpolator_t {
 
     public:
-        float ex, dexdy, dexdz, d2exdydz;
-        float ey, deydz, deydx, d2eydzdx;
-        float ez, dezdx, dezdy, d2ezdxdy;
-        float cbx, dcbxdx;
-        float cby, dcbydy;
-        float cbz, dcbzdz;
+        real_t ex, dexdy, dexdz, d2exdydz;
+        real_t ey, deydz, deydx, d2eydzdx;
+        real_t ez, dezdx, dezdy, d2ezdxdy;
+        real_t cbx, dcbxdx;
+        real_t cby, dcbydy;
+        real_t cbz, dcbzdz;
 
         interpolator_t() :
             ex(0.0), dexdy(0.0), dexdz(0.0), d2exdydz(0.0),

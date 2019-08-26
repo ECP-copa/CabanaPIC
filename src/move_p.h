@@ -98,13 +98,13 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
            s_midz = p->dz;
            */
 
-        float s_midx = position_x.access(s, i);
-        float s_midy = position_y.access(s, i);
-        float s_midz = position_z.access(s, i);
+        real_t s_midx = position_x.access(s, i);
+        real_t s_midy = position_y.access(s, i);
+        real_t s_midz = position_z.access(s, i);
 
-        float s_dispx = pm.dispx;
-        float s_dispy = pm.dispy;
-        float s_dispz = pm.dispz;
+        real_t s_dispx = pm.dispx;
+        real_t s_dispy = pm.dispy;
+        real_t s_dispz = pm.dispz;
 
         s_dir[0] = (s_dispx>0) ? 1 : -1;
         s_dir[1] = (s_dispy>0) ? 1 : -1;
@@ -143,7 +143,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 
         int ii = cell.access(s, i);
 
-        //a = (float *)(a0 + ii);
+        //a = (real_t *)(a0 + ii);
 
         //1D only
         _asa(ii,accumulator_var::jx, 0) += 4.0f*q*s_dispx;

@@ -69,7 +69,7 @@ void uncenter_particles(
             real_t uy = velocity_y.access(s,i);   // Load velocity
             real_t uz = velocity_z.access(s,i);   // Load velocity
 
-            real_t v0 = qdt_4mc/(float)sqrt(one + (ux*ux + (uy*uy + uz*uz)));
+            real_t v0 = qdt_4mc/(real_t)sqrt(one + (ux*ux + (uy*uy + uz*uz)));
 
             // Borris push
             // Boris - scalars

@@ -59,7 +59,7 @@ enum grid_enums {
 typedef struct grid {
 
   // System of units
-  float dt, cvac, eps0;
+  real_t dt, cvac, eps0;
 
   // Time stepper.  The simulation time is given by
   // t = g->t0 + (double)g->dt*(double)g->step
@@ -67,15 +67,15 @@ typedef struct grid {
   double t0;                // Simulation time corresponding to step 0
 
   // Phase 2 grid data structures 
-  float x0, y0, z0;         // Min corner local domain (must be coherent)
-  float x1, y1, z1;         // Max corner local domain (must be coherent)
+  real_t x0, y0, z0;         // Min corner local domain (must be coherent)
+  real_t x1, y1, z1;         // Max corner local domain (must be coherent)
   int   nx, ny, nz;         // Local voxel mesh resolution.  Voxels are
                             // indexed FORTRAN style 0:nx+1,0:ny+1,0:nz+1
                             // with voxels 1:nx,1:ny,1:nz being non-ghost
                             // voxels.
-  float dx, dy, dz, dV;     // Cell dimensions and volume (CONVENIENCE ...
+  real_t dx, dy, dz, dV;     // Cell dimensions and volume (CONVENIENCE ...
                             // USE x0,x1 WHEN DECIDING WHICH NODE TO USE!)
-  float rdx, rdy, rdz, r8V; // Inverse voxel dimensions and one over
+  real_t rdx, rdy, rdz, r8V; // Inverse voxel dimensions and one over
                             // eight times the voxel volume (CONVENIENCE)
   int   sx, sy, sz, nv;     // Voxel indexing x-, y-,z- strides and the
                             // number of local voxels (including ghosts,

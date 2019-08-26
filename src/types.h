@@ -56,13 +56,13 @@ enum UserParticleFields
 // Designate the types that the particles will hold.
 using ParticleDataTypes =
 Cabana::MemberTypes<
-    float,                        // (0) x-position
-    float,                        // (1) y-position
-    float,                        // (2) z-position
-    float,                        // (3) x-velocity
-    float,                        // (4) y-velocity
-    float,                        // (5) z-velocity
-    float,                        // (6) weight
+    real_t,                        // (0) x-position
+    real_t,                        // (1) y-position
+    real_t,                        // (2) z-position
+    real_t,                        // (3) x-velocity
+    real_t,                        // (4) y-velocity
+    real_t,                        // (5) z-velocity
+    real_t,                        // (6) weight
     int                           // (7) Cell index
 >;
 
@@ -98,30 +98,30 @@ enum InterpolatorFields
 
     using InterpolatorDataTypes =
         Cabana::MemberTypes<
-        float, //  ex,
-        float , // dexdy,
-        float , // dexdz,
-        float , // d2exdydz,
-        float , // ey,
-        float , // deydz,
-        float , // deydx,
-        float , // d2eydzdx,
-        float , // ez,
-        float , // dezdx,
-        float , // dezdy,
-        float , // d2ezdxdy,
+        real_t, //  ex,
+        real_t , // dexdy,
+        real_t , // dexdz,
+        real_t , // d2exdydz,
+        real_t , // ey,
+        real_t , // deydz,
+        real_t , // deydx,
+        real_t , // d2eydzdx,
+        real_t , // ez,
+        real_t , // dezdx,
+        real_t , // dezdy,
+        real_t , // d2ezdxdy,
         // Below here is not need for ES? EM only?
-        float , // cbx,
-        float , // dcbxdx,
-        float , // cby,
-        float , // dcbydy,
-        float , // cbz,
-        float // dcbzdz,
+        real_t , // cbx,
+        real_t , // dcbxdx,
+        real_t , // cby,
+        real_t , // dcbydy,
+        real_t , // cbz,
+        real_t // dcbzdz,
         >;
     using interpolator_array_t = Cabana::AoSoA<InterpolatorDataTypes,MemorySpace,cell_blocking>;
 using AccumulatorDataTypes =
     Cabana::MemberTypes<
-    float[12] // jx[4] jy[4] jz[4]
+    real_t[12] // jx[4] jy[4] jz[4]
 >;
 
 //using accumulator_array_t = Cabana::AoSoA<AccumulatorDataTypes,MemorySpace,cell_blocking>;
@@ -130,10 +130,10 @@ using AccumulatorDataTypes =
 #define ACCUMULATOR_ARRAY_LENGTH 4
 
 // TODO: should we flatten this out to 1D 12 big?
-using accumulator_array_t = Kokkos::View<float* [ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>;
+using accumulator_array_t = Kokkos::View<real_t* [ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>;
 
 using accumulator_array_sa_t = Kokkos::Experimental::ScatterView<
-    float *[ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>; //, KOKKOS_LAYOUT,
+    real_t *[ACCUMULATOR_VAR_COUNT][ACCUMULATOR_ARRAY_LENGTH]>; //, KOKKOS_LAYOUT,
     //Kokkos::DefaultExecutionSpace, Kokkos::Experimental::ScatterSum,
     //KOKKOS_SCATTER_DUPLICATED, KOKKOS_SCATTER_ATOMIC
 //>;
@@ -171,15 +171,15 @@ using FieldDataTypes = Cabana::MemberTypes<
   material_id fmatx, fmaty, fmatz, cmat; // Material at face and cell centers
   */
 
-  float, // ex
-  float, // ey
-  float, // ez
-  float, // cbx
-  float, // cby
-  float, // cbz
-  float, // jfx
-  float, // jfy
-  float // jfz
+  real_t, // ex
+  real_t, // ey
+  real_t, // ez
+  real_t, // cbx
+  real_t, // cby
+  real_t, // cbz
+  real_t, // jfx
+  real_t, // jfy
+  real_t // jfz
 >;
 
 using field_array_t = Cabana::AoSoA<FieldDataTypes,MemorySpace,cell_blocking>;
@@ -187,7 +187,7 @@ using field_array_t = Cabana::AoSoA<FieldDataTypes,MemorySpace,cell_blocking>;
 // TODO: should this be in it's own file?
 class particle_mover_t {
     public:
-  float dispx, dispy, dispz; // Displacement of particle
+  real_t dispx, dispy, dispz; // Displacement of particle
   int32_t i;                 // Index of the particle to move
 };
 

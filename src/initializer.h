@@ -66,9 +66,9 @@ class Initializer {
 	    
         }
 
-        static float rand_float(float min = 0, float max = 1)
+        static real_t rand_float(real_t min = 0, real_t max = 1)
         {
-            return min + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max-min)));
+            return min + static_cast <real_t> (rand()) /( static_cast <real_t> (RAND_MAX/(max-min)));
         }
 
         // Function to intitialize the particles.
@@ -87,7 +87,7 @@ class Initializer {
             auto weight = particles.slice<Weight>();
             auto cell = particles.slice<Cell_Index>();
 
-            float v0 = Parameters::instance().v0;
+            real_t v0 = Parameters::instance().v0;
 
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
@@ -104,10 +104,10 @@ class Initializer {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5f*dxp-1.f; //rand_float(-1.0f, 1.0f);
+                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f);
                     position_x.access(s,i) = x;
-                    position_y.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0.f; //rand_float(-1.0f, 1.0f);
+                    position_y.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
 
 
                     weight.access(s,i) = w;
