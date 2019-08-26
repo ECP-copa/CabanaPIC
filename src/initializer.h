@@ -45,10 +45,10 @@ class Initializer {
 
             Parameters::instance().num_steps = 2500;
 
-            Parameters::instance().v0 = 0.0866025403784439*4.0;
+            Parameters::instance().v0 = 0.0866025403784439;
             real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
-
-            Parameters::instance().len_x_global = 0.628318530717959*(gam*sqrt(gam))*4.0; //default_grid_len;
+	      
+            Parameters::instance().len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
             Parameters::instance().len_y_global = default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
 
@@ -61,8 +61,9 @@ class Initializer {
             Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
 
             Parameters::instance().dt = 0.99*courant_length(Parameters::instance().len_x,Parameters::instance().len_y,Parameters::instance().len_z,Parameters::instance().nx,Parameters::instance().ny,Parameters::instance().nz)/Parameters::instance().c;
-	      
+	    Parameters::instance().n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
             Parameters::instance().print_run_details();
+	    
         }
 
         static float rand_float(float min = 0, float max = 1)
@@ -98,7 +99,7 @@ class Initializer {
                     int sign =  -1;
                     size_t pi2 = (s)*particle_list_t::vector_length+i;
                     size_t pi = ((pi2) / 2);
-                    if (i%2 == 0) {
+                    if (pi2%2 == 0) {
                         sign = 1;
                     }
                     size_t pic = (2*pi)%nppc;
@@ -115,14 +116,14 @@ class Initializer {
                     //int pre_ghost = (s % Parameters::instance().num_real_cells);
                     //   size_t ix, iy, iz;
 
-                    size_t pre_ghost = (2*pi/nppc)+1;
+                    size_t pre_ghost = (2*pi/nppc);
 
-                    cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) ; //13; //allow_for_ghosts(pre_ghost);
+                    cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
 
-                    // Initialize velocity.
+                    // Initialize velocity.(each cell length is 2)
                     real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
                     //
-                    if (pi2%2 == 1) { sign = -1; }
+
                     real_t gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0 *gam*(1.0+na); //0.1;
                     velocity_y.access(s,i) = 0;
