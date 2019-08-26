@@ -24,10 +24,11 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		real_t dt_eps0
                 )
         {
-            Solver_Type::advance_e( fields, px, py, pz, nx, ny, nz );
+	  Solver_Type::advance_e( fields, px, py, pz, nx, ny, nz, dt_eps0);
         }
 };
 
@@ -56,7 +57,8 @@ class ES_Field_Solver
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		real_t dt_eps0
         )
         {
             auto ex = fields.slice<FIELD_EX>();
@@ -75,7 +77,7 @@ class ES_Field_Solver
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
-                const float cj = 1; // TODO: g->dt/g->eps0;
+	      const float cj =dt_eps0;
                 ex(i) = ex(i) + ( - cj * jfx(i) ) ;
                 ey(i) = ey(i) + ( - cj * jfy(i) ) ;
                 ez(i) = ez(i) + ( - cj * jfz(i) ) ;
@@ -110,7 +112,7 @@ class ES_Field_Solver_1D
             real_t e_tot_energy=0;
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
             Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
-            return e_tot_energy;
+            return e_tot_energy*0.5f;
         }
 
         void advance_e(
@@ -120,7 +122,8 @@ class ES_Field_Solver_1D
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		real_t dt_eps0
         )
         {
             auto ex = fields.slice<FIELD_EX>();
@@ -130,7 +133,7 @@ class ES_Field_Solver_1D
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
-                const float cj = 1; // TODO: g->dt/g->eps0;
+                const float cj = dt_eps0;
                 ex(i) = ex(i) + ( - cj * jfx(i) ) ;
             };
 
@@ -153,7 +156,8 @@ class EM_Field_Solver
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		real_t dt_eps0
                 )
         {
             //f0 = &f(x,  y,  z  );
@@ -253,7 +257,8 @@ class EM_Field_Solver
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		real_t dt_eps0
         )
         {
             // TODO: enable

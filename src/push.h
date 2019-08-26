@@ -210,7 +210,7 @@ void push(
                 //_a(ii,2) = 0;
                 //_a(ii,3) = 0;
 
-                accumulators_scatter_access(ii, accumulator_var::jx, 0) += q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jx, 0) += 4.0f*q*ux;
                 accumulators_scatter_access(ii, accumulator_var::jx, 1) += 0.0;
                 accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
                 accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;

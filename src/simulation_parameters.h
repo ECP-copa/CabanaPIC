@@ -22,9 +22,10 @@ template <class real_> class Parameters_
         const real_ mu; // permeability of free space
         const real_ c; // Speed of light
         const real_ eps; // permittivity of free space
-        const real_ n0; // Background plasma density
+
 
         // Params
+        real_ n0; // Background plasma density
         size_t num_species;
         size_t NX_global;
         size_t NY_global;

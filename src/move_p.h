@@ -146,7 +146,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         //a = (float *)(a0 + ii);
 
         //1D only
-        _asa(ii,accumulator_var::jx, 0) += q*s_dispx;
+        _asa(ii,accumulator_var::jx, 0) += 4.0f*q*s_dispx;
         _asa(ii,accumulator_var::jx, 1) += 0.0;
         _asa(ii,accumulator_var::jx, 2) += 0.0;
         _asa(ii,accumulator_var::jx, 3) += 0.0;

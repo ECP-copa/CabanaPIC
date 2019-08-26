@@ -37,8 +37,8 @@ int main( int argc, char* argv[] )
         // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
-        size_t npc = 4000;
-        Initializer::initialize_params(64, npc);
+        size_t npc = 8000;
+        Initializer::initialize_params(32, npc);
 
         // Cache some values locally for printing
         const size_t nx = Parameters::instance().nx;
@@ -61,18 +61,19 @@ int main( int argc, char* argv[] )
         real_t Lx   = Parameters::instance().len_x;
         real_t Ly   = Parameters::instance().len_y;
         real_t Lz   = Parameters::instance().len_z;
-        real_t nppc = Parameters::instance().NPPC;
+        size_t nppc = Parameters::instance().NPPC;
+	real_t eps0 = Parameters::instance().eps;
         real_t Npe  = n0*Lx*Ly*Lz;
-        real_t Ne= nppc*nx*ny*nz;
-        real_t qsp = ec;
+        size_t Ne=  (nppc*nx*ny*nz);
+        real_t qsp = -ec;
         real_t qdt_2mc = qsp*dt/(2*me*c);
         real_t cdt_dx = c*dt/dx;
         real_t cdt_dy = c*dt/dy;
         real_t cdt_dz = c*dt/dz;
-
+	real_t dt_eps0 = dt/eps0;
         real_t frac = 1.0f;
-        real_t we = Npe/Ne;
-
+        real_t we = (real_t) Npe/(real_t) Ne;
+	
         // Create the particle list.
         particle_list_t particles( num_particles );
         //logger << "size " << particles.size() << std::endl;
@@ -189,7 +190,7 @@ int main( int argc, char* argv[] )
             //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
 
             // Advance the electric field from E_0 to E_1
-            field_solver.advance_e(fields, px, py, pz, nx, ny, nz);
+            field_solver.advance_e(fields, px, py, pz, nx, ny, nz, dt_eps0);
 
             //     // Half advance the magnetic field from B_{1/2} to B_1
             //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
