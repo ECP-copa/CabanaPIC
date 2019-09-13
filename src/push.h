@@ -241,17 +241,17 @@ void push(
                 // printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
                 //         v0, ii, ux, uy, uz);
 
-                // CALC_J( y,z,x );
-                // accumulators_scatter_access(ii, accumulator_var::jy, 0) += v0; // q*ux;
-                // accumulators_scatter_access(ii, accumulator_var::jy, 1) += v1; // 0.0;
-                // accumulators_scatter_access(ii, accumulator_var::jy, 2) += v2; // 0.0;
-                // accumulators_scatter_access(ii, accumulator_var::jy, 3) += v3; // 0.0;
+                CALC_J( y,z,x );
+                accumulators_scatter_access(ii, accumulator_var::jy, 0) += v0; // q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jy, 1) += v1; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jy, 2) += v2; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jy, 3) += v3; // 0.0;
 
-                // CALC_J( z,x,y );
-                // accumulators_scatter_access(ii, accumulator_var::jz, 0) += v0; // q*ux;
-                // accumulators_scatter_access(ii, accumulator_var::jz, 1) += v1; // 0.0;
-                // accumulators_scatter_access(ii, accumulator_var::jz, 2) += v2; // 0.0;
-                // accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
+                CALC_J( z,x,y );
+                accumulators_scatter_access(ii, accumulator_var::jz, 0) += v0; // q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jz, 1) += v1; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jz, 2) += v2; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
 
                 #undef CALC_J
 

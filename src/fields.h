@@ -19,132 +19,126 @@ void serial_update_ghosts(
     }
     else { // assume periodic
 
-      int x,y,z;
-      for ( x = 1; x <= nx; x++){
-      	//y first
-      	int to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
-      	int from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
-      	float tmp_slice_x = slice_x(to);
-	//	printf("slice x %d:  %e = %e + %e \n", x, slice_x(to), tmp_slice_x, slice_x(from) );		
-      	slice_x(to) += slice_x(from);
-      	slice_x(from) += tmp_slice_x;
+      // int x,y,z;
+      // for ( x = 1; x <= nx; x++){
+      // 	//y first
+      // 	int to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
+      // 	int from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
+      // 	float tmp_slice_x = slice_x(to);
+      // 	//	printf("slice x %d:  %e = %e + %e \n", x, slice_x(to), tmp_slice_x, slice_x(from) );		
+      // 	slice_x(to) += slice_x(from);
+      // 	slice_x(from) += tmp_slice_x;
 
 	
-      	to   = VOXEL(x, 1   , 2, nx, ny, nz, ng);
-      	from = VOXEL(x, ny+1, 2, nx, ny, nz, ng);
-      	tmp_slice_x = slice_x(to);
-      	slice_x(to) += slice_x(from);
-      	slice_x(from) += tmp_slice_x;
+      // 	to   = VOXEL(x, 1   , 2, nx, ny, nz, ng);
+      // 	from = VOXEL(x, ny+1, 2, nx, ny, nz, ng);
+      // 	tmp_slice_x = slice_x(to);
+      // 	slice_x(to) += slice_x(from);
+      // 	slice_x(from) += tmp_slice_x;
       
-      	//z next
-      	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
-      	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
-      	tmp_slice_x = slice_x(to);
-      	slice_x(to) += slice_x(from);
-      	slice_x(from) += tmp_slice_x;	
+      // 	//z next
+      // 	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
+      // 	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
+      // 	tmp_slice_x = slice_x(to);
+      // 	slice_x(to) += slice_x(from);
+      // 	slice_x(from) += tmp_slice_x;	
 
-      	to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
-      	from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
-      	tmp_slice_x = slice_x(to);
-      	slice_x(to) += slice_x(from);
-      	slice_x(from) += tmp_slice_x;	
-	//printf("slice x %d, jfx=%e,%e,", x, slice_x(to),slice_x(from));
-      	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
-      	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
-	//printf("%e,%e\n",slice_x(to),slice_x(from));	
+      // 	to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
+      // 	from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
+      // 	tmp_slice_x = slice_x(to);
+      // 	slice_x(to) += slice_x(from);
+      // 	slice_x(from) += tmp_slice_x;	
+      // 	//printf("slice x %d, jfx=%e,%e,", x, slice_x(to),slice_x(from));
+      // 	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
+      // 	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
+      // 	//printf("%e,%e\n",slice_x(to),slice_x(from));	
+      // }
+
+
+      // Copy x from RHS -> LHS
+      int x = 1;
+      // (1 .. nz+1)
+      for (int z = 1; z < nz+2; z++)
+      {
+          for (int y = 1; y < ny+2; y++)
+          {
+              // TODO: loop over ng?
+              int to = VOXEL(x, y, z, nx, ny, nz, ng);
+              int from = VOXEL(nx+1, y, z, nx, ny, nz, ng);
+
+              // Only copy jf? can we copy more values?
+              // TODO: once we're in parallel this needs to be a second loop with
+              // a buffer
+              // Cache value to so we don't lose it during the update
+              float tmp_slice_y = slice_y(to);
+              float tmp_slice_z = slice_z(to);
+
+              slice_y(to) += slice_y(from);
+              slice_z(to) += slice_z(from);
+              // printf("slice y %e = %e + %e \n", slice_y(to), tmp_slice_y, slice_y(from) );
+              // printf("slice z %e = %e + %e \n", slice_z(to), tmp_slice_z, slice_z(from) );
+
+              // printf("%e + %e = %e \n", tmp_slice_y, slice_y(from), slice_y(to) );
+
+              // TODO: this could just be assignment to slice_y(to)
+              slice_y(from) += tmp_slice_y;
+              slice_z(from) += tmp_slice_z;
+
+              // TODO: does this copy into the corners twice?
+          }
       }
 
-      // for(x=0; x<=nx+1; x++)
-      // 	for(y=0; y<=ny+1; y++)
-      // 	  for(z=0; z<=nz+1; z++){
-      // 	    int       	to   = VOXEL(x, y, z   , nx, ny, nz, ng);
-      // 	    if((y!=1&&y!=2)||(z!=1&&z!=2)) printf("slice xyz= %d,%d,%d, jfx=%e\n", x,y,z, slice_x(to));
-      // 	  }
-	
-        // // Copy x from RHS -> LHS
-        // int x = 1;
-        // // (1 .. nz+1)
-        // for (int z = 1; z < nz+2; z++)
-        // {
-        //     for (int y = 1; y < ny+2; y++)
-        //     {
-        //         // TODO: loop over ng?
-        //         int to = VOXEL(x, y, z, nx, ny, nz, ng);
-        //         int from = VOXEL(nx+1, y, z, nx, ny, nz, ng);
+      int y = 1;
+      for (int z = 1; z < nz+2; z++)
+      {
+          for (int x = 1; x < nx+2; x++)
+          {
+              // TODO: loop over ng?
+              int to = VOXEL(x, y, z, nx, ny, nz, ng);
+              int from = VOXEL(x, ny+1, z, nx, ny, nz, ng);
 
-        //         // Only copy jf? can we copy more values?
-        //         // TODO: once we're in parallel this needs to be a second loop with
-        //         // a buffer
-        //         // Cache value to so we don't lose it during the update
-        //         float tmp_slice_y = slice_y(to);
-        //         float tmp_slice_z = slice_z(to);
+              // Only copy jf? can we copy more values?
+              // TODO: once we're in parallel this needs to be a second loop with
+              // a buffer
+              // Cache value to so we don't lose it during the update
+              float tmp_slice_x = slice_x(to);
+              float tmp_slice_z = slice_z(to);
 
-        //         slice_y(to) += slice_y(from);
-        //         slice_z(to) += slice_z(from);
-        //         // printf("slice y %e = %e + %e \n", slice_y(to), tmp_slice_y, slice_y(from) );
-        //         // printf("slice z %e = %e + %e \n", slice_z(to), tmp_slice_z, slice_z(from) );
+              slice_x(to) += slice_x(from);
+              slice_z(to) += slice_z(from);
+              // printf("slice x %e = %e + %e \n", slice_x(to), tmp_slice_x, slice_x(from) );
+              // printf("slice z %e = %e + %e \n", slice_z(to), tmp_slice_z, slice_z(from) );
 
-        //         // printf("%e + %e = %e \n", tmp_slice_y, slice_y(from), slice_y(to) );
+              slice_x(from) += tmp_slice_x;
+              slice_z(from) += tmp_slice_z;
+          }
+      }
 
-        //         // TODO: this could just be assignment to slice_y(to)
-        //         slice_y(from) += tmp_slice_y;
-        //         slice_z(from) += tmp_slice_z;
+      int z = 1;
+      for (int y = 1; y < ny+2; y++)
+      {
+          for (int x = 1; x < nx+2; x++)
+          {
+              // TODO: loop over ng?
+              int to = VOXEL(x, y, z, nx, ny, nz, ng);
+              int from = VOXEL(x, y, nz+1, nx, ny, nz, ng);
 
-        //         // TODO: does this copy into the corners twice?
-        //     }
-        // }
+              // Only copy jf? can we copy more values?
+              // TODO: once we're in parallel this needs to be a second loop with
+              // a buffer
+              // Cache value to so we don't lose it during the update
+              float tmp_slice_x = slice_x(to);
+              float tmp_slice_y = slice_y(to);
 
-        // int y = 1;
-        // for (int z = 1; z < nz+2; z++)
-        // {
-        //     for (int x = 1; x < nx+2; x++)
-        //     {
-        //         // TODO: loop over ng?
-        //         int to = VOXEL(x, y, z, nx, ny, nz, ng);
-        //         int from = VOXEL(x, ny+1, z, nx, ny, nz, ng);
+              slice_x(to) += slice_x(from);
+              slice_y(to) += slice_y(from);
+              // printf("slice x %e = %e + %e \n", slice_x(to), tmp_slice_x, slice_x(from) );
+              // printf("slice y %e = %e + %e \n", slice_y(to), tmp_slice_y, slice_y(from) );
 
-        //         // Only copy jf? can we copy more values?
-        //         // TODO: once we're in parallel this needs to be a second loop with
-        //         // a buffer
-        //         // Cache value to so we don't lose it during the update
-        //         float tmp_slice_x = slice_x(to);
-        //         float tmp_slice_z = slice_z(to);
-
-        //         slice_x(to) += slice_x(from);
-        //         slice_z(to) += slice_z(from);
-        //         // printf("slice x %e = %e + %e \n", slice_x(to), tmp_slice_x, slice_x(from) );
-        //         // printf("slice z %e = %e + %e \n", slice_z(to), tmp_slice_z, slice_z(from) );
-
-        //         slice_x(from) += tmp_slice_x;
-        //         slice_z(from) += tmp_slice_z;
-        //     }
-        // }
-
-        // int z = 1;
-        // for (int y = 1; y < ny+2; y++)
-        // {
-        //     for (int x = 1; x < nx+2; x++)
-        //     {
-        //         // TODO: loop over ng?
-        //         int to = VOXEL(x, y, z, nx, ny, nz, ng);
-        //         int from = VOXEL(x, y, nz+1, nx, ny, nz, ng);
-
-        //         // Only copy jf? can we copy more values?
-        //         // TODO: once we're in parallel this needs to be a second loop with
-        //         // a buffer
-        //         // Cache value to so we don't lose it during the update
-        //         float tmp_slice_x = slice_x(to);
-        //         float tmp_slice_y = slice_y(to);
-
-        //         slice_x(to) += slice_x(from);
-        //         slice_y(to) += slice_y(from);
-        //         // printf("slice x %e = %e + %e \n", slice_x(to), tmp_slice_x, slice_x(from) );
-        //         // printf("slice y %e = %e + %e \n", slice_y(to), tmp_slice_y, slice_y(from) );
-
-        //         slice_x(from) += tmp_slice_x;
-        //         slice_y(from) += tmp_slice_y;
-        //     }
-        // }
+              slice_x(from) += tmp_slice_x;
+              slice_y(from) += tmp_slice_y;
+          }
+      }
     }
 }
 // Policy base class
@@ -250,9 +244,13 @@ class ES_Field_Solver_1D
                 )
         {
             auto ex = fields.slice<FIELD_EX>();
+            auto ey = fields.slice<FIELD_EY>();
+            auto ez = fields.slice<FIELD_EZ>();
             auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
             {
-                lsum += ex(i) * ex(i);
+                lsum += ex(i) * ex(i)
+		       +ey(i) * ey(i)
+		       +ez(i) * ez(i);
             };
 
             real_t e_tot_energy=0;
@@ -274,6 +272,8 @@ class ES_Field_Solver_1D
         {
             const size_t ng = Parameters::instance().num_ghosts;	  
             auto ex = fields.slice<FIELD_EX>();
+            auto ey = fields.slice<FIELD_EY>();
+            auto ez = fields.slice<FIELD_EZ>();
             auto jfx = fields.slice<FIELD_JFX>();
             auto jfy = fields.slice<FIELD_JFY>();
             auto jfz = fields.slice<FIELD_JFZ>();
@@ -286,6 +286,8 @@ class ES_Field_Solver_1D
             {
                 const real_t cj = dt_eps0;
                 ex(i) = ex(i) + ( - cj * jfx(i) ) ;
+                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
+                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
