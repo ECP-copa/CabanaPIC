@@ -10,8 +10,8 @@ void load_interpolator_array(
         )
 {
     size_t x_offset = 1; // VOXEL(x+1,y,  z,   nx,ny,nz);
-    size_t y_offset = (1*nx); // VOXEL(x,  y+1,z,   nx,ny,nz);
-    size_t z_offset = (1*nx*ny); // VOXEL(x,  y,  z+1, nx,ny,nz);
+    size_t y_offset = (1*(nx+ng*2)); // VOXEL(x,  y+1,z,   nx,ny,nz);
+    size_t z_offset = (1*(nx+ng*2)*(ny+ng*2)); // VOXEL(x,  y,  z+1, nx,ny,nz);
 
     auto field_ex = fields.slice<FIELD_EX>();
     auto field_ey = fields.slice<FIELD_EY>();
@@ -57,13 +57,12 @@ void load_interpolator_array(
         real_t w2 = field_ex(i + z_offset);            // pfz->ex;
         real_t w3 = field_ex(i + y_offset + z_offset); // pfyz->ex;
 
-        //1D only
         // TODO: make this not use only w0
-        interp_ex(i)       = w0; //fourth*( (w3 + w0) + (w1 + w2) );
+        interp_ex(i)       = fourth*( (w3 + w0) + (w1 + w2) );
         interp_dexdy(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_dexdz(i)    = fourth*( (w3 - w0) - (w1 - w2) );
         interp_d2exdydz(i) = fourth*( (w3 + w0) - (w1 + w2) );
-
+	//	printf("ex: xyz %d,%d,%d:  %e,%e,%e,%e \n", x,y,z,w0,w1,w2,w3) ;		
         // ey interpolation coefficients
         w0 = field_ey(i);
         w1 = field_ey(i + z_offset); // pfz->ey;

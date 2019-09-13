@@ -121,17 +121,17 @@ void push(
             real_t dy = position_y.access(s,i);   // Load position
             real_t dz = position_z.access(s,i);   // Load position
 
-            // real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
-            //         dz*( dexdz + dy*d2exdydz ) );
-            // real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
-            //         dx*( deydx + dz*d2eydzdx ) );
-            // real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
-            //         dy*( dezdy + dx*d2ezdxdy ) );
+            real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
+                    dz*( dexdz + dy*d2exdydz ) );
+            real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
+                    dx*( deydx + dz*d2eydzdx ) );
+            real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
+                    dy*( dezdy + dx*d2ezdxdy ) );
 
             //1D only
-            real_t hax = qdt_2mc*ex;
-            real_t hay = 0;
-            real_t haz = 0;
+            //real_t hax = qdt_2mc*ex;
+            // real_t hay = 0;
+            // real_t haz = 0;
 
             cbx  = cbx + dx*dcbxdx;             // Interpolate B
             cby  = cby + dy*dcbydy;
