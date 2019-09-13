@@ -210,36 +210,50 @@ void push(
                 //_a(ii,2) = 0;
                 //_a(ii,3) = 0;
 
-                accumulators_scatter_access(ii, accumulator_var::jx, 0) += 4.0f*q*ux;
-                accumulators_scatter_access(ii, accumulator_var::jx, 1) += 0.0;
-                accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
-                accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jx, 0) += 4.0f*q*ux;
+                // accumulators_scatter_access(ii, accumulator_var::jx, 1) += 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;
 
-                // #     define ACCUMULATE_J(X,Y,Z,offset)                                 \
-                //                     v4  = q*u##X;   /* v2 = q ux                            */        \
-                //                     v1  = v4*d##Y;  /* v1 = q ux dy                         */        \
-                //                     v0  = v4-v1;    /* v0 = q ux (1-dy)                     */        \
-                //                     v1 += v4;       /* v1 = q ux (1+dy)                     */        \
-                //                     v4  = one+d##Z; /* v4 = 1+dz                            */        \
-                //                     v2  = v0*v4;    /* v2 = q ux (1-dy)(1+dz)               */        \
-                //                     v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */        \
-                //                     v4  = one-d##Z; /* v4 = 1-dz                            */        \
-                //                     v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */        \
-                //                     v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */        \
-                //                     v0 += v5;       /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */        \
-                //                     v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */        \
-                //                     v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */        \
-                //                     v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */        \
-                //                     _a(ii,offset+0) += v0; \
-                //                     _a(ii,offset+1) += v1; \
-                //                     _a(ii,offset+2) += v2; \
-                //                     _a(ii,offset+3) += v3;
+                #define CALC_J(X,Y,Z)                                        \
+                v4  = q*u##X;   /* v2 = q ux                            */   \
+                v1  = v4*d##Y;  /* v1 = q ux dy                         */   \
+                v0  = v4-v1;    /* v0 = q ux (1-dy)                     */   \
+                v1 += v4;       /* v1 = q ux (1+dy)                     */   \
+                v4  = one+d##Z; /* v4 = 1+dz                            */   \
+                v2  = v0*v4;    /* v2 = q ux (1-dy)(1+dz)               */   \
+                v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */   \
+                v4  = one-d##Z; /* v4 = 1-dz                            */   \
+                v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */   \
+                v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */   \
+                v0 += v5;       /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */   \
+                v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */   \
+                v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */   \
+                v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */
 
-                //                     ACCUMULATE_J( x,y,z, 0 );
-                //                     ACCUMULATE_J( y,z,x, 4 );
-                //                     ACCUMULATE_J( z,x,y, 8 );
+                CALC_J( x,y,z );
+                //std::cout << "Contributing " << v0 << ", " << v1 << ", " << v2 << ", " << v3 << std::endl;
+                accumulators_scatter_access(ii, accumulator_var::jx, 0) += q*ux*(1-dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 1) += q*ux*(1+dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 2) += q*ux*(1-dy)*(1+dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 3) += q*ux*(1+dy)*(1+dz);
 
-                // #     undef ACCUMULATE_J
+                // printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
+                //         v0, ii, ux, uy, uz);
+
+                // CALC_J( y,z,x );
+                // accumulators_scatter_access(ii, accumulator_var::jy, 0) += v0; // q*ux;
+                // accumulators_scatter_access(ii, accumulator_var::jy, 1) += v1; // 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jy, 2) += v2; // 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jy, 3) += v3; // 0.0;
+
+                // CALC_J( z,x,y );
+                // accumulators_scatter_access(ii, accumulator_var::jz, 0) += v0; // q*ux;
+                // accumulators_scatter_access(ii, accumulator_var::jz, 1) += v1; // 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jz, 2) += v2; // 0.0;
+                // accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
+
+                #undef CALC_J
 
             }
             else
