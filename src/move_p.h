@@ -181,17 +181,17 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
        _asa(ii, accumulator_var::jx, 2) += v2; // 0.0;
        _asa(ii, accumulator_var::jx, 3) += v3; // 0.0;
 
-        // accumulate_j(y,z,x);
-        // _asa(ii, accumulator_var::jy, 0) += v0; // q*ux;
-        // _asa(ii, accumulator_var::jy, 1) += v1; // 0.0;
-        // _asa(ii, accumulator_var::jy, 2) += v2; // 0.0;
-        // _asa(ii, accumulator_var::jy, 3) += v3; // 0.0;
+       accumulate_j(y,z,x);
+       _asa(ii, accumulator_var::jy, 0) += v0; // q*ux;
+       _asa(ii, accumulator_var::jy, 1) += v1; // 0.0;
+       _asa(ii, accumulator_var::jy, 2) += v2; // 0.0;
+       _asa(ii, accumulator_var::jy, 3) += v3; // 0.0;
 
-        // accumulate_j(z,x,y);
-        // _asa(ii, accumulator_var::jz, 0) += v0; // q*ux;
-        // _asa(ii, accumulator_var::jz, 1) += v1; // 0.0;
-        // _asa(ii, accumulator_var::jz, 2) += v2; // 0.0;
-        // _asa(ii, accumulator_var::jz, 3) += v3; // 0.0;
+       accumulate_j(z,x,y);
+       _asa(ii, accumulator_var::jz, 0) += v0; // q*ux;
+       _asa(ii, accumulator_var::jz, 1) += v1; // 0.0;
+       _asa(ii, accumulator_var::jz, 2) += v2; // 0.0;
+       _asa(ii, accumulator_var::jz, 3) += v3; // 0.0;
 
 #   undef accumulate_j
 
@@ -259,10 +259,10 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         if( v0>0 ) face += 3;
 
         size_t ix, iy, iz;
-        //RANK_TO_INDEX(ii, ix, iy, iz, (nx-1+(2*num_ghosts)), (ny-1+(2*num_ghosts)));
-        ix = ii-((nx+2)*(ny+2)+(nx+2)); //ii-12;
-        iy = 1;
-        iz = 1;
+        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+        // ix = ii-((nx+2)*(ny+2)+(nx+2)); //ii-12;
+        // iy = 1;
+        // iz = 1;
 
         if (face == 0) { ix--; }
         if (face == 1) { iy--; }
@@ -375,7 +375,8 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         /*     // TODO: I still need to update the cell we're in */
 
         //1D only
-        int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
+        //int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
+        int updated_ii = VOXEL(ix, iy, iz, nx, ny, nz, num_ghosts);
         cell.access(s, i) = updated_ii;
 
 
