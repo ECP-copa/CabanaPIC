@@ -2,7 +2,7 @@
 #define pic_EM_fields_h
 
 #include "Cabana_Parallel.hpp" // Simd parallel for
-#include "input_deck.h"
+#include "input/deck.h"
 
 // TODO: Namespace this stuff?
 

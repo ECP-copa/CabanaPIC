@@ -1,0 +1,51 @@
+// For a list of available global variables, see `src/input/deck.h`, common ones include:
+/*
+        real_ de = 1.0; // Length normalization (electron inertial length)
+        real_ ec = 1.0; // Charge normalization
+        real_ me = 1.0; // Mass normalization
+        real_ mu = 1.0; // permeability of free space
+        real_ c = 1.0; // Speed of light
+        real_ eps = 1.0; // permittivity of free space
+        real_ n0 = 1.0; // Background plasma density
+        size_t nx = 16;
+        size_t ny = 1;
+        size_t nz = 1;
+        size_t nppc = 1;
+        double dt = 1.0;
+        int num_steps = 2;
+        real_ len_x_global = 1.0;
+        real_ len_y_global = 1.0;
+        real_ len_z_global = 1.0;
+        real_ v0 = 1.0; //drift velocity
+        size_t num_ghosts = 1;
+        (len_x and dx will automatically be set)
+*/
+#include "src/input/deck.h"
+//class Input_Deck : public _Input_Deck {
+    //public:
+Input_Deck::Input_Deck()
+{
+    // User puts initialization code here
+    // Example: Weibel?
+    nx = 32;
+    num_steps = 200;
+    nppc = 8000; //64;
+
+    v0 = 0.0866025403784439;
+
+    // Can also create temporaries
+    real_ gam = 1.0 / sqrt(1.0 - v0*v0);
+
+    const real_t default_grid_len = 1.0;
+
+    len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
+    len_y_global = default_grid_len;
+    len_z_global = default_grid_len;
+
+    dt = 0.99*courant_length(
+            len_x_global, len_y_global, len_z_global,
+            nx, ny, nz
+            ) / c;
+
+    n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
+}

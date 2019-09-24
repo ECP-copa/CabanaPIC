@@ -1,14 +1,24 @@
 #ifndef INPUT_DECK_H
 #define INPUT_DECK_H
 
+#include <cstddef> // size_t
+#include <iostream>
+
+#include "types.h"
+
+enum Boundary {
+    Reflect = 0,
+    Periodic
+};
+
 class _Input_Deck {
     public:
         // TODO: move this into types
         using real_ = float;
 
-        static real_t courant_length( real_t lx, real_t ly, real_t lz,
+        static real_ courant_length( real_ lx, real_ ly, real_ lz,
                 size_t nx, size_t ny, size_t nz ) {
-            real_t w0, w1 = 0;
+            real_ w0, w1 = 0;
             if( nx>1 ) w0 = nx/lx, w1 += w0*w0;
             if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
             if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
@@ -154,6 +164,19 @@ class _Input_Deck {
         }
 };
 
+#ifdef USER_INPUT_DECK
+#define STRINGIFY(s)#s
+#define EXPAND(s)STRINGIFY(s)
+//#include EXPAND(USER_INPUT_DECK)
+// Cmake will put the concrete definition in an object file.. hopefully.
+// This is not ideal, but the include would prevent compile time change
+// detection
+class Input_Deck : public _Input_Deck {
+    public:
+        Input_Deck();
+};
+#else
+// Default deck -- Weibel
 class Input_Deck : public _Input_Deck {
     public:
         Input_Deck()
@@ -183,7 +206,9 @@ class Input_Deck : public _Input_Deck {
             n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
         }
 };
+#endif
 
 extern Input_Deck deck;
+//Input_Deck deck;
 
 #endif // guard

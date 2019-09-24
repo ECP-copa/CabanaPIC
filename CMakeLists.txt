@@ -13,6 +13,25 @@ if (OPENMP_FOUND)
 endif()
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
+include_directories(${PROJECT_SOURCE_DIR})
+
+file(GLOB SOURCES "src/*.cpp")
+
+set(INPUT_DECK "" CACHE STRING "Path to input deck")
+
+if (NOT ${INPUT_DECK} STREQUAL "")
+    # TODO: normalize this path?
+    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/${INPUT_DECK})
+        message( FATAL_ERROR "Cannot find user specified input deck:
+            ${INPUT_DECK}")
+    endif()
+    add_definitions(-DUSER_INPUT_DECK=${INPUT_DECK})
+
+    # Append deck to sources list
+    list(APPEND SOURCES "${INPUT_DECK}")
+endif()
+
+
 option(ENABLE_GPU OFF)
 option(ENABLE_SERIAL OFF)
 
@@ -40,8 +59,6 @@ endif()
 if(NOT DEFINED KOKKOS_DIR)
     set(KOKKOS_DIR ~/tools/kokkos/)
 endif()
-
-file(GLOB SOURCES "src/*.cpp")
 
 INCLUDE_DIRECTORIES(./src)
 

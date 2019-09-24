@@ -7,9 +7,6 @@
 
 #include "types.h"
 #include "helpers.h"
-#include "simulation_parameters.h"
-
-#include "initializer.h"
 
 #include "fields.h"
 #include "accumulator.h"
@@ -19,7 +16,7 @@
 
 #include "visualization.h"
 
-#include "input_deck.h"
+#include "input/deck.h"
 
 // Global variable to hold paramters
 //Parameters params;
@@ -44,7 +41,6 @@ int main( int argc, char* argv[] )
 
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 8000;
-        // Initializer::initialize_params(32, npc);
 
         deck.derive_params();
 
