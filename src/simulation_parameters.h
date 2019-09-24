@@ -1,6 +1,8 @@
 #ifndef SIMULATION_PARAMETERS_H
 #define SIMULATION_PARAMETERS_H
 
+#include "types.h"
+
 enum Boundary {
     Reflect = 0,
     Periodic
@@ -106,21 +108,8 @@ template <class real_> class Parameters_
             dz(len_z/nz),
             ghost_offset(nx*num_ghosts),
             v0(0)
-    {
-        /* v0 = 0.0866025403784439*4.0; */
-        /* real_ gam = 1.0/sqrt(1.0-v0*v0); */
-        /* len_x_global =  0.628318530717959*(gam*sqrt(gam))*4.0; */
-        /* len_x = len_x_global; */
-        /* std::cout<<num_particles<<std::endl; */
-        /* std::cout<<NPPC<<std::endl; */
-        /* std::cout<<num_real_cells<<std::endl; */
-        std::cout << "#Singeton Constructor" << std::endl;
-    }
-
-        static  Parameters_& instance()
         {
-            static Parameters_ instance_;
-            return instance_;
+            // Intentionally empty
         }
 
 
@@ -134,4 +123,6 @@ template <class real_> class Parameters_
             std::cout << std::endl;
         }
 };
+
+
 #endif // SIMULATION_PARAMETERS_H

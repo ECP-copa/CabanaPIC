@@ -2,68 +2,69 @@
 #define pic_init_h
 
 
+/*
 class Initializer {
     public:
-  // Compute the Courant length on a regular mesh
-  static real_t courant_length( real_t lx, real_t ly, real_t lz,
-				size_t nx, size_t ny, size_t nz ) {
-    real_t w0, w1 = 0;
-    if( nx>1 ) w0 = nx/lx, w1 += w0*w0;
-    if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
-    if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
-    return sqrt(1/w1);
-  }
-  
-  static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
+        // Compute the Courant length on a regular mesh
+        static real_t courant_length( real_t lx, real_t ly, real_t lz,
+                size_t nx, size_t ny, size_t nz ) {
+            real_t w0, w1 = 0;
+            if( nx>1 ) w0 = nx/lx, w1 += w0*w0;
+            if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
+            if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
+            return sqrt(1/w1);
+        }
+
+        static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
         {
 
             //logger << "Importing Default Input Deck" << std::endl;
             const real_t default_grid_len = 1.0;
-	    //1D
-            Parameters::instance().NX_global = _nc;
-            Parameters::instance().NY_global = 1; //_nc;
-            Parameters::instance().NZ_global = 1; //_nc;
+            //1D
+            params.NX_global = _nc;
+            params.NY_global = 1; //_nc;
+            params.NZ_global = 1; //_nc;
 
-            Parameters::instance().nx = Parameters::instance().NX_global;
-            Parameters::instance().ny = Parameters::instance().NY_global;
-            Parameters::instance().nz = Parameters::instance().NZ_global;
+            params.nx = params.NX_global;
+            params.ny = params.NY_global;
+            params.nz = params.NZ_global;
 
-            Parameters::instance().num_ghosts = 1;
+            params.num_ghosts = 1;
 
-            Parameters::instance().num_cells =
-                (Parameters::instance().nx + Parameters::instance().num_ghosts*2) *
-                (Parameters::instance().ny + Parameters::instance().num_ghosts*2) *
-                (Parameters::instance().nz + Parameters::instance().num_ghosts*2);
+            params.num_cells =
+                (params.nx + params.num_ghosts*2) *
+                (params.ny + params.num_ghosts*2) *
+                (params.nz + params.num_ghosts*2);
 
-            Parameters::instance().num_real_cells =
-                Parameters::instance().nx * Parameters::instance().ny * Parameters::instance().nz;
+            params.num_real_cells =
+                params.nx * params.ny * params.nz;
 
-            Parameters::instance().NPPC = _nppc;
+            params.NPPC = _nppc;
 
-            Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_real_cells;
+            params.num_particles =  params.NPPC  *  params.num_real_cells;
 
 
-            Parameters::instance().num_steps = 2500;
+            params.num_steps = 2500;
 
-            Parameters::instance().v0 = 0.0866025403784439;
-            real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
-	      
-            Parameters::instance().len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
-            Parameters::instance().len_y_global = default_grid_len;
-            Parameters::instance().len_z_global = default_grid_len;
+            params.v0 = 0.0866025403784439;
+            real_t gam = 1.0/sqrt(1.0-params.v0*params.v0);
 
-            Parameters::instance().len_x = Parameters::instance().len_x_global; //default_grid_len;
-            Parameters::instance().len_y = default_grid_len;
-            Parameters::instance().len_z = default_grid_len;
+            params.len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
+            params.len_y_global = default_grid_len;
+            params.len_z_global = default_grid_len;
 
-            Parameters::instance().dx = Parameters::instance().len_x / Parameters::instance().nx;
-            Parameters::instance().dy = Parameters::instance().len_y / Parameters::instance().ny;
-            Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
+            params.len_x = params.len_x_global; //default_grid_len;
+            params.len_y = default_grid_len;
+            params.len_z = default_grid_len;
 
-            Parameters::instance().dt = 0.99*courant_length(Parameters::instance().len_x,Parameters::instance().len_y,Parameters::instance().len_z,Parameters::instance().nx,Parameters::instance().ny,Parameters::instance().nz)/Parameters::instance().c;
-	    Parameters::instance().n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
-            Parameters::instance().print_run_details();
-	    
+            params.dx = params.len_x / params.nx;
+            params.dy = params.len_y / params.ny;
+            params.dz = params.len_z / params.nz;
+
+            params.dt = 0.99*courant_length(params.len_x,params.len_y,params.len_z,params.nx,params.ny,params.nz)/params.c;
+            params.n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
+            params.print_run_details();
+
         }
 
         static real_t rand_float(real_t min = 0, real_t max = 1)
@@ -87,7 +88,7 @@ class Initializer {
             auto weight = particles.slice<Weight>();
             auto cell = particles.slice<Cell_Index>();
 
-            real_t v0 = Parameters::instance().v0;
+            real_t v0 = params.v0;
 
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
@@ -113,7 +114,7 @@ class Initializer {
                     weight.access(s,i) = w;
 
                     // gives me a num in the range 0..num_real_cells
-                    //int pre_ghost = (s % Parameters::instance().num_real_cells);
+                    //int pre_ghost = (s % params.num_real_cells);
                     //   size_t ix, iy, iz;
 
                     size_t pre_ghost = (2*pi/nppc);
@@ -185,5 +186,6 @@ class Initializer {
 
         }
 };
+*/
 
 #endif // pic_init_H

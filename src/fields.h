@@ -1,6 +1,11 @@
 #ifndef pic_EM_fields_h
 #define pic_EM_fields_h
 
+#include "Cabana_Parallel.hpp" // Simd parallel for
+#include "input_deck.h"
+
+// TODO: Namespace this stuff?
+
 template<class Slice_X, class Slice_Y, class Slice_Z>
 KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts(
@@ -11,7 +16,7 @@ void serial_update_ghosts(
         int nx, int ny, int nz, int ng)
 {
 
-    const Boundary boundary = Parameters::instance().BOUNDARY_TYPE;
+    const Boundary boundary = deck.BOUNDARY_TYPE;
     if (boundary == Boundary::Reflect)
     {
         // TODO: this
@@ -25,33 +30,33 @@ void serial_update_ghosts(
       // 	int to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
       // 	int from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
       // 	float tmp_slice_x = slice_x(to);
-      // 	//	printf("slice x %d:  %e = %e + %e \n", x, slice_x(to), tmp_slice_x, slice_x(from) );		
+      // 	//	printf("slice x %d:  %e = %e + %e \n", x, slice_x(to), tmp_slice_x, slice_x(from) );
       // 	slice_x(to) += slice_x(from);
       // 	slice_x(from) += tmp_slice_x;
 
-	
+
       // 	to   = VOXEL(x, 1   , 2, nx, ny, nz, ng);
       // 	from = VOXEL(x, ny+1, 2, nx, ny, nz, ng);
       // 	tmp_slice_x = slice_x(to);
       // 	slice_x(to) += slice_x(from);
       // 	slice_x(from) += tmp_slice_x;
-      
+
       // 	//z next
       // 	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
       // 	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
       // 	tmp_slice_x = slice_x(to);
       // 	slice_x(to) += slice_x(from);
-      // 	slice_x(from) += tmp_slice_x;	
+      // 	slice_x(from) += tmp_slice_x;
 
       // 	to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
       // 	from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
       // 	tmp_slice_x = slice_x(to);
       // 	slice_x(to) += slice_x(from);
-      // 	slice_x(from) += tmp_slice_x;	
+      // 	slice_x(from) += tmp_slice_x;
       // 	//printf("slice x %d, jfx=%e,%e,", x, slice_x(to),slice_x(from));
       // 	to   = VOXEL(x, 2, 1   , nx, ny, nz, ng);
       // 	from = VOXEL(x, 2, nz+1, nx, ny, nz, ng);
-      // 	//printf("%e,%e\n",slice_x(to),slice_x(from));	
+      // 	//printf("%e,%e\n",slice_x(to),slice_x(from));
       // }
 
 
@@ -249,8 +254,8 @@ class ES_Field_Solver_1D
             auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
             {
                 lsum += ex(i) * ex(i)
-		       +ey(i) * ey(i)
-		       +ez(i) * ez(i);
+                    +ey(i) * ey(i)
+                    +ez(i) * ez(i);
             };
 
             real_t e_tot_energy=0;
@@ -270,16 +275,16 @@ class ES_Field_Solver_1D
 		real_t dt_eps0
         )
         {
-            const size_t ng = Parameters::instance().num_ghosts;	  
+            const size_t ng = deck.num_ghosts;
             auto ex = fields.slice<FIELD_EX>();
             auto ey = fields.slice<FIELD_EY>();
             auto ez = fields.slice<FIELD_EZ>();
             auto jfx = fields.slice<FIELD_JFX>();
             auto jfy = fields.slice<FIELD_JFY>();
             auto jfz = fields.slice<FIELD_JFZ>();
-	    
-	    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-	    
+
+            serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
@@ -411,7 +416,7 @@ class EM_Field_Solver
                 size_t nx,
                 size_t ny,
                 size_t nz,
-		real_t dt_eps0
+                real_t dt_eps0
         )
         {
             // TODO: enable

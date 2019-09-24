@@ -5,20 +5,22 @@
 #include "Cabana_ExecutionPolicy.hpp" // SIMDpolicy
 #include "Cabana_Parallel.hpp" // Simd parallel for
 
+#include "Input_Deck.h"
+
 // Converts from an index that doesn't know about ghosts to one that does
 KOKKOS_INLINE_FUNCTION int allow_for_ghosts(int pre_ghost)
 {
 
     size_t ix, iy, iz;
     RANK_TO_INDEX(pre_ghost, ix, iy, iz,
-            Parameters::instance().nx,
-            Parameters::instance().ny);
+            deck.nx,
+            deck.ny);
     //    printf("%ld\n",ix);
     int with_ghost = VOXEL(ix, iy, iz,
-            Parameters::instance().nx,
-            Parameters::instance().ny,
-            Parameters::instance().nz,
-            Parameters::instance().num_ghosts);
+            deck.nx,
+            deck.ny,
+            deck.nz,
+            deck.num_ghosts);
 
     return with_ghost;
 }
