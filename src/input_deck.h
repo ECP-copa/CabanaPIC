@@ -88,6 +88,7 @@ class _Input_Deck {
             dz = len_z / nz;
 
             num_cells = (nx+(2*num_ghosts)) * (ny+(2*num_ghosts)) * (nz+(2*num_ghosts));
+            //num_real_cells = nx * ny * ny;
             num_particles = nx * ny * nz * nppc;
         }
 
@@ -161,7 +162,7 @@ class Input_Deck : public _Input_Deck {
             // Example: Weibel?
             nx = 64;
             num_steps = 20;
-            nppc = 64;
+            nppc = 8000; //64;
 
             v0 = 0.0866025403784439;
 

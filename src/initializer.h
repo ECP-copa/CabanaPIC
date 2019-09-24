@@ -1,8 +1,8 @@
 #ifndef pic_init_h
 #define pic_init_h
 
-
 /*
+
 class Initializer {
     public:
         // Compute the Courant length on a regular mesh
