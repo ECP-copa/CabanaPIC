@@ -1,3 +1,4 @@
+#include "src/input/deck.h"
 // For a list of available global variables, see `src/input/deck.h`, common ones include:
 /*
         real_ de = 1.0; // Length normalization (electron inertial length)
@@ -20,15 +21,15 @@
         size_t num_ghosts = 1;
         (len_x and dx will automatically be set)
 */
-#include "src/input/deck.h"
-//class Input_Deck : public _Input_Deck {
-    //public:
+// I would rather decalare this as a class, not just as a constructor, but that
+// would have to be in a header (which would stop the compile detecting
+// changes...). This is fine for now.
 Input_Deck::Input_Deck()
 {
     // User puts initialization code here
     // Example: Weibel?
     nx = 32;
-    num_steps = 200;
+    num_steps = 2000;
     nppc = 8000; //64;
 
     v0 = 0.0866025403784439;
