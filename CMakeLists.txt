@@ -20,15 +20,17 @@ file(GLOB SOURCES "src/*.cpp")
 set(INPUT_DECK "" CACHE STRING "Path to input deck")
 
 if (NOT ${INPUT_DECK} STREQUAL "")
-    # TODO: normalize this path?
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/${INPUT_DECK})
-        message( FATAL_ERROR "Cannot find user specified input deck:
-            ${INPUT_DECK}")
+    # TODO: normalize these paths?
+    if(EXISTS ${PROJECT_SOURCE_DIR}/${INPUT_DECK})
+        # Append deck to sources list
+        list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/${INPUT_DECK}")
+        add_definitions(-DUSER_INPUT_DECK=${PROJECT_SOURCE_DIR}/${INPUT_DECK})
+    elseif(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK})
+        list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK}")
+        add_definitions(-DUSER_INPUT_DECK=${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK})
+    else()
+    message( FATAL_ERROR "Cannot find user specified input deck: ${INPUT_DECK}")
     endif()
-    add_definitions(-DUSER_INPUT_DECK=${INPUT_DECK})
-
-    # Append deck to sources list
-    list(APPEND SOURCES "${INPUT_DECK}")
 endif()
 
 
