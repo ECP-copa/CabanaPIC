@@ -160,7 +160,7 @@ class Input_Deck : public _Input_Deck {
         {
             // User puts initialization code here
             // Example: Weibel?
-            nx = 64;
+            nx = 32;
             num_steps = 20;
             nppc = 8000; //64;
 
