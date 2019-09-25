@@ -1,5 +1,6 @@
 #include "interpolator.h"
 
+
 void load_interpolator_array(
         field_array_t fields,
         interpolator_array_t interpolators,
@@ -9,7 +10,7 @@ void load_interpolator_array(
         size_t ng
         )
 {
-    size_t x_offset = 1; // VOXEL(x+1,y,  z,   nx,ny,nz);
+    size_t x_offset =  1; // VOXEL(x+1,y,  z,   nx,ny,nz);
     size_t y_offset = (1*(nx+ng*2)); // VOXEL(x,  y+1,z,   nx,ny,nz);
     size_t z_offset = (1*(nx+ng*2)*(ny+ng*2)); // VOXEL(x,  y,  z+1, nx,ny,nz);
 
@@ -42,7 +43,7 @@ void load_interpolator_array(
 
     const real_t fourth = 1.0 / 4.0;
     const real_t half = 1.0 / 2.0;
-
+    
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _load_interpolator = KOKKOS_LAMBDA( const int x, const int y, const int z)
     {
