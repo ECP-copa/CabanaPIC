@@ -111,36 +111,60 @@ void serial_update_ghosts(
     
     int x,y,z,from,to;
     for ( x = 1; x <= nx; x++){
-    	//y first
-    	to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
-    	from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
-    	float tmp_slice_x = slice_x(to);
-    	//	printf("slice x %d:  %e = %e + %e \n", x, slice_x(to), tmp_slice_x, slice_x(from) );		
-    	slice_x(to) += slice_x(from);
-    	slice_x(from) += tmp_slice_x;
+      //y first
+      from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
+      to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
+      slice_x(to) += slice_x(from);
 
-    	
-    	to   = VOXEL(x, 1   , 2, nx, ny, nz, ng);
-    	from = VOXEL(x, ny+1, 2, nx, ny, nz, ng);
-    	tmp_slice_x = slice_x(to);
-    	slice_x(to) += slice_x(from);
-    	slice_x(from) += tmp_slice_x;
+      
+      from = VOXEL(x, ny+1, nz+1, nx, ny, nz, ng);    	
+      to   = VOXEL(x, 1   , nz+1, nx, ny, nz, ng);
+      slice_x(to) += slice_x(from);
+
     
-    	//z next
-    	to   = VOXEL(x, ny+1, 1   , nx, ny, nz, ng);
-    	from = VOXEL(x, ny+1, nz+1, nx, ny, nz, ng);
-    	tmp_slice_x = slice_x(to);
-    	slice_x(to) += slice_x(from);
-    	slice_x(from) += tmp_slice_x;	
-
-    	to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
-    	from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
-    	tmp_slice_x = slice_x(to);
-    	slice_x(to) += slice_x(from);
-    	slice_x(from) += tmp_slice_x;	
+      //z next
+      from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
+      to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
+      slice_x(to) += slice_x(from);
 
     }
 
+    for ( y = 1; y <= ny; y++){
+      //z first
+      from = VOXEL(1   , y, nz+1, nx, ny, nz, ng);
+      to   = VOXEL(1   , y, 1   , nx, ny, nz, ng);
+      slice_y(to) += slice_y(from);
+
+      
+      from = VOXEL(nx+1, y, nz+1, nx, ny, nz, ng);    	
+      to   = VOXEL(nx+1, y, 1   , nx, ny, nz, ng);
+      slice_y(to) += slice_y(from);
+
+    
+      //x next
+      from = VOXEL(nx+1, y, 1   , nx, ny, nz, ng);
+      to   = VOXEL(1   , y, 1   , nx, ny, nz, ng);
+      slice_y(to) += slice_y(from);
+    }
+
+    for ( z = 1; z <= nz; z++){
+      //x first
+      from = VOXEL(nx+1, 1   , z, nx, ny, nz, ng);
+      to   = VOXEL(1   , 1   , z, nx, ny, nz, ng);
+      slice_z(to) += slice_z(from);
+
+      
+      from = VOXEL(nx+1, ny+1, z, nx, ny, nz, ng);    	
+      to   = VOXEL(1   , ny+1, z, nx, ny, nz, ng);
+      slice_z(to) += slice_z(from);
+
+    
+      //y next
+      from = VOXEL(1   , ny+1, z, nx, ny, nz, ng);
+      to   = VOXEL(1   , 1   , z, nx, ny, nz, ng);
+      slice_z(to) += slice_z(from);
+    }
+    
     
 
     // // Copy x from RHS -> LHS
@@ -512,13 +536,11 @@ public:
     	const int fy = VOXEL(x,   y-1, z,   nx, ny, nz, ng);
     	const int fz = VOXEL(x,   y,   z-1, nx, ny, nz, ng);
     	
-    	// ex(f0) = ex(f0) + ( - cj * jfx(f0) ) + ( py * (cbz(f0) - cbz(fy)) - pz * (cby(f0) - cby(fz)) );
-    	// ey(f0) = ey(f0) + ( - cj * jfy(f0) ) + ( pz * (cbx(f0) - cbx(fz)) - px * (cbz(f0) - cbz(fx)) );
-    	// ez(f0) = ez(f0) + ( - cj * jfz(f0) ) + ( px * (cby(f0) - cby(fx)) - py * (cbx(f0) - cbx(fy)) );
-	// ex(f0) = ex(f0) + ( - cj * jfx(f0) ); 
-    	// ez(f0) = ez(f0) + ( - cj * jfz(f0) ) + ( px * (cby(f0) - cby(fx)) );
+    	ex(f0) = ex(f0) + ( - cj * jfx(f0) ) + ( py * (cbz(f0) - cbz(fy)) - pz * (cby(f0) - cby(fz)) );
+    	ey(f0) = ey(f0) + ( - cj * jfy(f0) ) + ( pz * (cbx(f0) - cbx(fz)) - px * (cbz(f0) - cbz(fx)) );
+    	ez(f0) = ez(f0) + ( - cj * jfz(f0) ) + ( px * (cby(f0) - cby(fx)) - py * (cbx(f0) - cbx(fy)) );
 
-    	 ex(f0) +=  ( - cj * jfx(f0) ) + ( py * (cbz(f0) - cbz(fy)) );
+	//ex(f0) +=  ( - cj * jfx(f0) ) + ( py * (cbz(f0) - cbz(fy)) );
 	
       };
 
@@ -566,12 +588,12 @@ public:
 	const int fy = VOXEL(x,   y+1, z,   nx, ny, nz, ng);
 	const int fz = VOXEL(x,   y,   z+1, nx, ny, nz, ng);
 
-	// cbx(f0) -= ( py*( ez(fy) - ez(f0) ) - pz*( ey(fz) - ey(f0) ) );
-	// cby(f0) -= ( pz*( ex(fz) - ex(f0) ) - px*( ez(fx) - ez(f0) ) );
-	// cbz(f0) -= ( px*( ey(fx) - ey(f0) ) - py*( ex(fy) - ex(f0) ) );
+	cbx(f0) -= ( py*( ez(fy) - ez(f0) ) - pz*( ey(fz) - ey(f0) ) );
+	cby(f0) -= ( pz*( ex(fz) - ex(f0) ) - px*( ez(fx) - ez(f0) ) );
+	cbz(f0) -= ( px*( ey(fx) - ey(f0) ) - py*( ex(fy) - ex(f0) ) );
 
-	//cby(f0) -= ( - px*( ez(fx) - ez(f0) ) );
-	cbz(f0) -= - py*( ex(fy) - ex(f0) ) ;
+
+	//cbz(f0) -= - py*( ex(fy) - ex(f0) ) ;
 	
       };
 
