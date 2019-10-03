@@ -53,7 +53,7 @@ env: #maybe add mpich later
     - COVERAGE=OFF
 
 script:
-  - cd $HOME && mkdir build && cd build
+  - mkdir build && cd build
   - pwd
   - PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=${HOME}/kokkos -DCABANA_DIR=${HOME}/Cabana .. &&
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1 && make install DESTDIR=$PWD
