@@ -4,6 +4,10 @@
 #define real_t float
 
 #include <Kokkos_ScatterView.hpp>
+#include <Cabana_Types.hpp>
+#include <Cabana_MemberTypes.hpp>
+#include <Cabana_AoSoA.hpp>
+#include <Cabana_Parallel.hpp>
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
 #ifndef VLEN
@@ -36,10 +40,6 @@ using ExecutionSpace = Kokkos::Cuda;
 //using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 ///// END ESSENTIALS ///
-
-#include "simulation_parameters.h"
-
-using Parameters = Parameters_<real_t>;
 
 enum UserParticleFields
 {

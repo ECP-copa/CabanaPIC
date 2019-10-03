@@ -94,17 +94,6 @@ void unload_accumulator_array(
                     accumulators(z_down,  accumulator_var::jx, 2) +
                     accumulators(yz_down, accumulator_var::jx, 3)
                 );
-	//if(y==1&&z==1)
-	//if(y!=1||z!=1)
-	  //	  printf("x,y,z=%d,%d,%d,jfx=%e\n",x,y,z,jfx(i));
-        // printf("jxf %d x %d y %d z %d = %e cx %e a0 %e ax %e ay %e az %e \n",
-        //         i, x, y, z, jfx(i),
-        //         cx,
-        //         accumulators(i,       accumulator_var::jx, 0),
-        //         accumulators(y_down,  accumulator_var::jx, 1),
-        //         accumulators(z_down,  accumulator_var::jx, 2),
-        //         accumulators(yz_down, accumulator_var::jx, 3)
-        //       );
 
         jfy(i) = cy*(
                     accumulators(i,       accumulator_var::jy, 0) +

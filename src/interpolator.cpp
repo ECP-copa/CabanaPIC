@@ -63,7 +63,7 @@ void load_interpolator_array(
         interp_dexdy(i)    = fourth*( (w3 - w0) + (w1 - w2) );
         interp_dexdz(i)    = fourth*( (w3 - w0) - (w1 - w2) );
         interp_d2exdydz(i) = fourth*( (w3 + w0) - (w1 + w2) );
-	//	printf("ex: xyz %d,%d,%d:  %e,%e,%e,%e \n", x,y,z,w0,w1,w2,w3) ;		
+
         // ey interpolation coefficients
         w0 = field_ey(i);
         w1 = field_ey(i + z_offset); // pfz->ey;
@@ -120,5 +120,53 @@ void load_interpolator_array(
         pfzx =  &f(x+1,y,  z+1);
         pfxy =  &f(x+1,y+1,z  );
         */
+
+}
+void initialize_interpolator(interpolator_array_t& f0)
+{
+    auto ex = f0.slice<EX>();
+    auto dexdy  = f0.slice<DEXDY>();
+    auto dexdz  = f0.slice<DEXDZ>();
+    auto d2exdydz  = f0.slice<D2EXDYDZ>();
+    auto ey  = f0.slice<EY>();
+    auto deydz  = f0.slice<DEYDZ>();
+    auto deydx  = f0.slice<DEYDX>();
+    auto d2eydzdx  = f0.slice<D2EYDZDX>();
+    auto ez  = f0.slice<EZ>();
+    auto dezdx  = f0.slice<DEZDX>();
+    auto dezdy  = f0.slice<DEZDY>();
+    auto d2ezdxdy  = f0.slice<D2EZDXDY>();
+    auto cbx  = f0.slice<CBX>();
+    auto dcbxdx   = f0.slice<DCBXDX>();
+    auto cby  = f0.slice<CBY>();
+    auto dcbydy  = f0.slice<DCBYDY>();
+    auto cbz  = f0.slice<CBZ>();
+    auto dcbzdz  = f0.slice<DCBZDZ>();
+
+    auto _init_interpolator =
+        KOKKOS_LAMBDA( const int i )
+        {
+            // Throw in some place holder values
+            ex(i) = 0.0;
+            dexdy(i) = 0.0;
+            dexdz(i) = 0.0;
+            d2exdydz(i) = 0.0;
+            ey(i) = 0.0;
+            deydz(i) = 0.0;
+            deydx(i) = 0.0;
+            d2eydzdx(i) = 0.0;
+            ez(i) = 0.0;
+            dezdx(i) = 0.0;
+            dezdy(i) = 0.0;
+            d2ezdxdy(i) = 0.0;
+            cbx(i) = 0.0;
+            dcbxdx(i) = 0.0;
+            cby(i) = 0.0;
+            dcbydy(i) = 0.0;
+            cbz(i) = 0.0;
+            dcbzdz(i) = 0.0;
+        };
+
+    Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
 
 }

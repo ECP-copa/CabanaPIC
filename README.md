@@ -34,6 +34,15 @@ cmake -DKOKKOS_DIR=$KOKKOS_INSTALL_DIR -DCABANA_DIR=$CABANA_INSTALL_DIR -D CMAKE
 
 Remember: Kokkos and Cabana need to be build with GPU support
 
+## Running
+
+Users can compile in custom input decks by specifying `INPUT_DECK` at build
+time, e.g:
+
+`CXX=g++-9 cmake -DKOKKOS_DIR=$HOME/kokkos/build/install -DCABANA_DIR=$HOME/Cabana/build/install -DINPUT_DECK=./decks/2steam-short.cxx ..`
+
+Some example decks live in `./decks`. Custom decks must follow the layout put
+forth in `./src/input/decks.h`
 
 ## Feature Wishlist
 

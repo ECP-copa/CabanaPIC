@@ -7,9 +7,6 @@
 
 #include "types.h"
 #include "helpers.h"
-#include "simulation_parameters.h"
-
-#include "initializer.h"
 
 #include "fields.h"
 #include "accumulator.h"
@@ -18,6 +15,12 @@
 #include "push.h"
 
 #include "visualization.h"
+
+#include "input/deck.h"
+
+// Global variable to hold paramters
+//Parameters params;
+Input_Deck deck;
 
 //---------------------------------------------------------------------------//
 // Main.
@@ -32,55 +35,60 @@ int main( int argc, char* argv[] )
     // Cabana scoping block
     {
 
-        Visualizer vis;
+        //Visualizer vis;
 
         // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 100;
-        Initializer::initialize_params(32, npc);
+
+        deck.derive_params();
+        deck.print_run_details();
 
         // Cache some values locally for printing
-        const size_t nx = Parameters::instance().nx;
-        const size_t ny = Parameters::instance().ny;
-        const size_t nz = Parameters::instance().nz;
-        const size_t num_ghosts = Parameters::instance().num_ghosts;
-        const size_t num_cells = Parameters::instance().num_cells;
-        const size_t num_particles = Parameters::instance().num_particles;
+        const size_t nx = deck.nx;
+        const size_t ny = deck.ny;
+        const size_t nz = deck.nz;
+        const size_t num_ghosts = deck.num_ghosts;
+        const size_t num_cells = deck.num_cells;
+        const size_t num_particles = deck.num_particles;
         real_t dxp = 2.f/(npc);
 
         // Define some consts
-        const real_t dx = Parameters::instance().dx;
-        const real_t dy = Parameters::instance().dy;
-        const real_t dz = Parameters::instance().dz;
-        real_t dt   = Parameters::instance().dt;
-        real_t c    = Parameters::instance().c;
-        real_t me   = Parameters::instance().me;
-        real_t n0   = Parameters::instance().n0;
-        real_t ec   = Parameters::instance().ec;
-        real_t Lx   = Parameters::instance().len_x;
-        real_t Ly   = Parameters::instance().len_y;
-        real_t Lz   = Parameters::instance().len_z;
-        size_t nppc = Parameters::instance().NPPC;
-	real_t eps0 = Parameters::instance().eps;
+        const real_t dx = deck.dx;
+        const real_t dy = deck.dy;
+        const real_t dz = deck.dz;
+        real_t dt   = deck.dt;
+        real_t c    = deck.c;
+        real_t me   = deck.me;
+        real_t n0   = deck.n0;
+        real_t ec   = deck.ec;
+        real_t Lx   = deck.len_x;
+        real_t Ly   = deck.len_y;
+        real_t Lz   = deck.len_z;
+        size_t nppc = deck.nppc;
+        real_t eps0 = deck.eps;
         real_t Npe  = n0*Lx*Ly*Lz;
         size_t Ne=  (nppc*nx*ny*nz);
         real_t qsp = -ec;
         real_t qdt_2mc = qsp*dt/(2*me*c);
+
         real_t cdt_dx = c*dt/dx;
         real_t cdt_dy = c*dt/dy;
         real_t cdt_dz = c*dt/dz;
-	real_t dt_eps0 = dt/eps0;
+        real_t dt_eps0 = dt/eps0;
         real_t frac = 1.0f;
         real_t we = (real_t) Npe/(real_t) Ne;
-	
+
+        printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
+
         // Create the particle list.
         particle_list_t particles( num_particles );
         //logger << "size " << particles.size() << std::endl;
         //logger << "numSoA " << particles.numSoA() << std::endl;
 
         // Initialize particles.
-        Initializer::initialize_particles( particles, nx, ny, nz, dxp, npc, we );
+        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we );
 
         grid_t* grid = new grid_t();
 
@@ -94,25 +102,27 @@ int main( int argc, char* argv[] )
         accumulator_array_t accumulators("Accumulator View", num_cells);
 
         auto scatter_add = Kokkos::Experimental::create_scatter_view(accumulators);
-            //<Kokkos::Experimental::ScatterSum,
-             //KOKKOS_SCATTER_DUPLICATED,
-             //KOKKOS_SCATTER_ATOMIC>(accumulators);
+        //<Kokkos::Experimental::ScatterSum,
+        //KOKKOS_SCATTER_DUPLICATED,
+        //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
         field_array_t fields(num_cells);
 
-        Initializer::initialize_interpolator(interpolators);
+        // Zero out the interpolator
+        // Techincally this is optional?
+        initialize_interpolator(interpolators);
 
         // Can obviously supply solver type at compile time
         Field_Solver<EM_Field_Solver> field_solver(fields);
         //Field_Solver<ES_Field_Solver_1D> field_solver(fields);
 
         // Grab some global values for use later
-        const Boundary boundary = Parameters::instance().BOUNDARY_TYPE;
+        const Boundary boundary = deck.BOUNDARY_TYPE;
 
-        //logger << "nx " << Parameters::instance().nx << std::endl;
+        //logger << "nx " << params.nx << std::endl;
         //logger << "num_particles " << num_particles << std::endl;
         //logger << "num_cells " << num_cells << std::endl;
-        //logger << "Actual NPPC " << Parameters::instance().NPPC << std::endl;
+        //logger << "Actual NPPC " << params.NPPC << std::endl;
 
         // TODO: give these a real value
         const real_t px =  (nx>1) ? frac*c*dt/dx : 0;
@@ -120,7 +130,7 @@ int main( int argc, char* argv[] )
         const real_t pz =  (nz>1) ? frac*c*dt/dz : 0;
 
         // simulation loop
-        const size_t num_steps = Parameters::instance().num_steps;
+        const size_t num_steps = deck.num_steps;
 
         printf( "#***********************************************\n" );
         printf ( "#num_step = %d\n" , num_steps );
