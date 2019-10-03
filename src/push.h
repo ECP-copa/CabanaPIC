@@ -233,10 +233,10 @@ void push(
 
                 CALC_J( x,y,z );
                 //std::cout << "Contributing " << v0 << ", " << v1 << ", " << v2 << ", " << v3 << std::endl;
-                accumulators_scatter_access(ii, accumulator_var::jx, 0) += q*ux*(1-dy)*(1-dz);
-                accumulators_scatter_access(ii, accumulator_var::jx, 1) += q*ux*(1+dy)*(1-dz);
-                accumulators_scatter_access(ii, accumulator_var::jx, 2) += q*ux*(1-dy)*(1+dz);
-                accumulators_scatter_access(ii, accumulator_var::jx, 3) += q*ux*(1+dy)*(1+dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 0) += v0; // q*ux*(1-dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 1) += v1; // q*ux*(1+dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 2) += v2; // q*ux*(1-dy)*(1+dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 3) += v3; // q*ux*(1+dy)*(1+dz);
 
                 // printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
                 //         v0, ii, ux, uy, uz);

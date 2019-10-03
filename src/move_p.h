@@ -376,7 +376,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
 
         //1D only
         //int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
-        int updated_ii = VOXEL(ix, iy, iz, nx, ny, nz, num_ghosts);
+        size_t updated_ii = VOXEL(ix, iy, iz, nx, ny, nz, num_ghosts);
         cell.access(s, i) = updated_ii;
 
 
