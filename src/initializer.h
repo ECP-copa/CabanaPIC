@@ -13,7 +13,7 @@ class Initializer {
     if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
     return sqrt(1/w1);
   }
-  
+
   static void initialize_params(size_t _nc = 16, size_t _nppc = 16)
         {
 
@@ -47,7 +47,7 @@ class Initializer {
 
             Parameters::instance().v0 = 0.2; //0.0866025403784439;
             real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
-	      
+
             Parameters::instance().len_x_global = default_grid_len;
             Parameters::instance().len_y_global = 3.14159265358979*0.5; //6.28318530717959; //default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
@@ -63,7 +63,7 @@ class Initializer {
             Parameters::instance().dt = 0.99*courant_length(Parameters::instance().len_x,Parameters::instance().len_y,Parameters::instance().len_z,Parameters::instance().nx,Parameters::instance().ny,Parameters::instance().nz)/Parameters::instance().c;
 	    Parameters::instance().n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
             Parameters::instance().print_run_details();
-	    
+
         }
 
         static real_t rand_float(real_t min = 0, real_t max = 1)
@@ -106,35 +106,22 @@ class Initializer {
 
                     real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f); //
                     size_t pre_ghost = (2*pi/nppc);
-                    //real_t na = 1e-6*sin(6.28318530717959*((x+1.0+pre_ghost*2)/(2*ny)));
-		    //x += dxp*na;
-		    //x += dxp*rand_float(0.0f, 0.002f);
-                    //real_t x = rand_float(-1.0f, 1.0f); //
+
                     position_x.access(s,i) = 0;
                     position_y.access(s,i) = x; //rand_float(-1.0f, 1.0f);
                     position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
 
-
                     weight.access(s,i) = w;
 
-                    // gives me a num in the range 0..num_real_cells
-                    //int pre_ghost = (s % Parameters::instance().num_real_cells);
-                    //   size_t ix, iy, iz;
+                    //test y
+                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
 
-
-
-                    //cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
-		    //test y
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; 
                     // Initialize velocity.(each cell length is 2)
-
-                    
-
                     real_t gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-		    velocity_z.access(s,i) = 1e-7*sign;
+                    velocity_z.access(s,i) = 1e-7*sign;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
