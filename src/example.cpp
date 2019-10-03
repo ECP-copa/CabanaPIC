@@ -74,12 +74,13 @@ int main( int argc, char* argv[] )
         real_t qdt_2mc = qsp*dt/(2*me*c);
 
         real_t cdt_dx = c*dt/dx;
-        printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
         real_t cdt_dy = c*dt/dy;
         real_t cdt_dz = c*dt/dz;
         real_t dt_eps0 = dt/eps0;
         real_t frac = 1.0f;
         real_t we = (real_t) Npe/(real_t) Ne;
+
+        printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
         // Create the particle list.
         particle_list_t particles( num_particles );

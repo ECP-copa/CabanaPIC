@@ -182,20 +182,23 @@ class Input_Deck : public _Input_Deck {
         Input_Deck()
         {
             // User puts initialization code here
-            // Example: Weibel?
-            nx = 32;
-            num_steps = 20;
-            nppc = 8000; //64;
+            // Example: EM 2 Stream in 1d?
+            nx = 1;
+            ny = 32;
+            nz = 1;
 
-            v0 = 0.0866025403784439;
+            num_steps = 20;
+            nppc = 100;
+
+            v0 = 0.2;
 
             // Can also create temporaries
             real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
             const real_t default_grid_len = 1.0;
 
-            len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
-            len_y_global = default_grid_len;
+            len_x_global = default_grid_len;
+            len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
             len_z_global = default_grid_len;
 
             dt = 0.99*courant_length(
