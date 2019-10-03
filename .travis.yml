@@ -32,12 +32,13 @@ before_script:
     popd
   - pwd
   - git clone --depth=1 https://github.com/ECP-copa/Cabana.git
-  - pushd Cabana &&
-  - mkdir build && pushd build &&
-    cmake -DCabana_ENABLE_Serial=OFF -DCabana_ENABLE_MPI=OFF
+  - pushd Cabana && mkdir build && pushd build &&
+    cmake -DCMAKE_PREFIX_PATH=$HOME/kokkos
+          -DCabana_ENABLE_Serial=OFF
+          -DCabana_ENABLE_MPI=OFF
           -DCabana_ENABLE_TESTING=OFF -DCabana_ENABLE_EXAMPLES=OFF
-          -DCabana_ENABLE_PERFORMANCE_TESTING=OFF &&
-    make -k -j2 VERBOSE=1 && make install DESTDIR=${HOME}/Cabana .. && popd &&
+          -DCabana_ENABLE_PERFORMANCE_TESTING=OFF .. &&
+    make -k -j2 VERBOSE=1 && make install DESTDIR=${HOME}/Cabana && popd &&
     popd
 
 before_install:
