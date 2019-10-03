@@ -30,6 +30,12 @@ before_script:
     make install &&
     popd &&
     popd
+  - git clone --depth=1 https://github.com/ECP-copa/Cabana.git
+  - mkdir build && pushd build &&
+    cmake -DCabana_ENABLE_Serial=OFF -DCabana_ENABLE_MPI=OFF
+          -DCabana_ENABLE_TESTING=OFF -DCabana_ENABLE_EXAMPLES=OFF
+          -DCabana_ENABLE_PERFORMANCE_TESTING=OFF &&
+    make -k -j2 VERBOSE=1 && make install DESTDIR=${HOME}/Cabana && popd
 
 before_install:
  - mkdir -p "$HOME/bin"
@@ -45,7 +51,7 @@ env: #maybe add mpich later
 
 script:
   - mkdir build && cd build &&
-    PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} .. &&
+    PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=${HOME}/kokkos -DCABANA_DIR=${HOME}/Cabana .. &&
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1 && make install DESTDIR=$PWD
 
 after_success:
