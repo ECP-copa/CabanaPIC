@@ -146,10 +146,54 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         //a = (real_t *)(a0 + ii);
 
         //1D only
-        _asa(ii,accumulator_var::jx, 0) += 4.0f*q*s_dispx;
-        _asa(ii,accumulator_var::jx, 1) += 0.0;
-        _asa(ii,accumulator_var::jx, 2) += 0.0;
-        _asa(ii,accumulator_var::jx, 3) += 0.0;
+        // _asa(ii,accumulator_var::jx, 0) += 4.0f*q*s_dispx;
+        // _asa(ii,accumulator_var::jx, 1) += 0.0;
+        // _asa(ii,accumulator_var::jx, 2) += 0.0;
+        // _asa(ii,accumulator_var::jx, 3) += 0.0;
+        real_t v4;
+        real_t v5 = q*s_dispx*s_dispy*s_dispz*(1./3.);
+
+#define accumulate_j(X,Y,Z)						\
+        v4  = q*s_disp##X;    /* v2 = q ux                            */  \
+        v1  = v4*s_mid##Y;    /* v1 = q ux dy                         */  \
+        v0  = v4-v1;          /* v0 = q ux (1-dy)                     */  \
+        v1 += v4;             /* v1 = q ux (1+dy)                     */  \
+        v4  = 1+s_mid##Z;     /* v4 = 1+dz                            */  \
+        v2  = v0*v4;          /* v2 = q ux (1-dy)(1+dz)               */  \
+        v3  = v1*v4;          /* v3 = q ux (1+dy)(1+dz)               */  \
+        v4  = 1-s_mid##Z;     /* v4 = 1-dz                            */  \
+        v0 *= v4;             /* v0 = q ux (1-dy)(1-dz)               */  \
+        v1 *= v4;             /* v1 = q ux (1+dy)(1-dz)               */  \
+        v0 += v5;             /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */  \
+        v1 -= v5;             /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */  \
+        v2 -= v5;             /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */  \
+        v3 += v5;             /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */  \
+        // 	a0(ii,offset+0) += v0;						\
+        // 	a0(ii,offset+1) += v1;						\
+        // 	a0(ii,offset+2) += v2;						\
+        // 	a0(ii,offset+3) += v3;
+
+       accumulate_j(x,y,z);
+       // printf("move_p deposit v0 %e to %d \n",
+       //         v0, ii);
+       _asa(ii, accumulator_var::jx, 0) += v0; // q*ux;
+       _asa(ii, accumulator_var::jx, 1) += v1; // 0.0;
+       _asa(ii, accumulator_var::jx, 2) += v2; // 0.0;
+       _asa(ii, accumulator_var::jx, 3) += v3; // 0.0;
+
+       accumulate_j(y,z,x);
+       _asa(ii, accumulator_var::jy, 0) += v0; // q*ux;
+       _asa(ii, accumulator_var::jy, 1) += v1; // 0.0;
+       _asa(ii, accumulator_var::jy, 2) += v2; // 0.0;
+       _asa(ii, accumulator_var::jy, 3) += v3; // 0.0;
+
+       accumulate_j(z,x,y);
+       _asa(ii, accumulator_var::jz, 0) += v0; // q*ux;
+       _asa(ii, accumulator_var::jz, 1) += v1; // 0.0;
+       _asa(ii, accumulator_var::jz, 2) += v2; // 0.0;
+       _asa(ii, accumulator_var::jz, 3) += v3; // 0.0;
+
+#   undef accumulate_j
 
         // #   define accumulate_j(X,Y,Z, offset)                                    \
         //         v4  = q*s_disp##X;    /* v2 = q ux                            */  \
@@ -215,10 +259,10 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         if( v0>0 ) face += 3;
 
         size_t ix, iy, iz;
-        //RANK_TO_INDEX(ii, ix, iy, iz, (nx-1+(2*num_ghosts)), (ny-1+(2*num_ghosts)));
-        ix = ii-((nx+2)*(ny+2)+(nx+2)); //ii-12;
-        iy = 1;
-        iz = 1;
+        RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
+        // ix = ii-((nx+2)*(ny+2)+(nx+2)); //ii-12;
+        // iy = 1;
+        // iz = 1;
 
         if (face == 0) { ix--; }
         if (face == 1) { iy--; }
@@ -331,7 +375,8 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         /*     // TODO: I still need to update the cell we're in */
 
         //1D only
-        int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
+        //int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
+        size_t updated_ii = VOXEL(ix, iy, iz, nx, ny, nz, num_ghosts);
         cell.access(s, i) = updated_ii;
 
 

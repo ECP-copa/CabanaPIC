@@ -31,7 +31,7 @@ void clear_accumulator_array(
 
       for (int j = 0; j < ACCUMULATOR_VAR_COUNT; j++)
       {
-          for (int k = 0; k < ACCUMULATOR_VAR_COUNT; k++)
+          for (int k = 0; k < ACCUMULATOR_ARRAY_LENGTH; k++)
           {
               accumulators(i, j, k) = 0.0;
           }
@@ -41,7 +41,6 @@ void clear_accumulator_array(
     Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
     Kokkos::parallel_for( exec_policy, _clean_accumulator, "clean_accumulator()" );
 }
-
 
 void unload_accumulator_array(
         field_array_t& fields,
@@ -62,7 +61,9 @@ void unload_accumulator_array(
     auto jfz = fields.slice<FIELD_JFZ>();
 
     // TODO: give these real values
-    real_t cx = 0.25 / (dy * dz * dt);
+    //    printf("cx %e dy %e dz %e dt %e \n", dy, dz, dt);
+    real_t cx = 0.25 * (1.0 / (dy * dz)) / dt;
+    //real_t cx = 0.25 / (dy * dz * dt);
     real_t cy = 0.25 / (dz * dx * dt);
     real_t cz = 0.25 / (dx * dy * dt);
 
@@ -71,10 +72,6 @@ void unload_accumulator_array(
     const size_t JY_OFFSET = 4;
     const size_t JZ_OFFSET = 8;
 
-    size_t x_offset = 1; // VOXEL(x+1,y,  z,   nx,ny,nz);
-    size_t y_offset = (1*nx); // VOXEL(x,  y+1,z,   nx,ny,nz);
-    size_t z_offset = (1*nx*ny); // VOXEL(x,  y,  z+1, nx,ny,nz);
-
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _unload_accumulator = KOKKOS_LAMBDA( const int x, const int y, const int z )
     {
@@ -82,29 +79,49 @@ void unload_accumulator_array(
         // f0->jfx += cx*( a0->jx[0] + ay->jx[1] + az->jx[2] + ayz->jx[3] );
         int i = VOXEL(x,y,z, nx,ny,nz,ng);
 
+        // TODO: this level of re-calculation is overkill
+        size_t x_down  = VOXEL(x-1, y,   z,   nx,ny,nz,ng);
+        size_t y_down  = VOXEL(x,   y-1, z,   nx,ny,nz,ng);
+        size_t z_down  = VOXEL(x,   y,   z-1, nx,ny,nz,ng);
+
+        size_t xz_down = VOXEL(x-1, y,   z-1, nx,ny,nz,ng);
+        size_t xy_down = VOXEL(x-1, y-1, z,   nx,ny,nz,ng);
+        size_t yz_down = VOXEL(x,   y-1, z-1, nx,ny,nz,ng);
+
         jfx(i) = cx*(
-                    accumulators(i,                   accumulator_var::jx, 0) +
-                    accumulators(i+y_offset,          accumulator_var::jx, 1) +
-                    accumulators(i+z_offset,          accumulator_var::jx, 2) +
-                    accumulators(i+y_offset+z_offset, accumulator_var::jx, 3)
+                    accumulators(i,       accumulator_var::jx, 0) +
+                    accumulators(y_down,  accumulator_var::jx, 1) +
+                    accumulators(z_down,  accumulator_var::jx, 2) +
+                    accumulators(yz_down, accumulator_var::jx, 3)
                 );
+	//if(y==1&&z==1)
+	//if(y!=1||z!=1)
+	  //	  printf("x,y,z=%d,%d,%d,jfx=%e\n",x,y,z,jfx(i));
+        // printf("jxf %d x %d y %d z %d = %e cx %e a0 %e ax %e ay %e az %e \n",
+        //         i, x, y, z, jfx(i),
+        //         cx,
+        //         accumulators(i,       accumulator_var::jx, 0),
+        //         accumulators(y_down,  accumulator_var::jx, 1),
+        //         accumulators(z_down,  accumulator_var::jx, 2),
+        //         accumulators(yz_down, accumulator_var::jx, 3)
+        //       );
 
         jfy(i) = cy*(
-                    accumulators(i,                   accumulator_var::jy, 0) +
-                    accumulators(i+z_offset,          accumulator_var::jy, 1) +
-                    accumulators(i+y_offset,          accumulator_var::jy, 2) +
-                    accumulators(i+y_offset+z_offset, accumulator_var::jy, 3)
+                    accumulators(i,       accumulator_var::jy, 0) +
+                    accumulators(z_down,  accumulator_var::jy, 1) +
+                    accumulators(x_down,  accumulator_var::jy, 2) +
+                    accumulators(xz_down, accumulator_var::jy, 3)
                 );
 
         jfz(i) = cz*(
-                    accumulators(i,                   accumulator_var::jz, 0) +
-                    accumulators(i+x_offset,          accumulator_var::jz, 1) +
-                    accumulators(i+y_offset,          accumulator_var::jz, 2) +
-                    accumulators(i+x_offset+y_offset, accumulator_var::jz, 3)
+                    accumulators(i,       accumulator_var::jz, 0) +
+                    accumulators(x_down,  accumulator_var::jz, 1) +
+                    accumulators(y_down,  accumulator_var::jz, 2) +
+                    accumulators(xy_down, accumulator_var::jz, 3)
                 );
     };
-
-    Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng, ny+ng, nz+ng} ); // Try not to into ghosts // TODO: dry this
+    //may not be enough if particles run into ghost cells
+    Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng+1, ny+ng+1, nz+ng+1} ); // Try not to into ghosts // TODO: dry this
     Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );
 
     /* // Crib sheet for old variable names
@@ -118,3 +135,4 @@ void unload_accumulator_array(
     */
 
 }
+

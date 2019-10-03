@@ -37,7 +37,7 @@ int main( int argc, char* argv[] )
         // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
-        size_t npc = 8000;
+        size_t npc = 100;
         Initializer::initialize_params(32, npc);
 
         // Cache some values locally for printing
@@ -103,8 +103,8 @@ int main( int argc, char* argv[] )
         Initializer::initialize_interpolator(interpolators);
 
         // Can obviously supply solver type at compile time
-        //Field_Solver<EM_Field_Solver> field_solver;
-        Field_Solver<ES_Field_Solver_1D> field_solver;
+        Field_Solver<EM_Field_Solver> field_solver(fields);
+        //Field_Solver<ES_Field_Solver_1D> field_solver(fields);
 
         // Grab some global values for use later
         const Boundary boundary = Parameters::instance().BOUNDARY_TYPE;
@@ -187,20 +187,20 @@ int main( int argc, char* argv[] )
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
 
             //     // Half advance the magnetic field from B_0 to B_{1/2}
-            //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
+	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             // Advance the electric field from E_0 to E_1
-            field_solver.advance_e(fields, px, py, pz, nx, ny, nz, dt_eps0);
+            field_solver.advance_e(fields, px, py, pz, nx, ny, nz, num_ghosts, dt_eps0);
 
-            //     // Half advance the magnetic field from B_{1/2} to B_1
-            //     field_solver.advance_b(fields, px, py, pz, nx, ny, nz);
+	    // Half advance the magnetic field from B_{1/2} to B_1
+	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             //     // Print particles.
             //     print_particles( particles );
 
             //     // Output vis
             //     vis.write_vis(particles, step);
-            printf("%d %f, %f\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz));
+            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
         }
 
 
