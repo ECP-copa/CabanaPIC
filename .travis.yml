@@ -64,7 +64,7 @@ after_success:
   - if [[ ${COVERAGE} ]]; then
       #cd .. && codecov --gcov-exec gcov-${GVER};
       pushd build &&
-      codecov -x gcov-6 -F "${CC}";
+      codecov -x gcov-6 -F "${CC}"
       #python -m coverxygen --src-dir .. --xml-dir xml/ --output doxygen.coverage.info && codecov -F doxygen -X gcov -f doxygen.coverage.info &&
      popd;
     fi
