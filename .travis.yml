@@ -61,7 +61,9 @@ script:
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1
 
 after_success:
-  - if [[ ${COVERAGE} ]]; then cd .. && codecov -x gcov-6 -F "${CC}"; fi
+  - pwd
+  - cd build
+  - if [[ ${COVERAGE} ]]; then codecov -x gcov-6 -F "${CC}"; fi
 
 cache:
   directories:
