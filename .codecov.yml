@@ -1,0 +1,6 @@
+coverage:
+  precision: 1
+  round: down
+ignore:
+  - Cabana/
+  - kokkos/
