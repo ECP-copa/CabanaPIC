@@ -34,10 +34,7 @@ int main( int argc, char* argv[] )
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-
         //Visualizer vis;
-
-        // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 100;
@@ -52,7 +49,7 @@ int main( int argc, char* argv[] )
         const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
         const size_t num_particles = deck.num_particles;
-        real_t dxp = 2.f/(npc);
+        real_t dxp = 2.f / (npc);
 
         // Define some consts
         const real_t dx = deck.dx;
