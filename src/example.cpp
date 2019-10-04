@@ -30,14 +30,11 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
-    printf ("#On Kokkos execution space %s\n",
+    printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-
         //Visualizer vis;
-
-        // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 100;
@@ -46,18 +43,19 @@ int main( int argc, char* argv[] )
         deck.print_run_details();
 
         // Cache some values locally for printing
-        const size_t nx = deck.nx;
-        const size_t ny = deck.ny;
-        const size_t nz = deck.nz;
-        const size_t num_ghosts = deck.num_ghosts;
+        const int nx = deck.nx;
+        const int ny = deck.ny;
+        const int nz = deck.nz;
+        const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
         const size_t num_particles = deck.num_particles;
-        real_t dxp = 2.f/(npc);
+        real_t dxp = 2.f / (npc);
 
         // Define some consts
         const real_t dx = deck.dx;
         const real_t dy = deck.dy;
         const real_t dz = deck.dz;
+
         real_t dt   = deck.dt;
         real_t c    = deck.c;
         real_t me   = deck.me;
@@ -66,7 +64,8 @@ int main( int argc, char* argv[] )
         real_t Lx   = deck.len_x;
         real_t Ly   = deck.len_y;
         real_t Lz   = deck.len_z;
-        size_t nppc = deck.nppc;
+
+        int nppc = deck.nppc;
         real_t eps0 = deck.eps;
         real_t Npe  = n0*Lx*Ly*Lz;
         size_t Ne=  (nppc*nx*ny*nz);
@@ -133,35 +132,33 @@ int main( int argc, char* argv[] )
         const size_t num_steps = deck.num_steps;
 
         printf( "#***********************************************\n" );
-        printf ( "#num_step = %d\n" , num_steps );
-        printf ( "#Lx/de = %f\n" , Lx );
-        printf ( "#Ly/de = %f\n" , Ly );
-        printf ( "#Lz/de = %f\n" , Lz );
-        printf ( "#nx = %d\n" , nx );
-        printf ( "#ny = %d\n" , ny );
-        printf ( "#nz = %d\n" , nz );
-        printf ( "#nppc = %d\n" , nppc );
-        printf ( "# Ne = %d\n" , Ne );
-        printf ( "#dt*wpe = %f\n" , dt );
-        printf ( "#dx/de = %f\n" , Lx/(nx) );
-        printf ( "#dy/de = %f\n" , Ly/(ny) );
-        printf ( "#dz/de = %f\n" , Lz/(nz) );
-        printf ( "#n0 = %f\n" , n0 );
-        printf( "" );
+        printf( "#num_step = %ld\n" , num_steps );
+        printf( "#Lx/de = %f\n" , Lx );
+        printf( "#Ly/de = %f\n" , Ly );
+        printf( "#Lz/de = %f\n" , Lz );
+        printf( "#nx = %d\n" , nx );
+        printf( "#ny = %d\n" , ny );
+        printf( "#nz = %d\n" , nz );
+        printf( "#nppc = %d\n" , nppc );
+        printf( "# Ne = %ld\n" , Ne );
+        printf( "#dt*wpe = %f\n" , dt );
+        printf( "#dx/de = %f\n" , Lx/(nx) );
+        printf( "#dy/de = %f\n" , Ly/(ny) );
+        printf( "#dz/de = %f\n" , Lz/(nz) );
+        printf( "#n0 = %f\n" , n0 );
+        printf( "*****\n" );
 
-        for (size_t step = 0; step < num_steps; step++)
+        for (int step = 0; step < num_steps; step++)
         {
-            //     //std::cout << "Step " << step << std::endl;
             // Convert fields to interpolators
-
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
 
             clear_accumulator_array(fields, accumulators, nx, ny, nz);
-            //     // TODO: Make the frequency of this configurable (every step is not
-            //     // required for this incarnation)
-            //     // Sort by cell index
-            //     auto keys = particles.slice<Cell_Index>();
-            //     auto bin_data = Cabana::sortByKey( keys );
+            // TODO: Make the frequency of this configurable (every step is not
+            // required for this incarnation)
+            // Sort by cell index
+            //auto keys = particles.slice<Cell_Index>();
+            //auto bin_data = Cabana::sortByKey( keys );
 
             // Move
             push(
@@ -197,26 +194,26 @@ int main( int argc, char* argv[] )
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
 
             //     // Half advance the magnetic field from B_0 to B_{1/2}
-	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             // Advance the electric field from E_0 to E_1
             field_solver.advance_e(fields, px, py, pz, nx, ny, nz, num_ghosts, dt_eps0);
 
-	    // Half advance the magnetic field from B_{1/2} to B_1
-	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
-
-            //     // Print particles.
-            //     print_particles( particles );
+            // Half advance the magnetic field from B_{1/2} to B_1
+            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             //     // Output vis
             //     vis.write_vis(particles, step);
+
             printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
         }
 
 
     } // End Scoping block
 
+    // TODO: add correctness check?
     printf("#Good!\n");
+
     // Finalize.
     Cabana::finalize();
     return 0;
