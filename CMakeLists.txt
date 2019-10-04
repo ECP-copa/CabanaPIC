@@ -87,5 +87,5 @@ INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
 add_executable(minipic ${SOURCES})
-target_link_libraries(minipic cabanacore kokkos hwloc dl)
+target_link_libraries(minipic cabanacore kokkos dl)
 

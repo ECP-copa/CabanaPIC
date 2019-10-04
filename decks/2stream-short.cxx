@@ -51,4 +51,4 @@ Input_Deck::Input_Deck()
             ) / c;
 
     n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
-}
+
