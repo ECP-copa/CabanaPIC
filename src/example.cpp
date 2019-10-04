@@ -140,16 +140,16 @@ int main( int argc, char* argv[] )
         printf( "#nx = %d\n" , nx );
         printf( "#ny = %d\n" , ny );
         printf( "#nz = %d\n" , nz );
-        printf( "#nppc = %ld\n" , nppc );
-        printf( "# Ne = %d\n" , Ne );
+        printf( "#nppc = %d\n" , nppc );
+        printf( "# Ne = %ld\n" , Ne );
         printf( "#dt*wpe = %f\n" , dt );
         printf( "#dx/de = %f\n" , Lx/(nx) );
         printf( "#dy/de = %f\n" , Ly/(ny) );
         printf( "#dz/de = %f\n" , Lz/(nz) );
         printf( "#n0 = %f\n" , n0 );
-        printf( "*****" );
+        printf( "*****\n" );
 
-        for (size_t step = 0; step < num_steps; step++)
+        for (int step = 0; step < num_steps; step++)
         {
             //     //std::cout << "Step " << step << std::endl;
             // Convert fields to interpolators
