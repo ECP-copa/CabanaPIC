@@ -38,8 +38,9 @@ before_script:
           -DCabana_ENABLE_MPI=OFF
           -DCabana_ENABLE_TESTING=OFF -DCabana_ENABLE_EXAMPLES=OFF
           -DCabana_ENABLE_PERFORMANCE_TESTING=OFF .. &&
-    make -k -j2 VERBOSE=1 && make install DESTDIR=${HOME}/Cabana && popd &&
+    make -k -j2 VERBOSE=1 && make install && popd &&
     popd
+  - ls $HOME/Cabana
 
 before_install:
  - mkdir -p "$HOME/bin"
@@ -56,7 +57,7 @@ env: #maybe add mpich later
 script:
   - mkdir build && cd build
   - pwd
-  - PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=${HOME}/kokkos -DCABANA_DIR=${HOME}/Cabana .. &&
+  - PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=$HOME/kokkos -DCABANA_DIR=$HOME/Cabana .. &&
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1 && make install DESTDIR=$PWD
 
 after_success:
