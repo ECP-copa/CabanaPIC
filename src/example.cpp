@@ -30,7 +30,7 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
-    printf ("#Running On Kokkos execution space %s\n",
+    printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
