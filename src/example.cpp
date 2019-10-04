@@ -46,10 +46,10 @@ int main( int argc, char* argv[] )
         deck.print_run_details();
 
         // Cache some values locally for printing
-        const size_t nx = deck.nx;
-        const size_t ny = deck.ny;
-        const size_t nz = deck.nz;
-        const size_t num_ghosts = deck.num_ghosts;
+        const int nx = deck.nx;
+        const int ny = deck.ny;
+        const int nz = deck.nz;
+        const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
         const size_t num_particles = deck.num_particles;
         real_t dxp = 2.f/(npc);
@@ -66,7 +66,7 @@ int main( int argc, char* argv[] )
         real_t Lx   = deck.len_x;
         real_t Ly   = deck.len_y;
         real_t Lz   = deck.len_z;
-        size_t nppc = deck.nppc;
+        int nppc = deck.nppc;
         real_t eps0 = deck.eps;
         real_t Npe  = n0*Lx*Ly*Lz;
         size_t Ne=  (nppc*nx*ny*nz);
@@ -133,21 +133,21 @@ int main( int argc, char* argv[] )
         const size_t num_steps = deck.num_steps;
 
         printf( "#***********************************************\n" );
-        printf ( "#num_step = %d\n" , num_steps );
-        printf ( "#Lx/de = %f\n" , Lx );
-        printf ( "#Ly/de = %f\n" , Ly );
-        printf ( "#Lz/de = %f\n" , Lz );
-        printf ( "#nx = %d\n" , nx );
-        printf ( "#ny = %d\n" , ny );
-        printf ( "#nz = %d\n" , nz );
-        printf ( "#nppc = %d\n" , nppc );
-        printf ( "# Ne = %d\n" , Ne );
-        printf ( "#dt*wpe = %f\n" , dt );
-        printf ( "#dx/de = %f\n" , Lx/(nx) );
-        printf ( "#dy/de = %f\n" , Ly/(ny) );
-        printf ( "#dz/de = %f\n" , Lz/(nz) );
-        printf ( "#n0 = %f\n" , n0 );
-        printf( "" );
+        printf( "#num_step = %ld\n" , num_steps );
+        printf( "#Lx/de = %f\n" , Lx );
+        printf( "#Ly/de = %f\n" , Ly );
+        printf( "#Lz/de = %f\n" , Lz );
+        printf( "#nx = %d\n" , nx );
+        printf( "#ny = %d\n" , ny );
+        printf( "#nz = %d\n" , nz );
+        printf( "#nppc = %ld\n" , nppc );
+        printf( "# Ne = %d\n" , Ne );
+        printf( "#dt*wpe = %f\n" , dt );
+        printf( "#dx/de = %f\n" , Lx/(nx) );
+        printf( "#dy/de = %f\n" , Ly/(ny) );
+        printf( "#dz/de = %f\n" , Lz/(nz) );
+        printf( "#n0 = %f\n" , n0 );
+        printf( "*****" );
 
         for (size_t step = 0; step < num_steps; step++)
         {
