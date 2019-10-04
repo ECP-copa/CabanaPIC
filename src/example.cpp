@@ -30,7 +30,7 @@ int main( int argc, char* argv[] )
     // Initialize the kokkos runtime.
     Cabana::initialize( argc, argv );
 
-    printf ("#On Kokkos execution space %s\n",
+    printf ("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
@@ -151,17 +151,15 @@ int main( int argc, char* argv[] )
 
         for (int step = 0; step < num_steps; step++)
         {
-            //     //std::cout << "Step " << step << std::endl;
             // Convert fields to interpolators
-
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
 
             clear_accumulator_array(fields, accumulators, nx, ny, nz);
-            //     // TODO: Make the frequency of this configurable (every step is not
-            //     // required for this incarnation)
-            //     // Sort by cell index
-            //     auto keys = particles.slice<Cell_Index>();
-            //     auto bin_data = Cabana::sortByKey( keys );
+            // TODO: Make the frequency of this configurable (every step is not
+            // required for this incarnation)
+            // Sort by cell index
+            //auto keys = particles.slice<Cell_Index>();
+            //auto bin_data = Cabana::sortByKey( keys );
 
             // Move
             push(
@@ -197,26 +195,26 @@ int main( int argc, char* argv[] )
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
 
             //     // Half advance the magnetic field from B_0 to B_{1/2}
-	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             // Advance the electric field from E_0 to E_1
             field_solver.advance_e(fields, px, py, pz, nx, ny, nz, num_ghosts, dt_eps0);
 
-	    // Half advance the magnetic field from B_{1/2} to B_1
-	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
-
-            //     // Print particles.
-            //     print_particles( particles );
+            // Half advance the magnetic field from B_{1/2} to B_1
+            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             //     // Output vis
             //     vis.write_vis(particles, step);
+
             printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
         }
 
 
     } // End Scoping block
 
+    // TODO: add correctness check?
     printf("#Good!\n");
+
     // Finalize.
     Cabana::finalize();
     return 0;
