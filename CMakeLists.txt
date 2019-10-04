@@ -37,6 +37,20 @@ endif()
 option(ENABLE_GPU OFF)
 option(ENABLE_SERIAL OFF)
 
+option(ENABLE_TESTS OFF)
+option(ENABLE_COVERAGE_BUILD OFF)
+
+if (ENABLE_TESTS)
+  enable_testing()
+  set(TEST_DIR "./tests/include")
+  include_directories(${TEST_DIR})
+  add_subdirectory(tests)
+endif(ENABLE_TESTS)
+
+if(ENABLE_COVERAGE_BUILD)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif(ENABLE_COVERAGE_BUILD)
+
 if (ENABLE_SERIAL)
     add_definitions(-DUSE_SERIAL_CPU=ON)
 endif(ENABLE_SERIAL)
@@ -74,3 +88,4 @@ LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
 add_executable(minipic ${SOURCES})
 target_link_libraries(minipic cabanacore kokkos hwloc dl)
+
