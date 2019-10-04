@@ -47,7 +47,7 @@ before_script:
        mkdir -p $HOME/.local/bin && wget -O $HOME/.local/bin/codecov https://codecov.io/bash && chmod +x $HOME/.local/bin/codecov;
      fi
 
-env:
+env: 
   global:
     - CCACHE_CPP2=yes
   matrix:
@@ -61,13 +61,7 @@ script:
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1
 
 after_success:
-  - if [[ ${COVERAGE} ]]; then
-      #cd .. && codecov --gcov-exec gcov-${GVER};
-      pushd build &&
-      codecov -x gcov-6 -F "${CC}"
-      #python -m coverxygen --src-dir .. --xml-dir xml/ --output doxygen.coverage.info && codecov -F doxygen -X gcov -f doxygen.coverage.info &&
-     popd;
-    fi
+  - if [[ ${COVERAGE} ]]; then cd .. && codecov -x gcov-6 -F "${CC}"; fi
 
 cache:
   directories:
