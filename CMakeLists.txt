@@ -23,10 +23,10 @@ if (NOT ${INPUT_DECK} STREQUAL "")
     # TODO: normalize these paths?
     if(EXISTS ${PROJECT_SOURCE_DIR}/${INPUT_DECK})
         # Append deck to sources list
-        list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/${INPUT_DECK}")
+        #list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/${INPUT_DECK}")
         add_definitions(-DUSER_INPUT_DECK=${PROJECT_SOURCE_DIR}/${INPUT_DECK})
     elseif(EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK})
-        list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK}")
+        #list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK}")
         add_definitions(-DUSER_INPUT_DECK=${CMAKE_CURRENT_BINARY_DIR}/${INPUT_DECK})
     else()
     message( FATAL_ERROR "Cannot find user specified input deck: ${INPUT_DECK}")
@@ -86,6 +86,5 @@ LINK_DIRECTORIES(${CABANA_DIR}/lib64)
 INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
-add_executable(minipic ${SOURCES})
+add_executable(minipic ${SOURCES} ${INPUT_DECK})
 target_link_libraries(minipic cabanacore kokkos dl)
-

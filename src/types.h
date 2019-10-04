@@ -72,7 +72,7 @@ using particle_list_t =
 
 /////////////// START VPIC TYPE ////////////
 
-#include <grid.h>
+#include "grid.h"
 
 enum InterpolatorFields
 { // TODO: things in here like EXYZ and CBXYZ are ambigious

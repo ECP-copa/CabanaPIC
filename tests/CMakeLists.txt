@@ -1,3 +1,5 @@
+add_subdirectory(decks)
+
 LIST(APPEND TESTS example)
 
 foreach (test ${TESTS})
