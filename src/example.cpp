@@ -55,6 +55,7 @@ int main( int argc, char* argv[] )
         const real_t dx = deck.dx;
         const real_t dy = deck.dy;
         const real_t dz = deck.dz;
+
         real_t dt   = deck.dt;
         real_t c    = deck.c;
         real_t me   = deck.me;
@@ -63,6 +64,7 @@ int main( int argc, char* argv[] )
         real_t Lx   = deck.len_x;
         real_t Ly   = deck.len_y;
         real_t Lz   = deck.len_z;
+
         int nppc = deck.nppc;
         real_t eps0 = deck.eps;
         real_t Npe  = n0*Lx*Ly*Lz;
