@@ -112,8 +112,10 @@ int main( int argc, char* argv[] )
         initialize_interpolator(interpolators);
 
         // Can obviously supply solver type at compile time
-        Field_Solver<EM_Field_Solver> field_solver(fields);
+        //Field_Solver<EM_Field_Solver> field_solver(fields);
         //Field_Solver<ES_Field_Solver_1D> field_solver(fields);
+        // This is able to deduce solver type from compile options
+        auto field_solver = make_field_solver(fields);
 
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
@@ -204,8 +206,17 @@ int main( int argc, char* argv[] )
 
             //     // Output vis
             //     vis.write_vis(particles, step);
+            //
 
-            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
+            // TODO: move this calculation into a class
+            real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz);
+#ifndef ES_FIELD_SOLVER
+            real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz);
+#else // Only makes sense to do b en for EM
+            real_t b_en = -1.0; // TODO: give this a better default
+#endif
+
+            printf("%d  %f  %e  %e\n",step, step*dt, e_en, b_en);
         }
 
 

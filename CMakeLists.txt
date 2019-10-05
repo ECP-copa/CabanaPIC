@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 project(minipic LANGUAGES CXX VERSION 0.0.1)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -27,8 +27,12 @@ set(SOLVER_TYPE "EM" CACHE STRING "Selected Solver Type")
 set(SolverTypes EM ES) # List allowable solver types
 # hint the tools the allowed values
 set_property(CACHE SOLVER_TYPE PROPERTY STRINGS ${SolverTypes})
-if (NOT ${SOLVER_TYPE} STREQUAL "EM")
-    message(FATAL_ERROR "SOLVER_TYPE other than EM is not yet supported")
+if (${SOLVER_TYPE} STREQUAL "EM")
+    add_definitions(-DEM_FIELD_SOLVER=YES)
+elseif (${SOLVER_TYPE} STREQUAL "ES")
+    add_definitions(-DES_FIELD_SOLVER=YES)
+else()
+    message(FATAL_ERROR "SOLVER_TYPE is not support (EM/ES only)")
 endif()
 ##### END SET SOLVES TYPE #####
 

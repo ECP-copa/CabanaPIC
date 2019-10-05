@@ -6,6 +6,7 @@
 
 // TODO: Namespace this stuff?
 
+
 template<class Slice_X, class Slice_Y, class Slice_Z>
 KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts_B(
@@ -260,7 +261,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 		public:
 
 				//constructor
-				Field_Solver(field_array_t fields)
+				Field_Solver(field_array_t& fields)
 				{
 						auto ex = fields.slice<FIELD_EX>();
 						auto ey = fields.slice<FIELD_EY>();
@@ -286,7 +287,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 				}
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -299,7 +300,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 						Solver_Type::advance_b( fields, px, py, pz, nx, ny, nz, ng);
 				}
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -320,7 +321,7 @@ class ES_Field_Solver
 		public:
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -334,7 +335,7 @@ class ES_Field_Solver
 				}
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -370,6 +371,32 @@ class ES_Field_Solver
 						Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
 						Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
 				}
+
+				real_t e_energy(
+								field_array_t& fields,
+								real_t px,
+								real_t py,
+								real_t pz,
+								size_t nx,
+								size_t ny,
+								size_t nz
+        )
+				{
+						auto ex = fields.slice<FIELD_EX>();
+						auto ey = fields.slice<FIELD_EY>();
+						auto ez = fields.slice<FIELD_EZ>();
+						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+						{
+								lsum += ex(i) * ex(i)
+										+ey(i) * ey(i)
+										+ez(i) * ez(i);
+						};
+
+						real_t e_tot_energy=0;
+						Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+						Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
+						return e_tot_energy*0.5f;
+				}
 };
 
 
@@ -378,15 +405,14 @@ class ES_Field_Solver_1D
 		public:
 
 				real_t e_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
 								size_t nx,
 								size_t ny,
-								size_t nz,
-								size_t ng
-								)
+								size_t nz
+        )
 				{
 						auto ex = fields.slice<FIELD_EX>();
 						auto ey = fields.slice<FIELD_EY>();
@@ -405,7 +431,7 @@ class ES_Field_Solver_1D
 				}
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -448,7 +474,7 @@ class EM_Field_Solver
 		public:
 
 				real_t e_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -473,7 +499,7 @@ class EM_Field_Solver
 				}
 
 				real_t b_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -499,7 +525,7 @@ class EM_Field_Solver
 
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -549,7 +575,7 @@ class EM_Field_Solver
 
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -600,9 +626,20 @@ class EM_Field_Solver
 						Kokkos::parallel_for( zyx_policy, _advance_b, "advance_b()" );
 						serial_update_ghosts_B(cbx, cby, cbz, nx, ny, nz, ng);
 				}
-
-
 };
 
+// Requires C++14
+static auto make_field_solver(field_array_t& fields)
+{
+    // TODO: make this support 1/2/3d
+#ifdef ES_FIELD_SOLVER
+    std::cout << "Initialized ES Solver" << std::endl;
+    Field_Solver<ES_Field_Solver> field_solver(fields);
+#else // EM
+    std::cout << "Initialized EM Solver" << std::endl;
+    Field_Solver<EM_Field_Solver> field_solver(fields);
+#endif
+    return field_solver;
+}
 
 #endif // pic_EM_fields_h
