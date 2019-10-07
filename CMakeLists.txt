@@ -47,6 +47,13 @@ if (NOT ${DIMENSIONALITY} STREQUAL "3")
 endif()
 ##### END SET DIMENSIONALITY #####
 
+##### SET REAL_TYPE (real_t) #####
+set(REAL_TYPE "float" CACHE STRING "Selected type for real numbers")
+set(ALLOWABLE_REALS "float" "double") # List allowable values
+set_property(CACHE REAL_TYPE PROPERTY STRINGS ${ALLOWABLE_REALS})
+add_definitions(-DREAL_TYPE=${REAL_TYPE})
+##### END SET REAL_TYPE #####
+
 # Allow user to select input deck to build against
 set(INPUT_DECK "" CACHE STRING "Path to input deck")
 

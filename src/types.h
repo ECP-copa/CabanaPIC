@@ -1,7 +1,11 @@
 #ifndef pic_types_h
 #define pic_types_h
 
+#ifndef REAL_TYPE
 #define real_t float
+#else
+#define real_t REAL_TYPE
+#endif
 
 #include <Kokkos_ScatterView.hpp>
 #include <Cabana_Types.hpp>
