@@ -14,7 +14,7 @@ enum Boundary {
 class _Input_Deck {
     public:
         // Having this separate lets us initialize us double if required
-        using real_ = real_t;
+        using real_ = float; //real_t;
 
         static real_ courant_length( real_ lx, real_ ly, real_ lz,
                 size_t nx, size_t ny, size_t nz ) {

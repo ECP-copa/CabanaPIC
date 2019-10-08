@@ -98,7 +98,8 @@ INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
-target_link_libraries(minipic cabanacore kokkos dl)
+# TODO: why is hwloc needed here for travis?
+target_link_libraries(minipic cabanacore kokkos dl hwloc)
 
 
 ##### TESTS ######
