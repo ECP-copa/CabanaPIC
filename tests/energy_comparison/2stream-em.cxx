@@ -50,14 +50,14 @@ class Custom_Finalizer : public Run_Finalizer {
                     b_mask,
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
-                    "Weibel.e.out", // diagnostic output file
+                    "Weibel.b.out", // diagnostic output file
                     206 // num to skip, reads 206 to EOF
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
             // Throw error code if either failed
             if ((!b_correct) || (!e_correct)) {
-                std::exit(!b_correct & !e_correct);
+                std::exit(1);
             }
         }
 };
