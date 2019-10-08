@@ -34,8 +34,6 @@ int main( int argc, char* argv[] )
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-        //Visualizer vis;
-
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 100;
 
@@ -182,21 +180,17 @@ int main( int argc, char* argv[] )
                 );
 
             Kokkos::Experimental::contribute(accumulators, scatter_add);
-            //for ( int zz = 0; zz < num_cells; zz++)
-            //{
-                //std::cout << "post accum " << zz << " = " << accumulators(zz, 0, 0) << std::endl;
-            //}
 
             // Only reset the data if these two are not the same arrays
             scatter_add.reset_except(accumulators);
 
             // TODO: boundaries? MPI
-            // boundary_p(); // Implies Parallel?
+            //boundary_p(); // Implies Parallel?
 
             // Map accumulator current back onto the fields
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
 
-            //     // Half advance the magnetic field from B_0 to B_{1/2}
+            // Half advance the magnetic field from B_0 to B_{1/2}
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             // Advance the electric field from E_0 to E_1
@@ -205,20 +199,7 @@ int main( int argc, char* argv[] )
             // Half advance the magnetic field from B_{1/2} to B_1
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            //     // Output vis
-            //     vis.write_vis(particles, step);
-            //
-
-            // TODO: move this calculation into a class
-            real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz);
-#ifndef ES_FIELD_SOLVER
-            real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz);
-#else // Only makes sense to do b en for EM
-            real_t b_en = -1.0; // TODO: give this a better default
-#endif
-
-            // Print energies to screen *and* dump them to disk
-            printf("%d  %f  %e  %e\n",step, step*dt, e_en, b_en);
+            dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz);
         }
 
 

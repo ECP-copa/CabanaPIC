@@ -642,4 +642,37 @@ static auto make_field_solver(field_array_t& fields)
     return field_solver;
 }
 
+template<typename field_solver_t>
+void dump_energies(
+        field_solver_t& field_solver,
+        field_array_t& fields,
+        int step,
+        real_t time,
+        real_t px,
+        real_t py,
+        real_t pz,
+        size_t nx,
+        size_t ny,
+        size_t nz
+        )
+{
+            real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz);
+            // Print energies to screen *and* dump them to disk
+            // TODO: is it ok to keep opening and closing the file like this?
+            // one per time step is probably fine?
+            std::ofstream energy_file;
+            energy_file.open("energies.txt", std::ios::app); // append
+            energy_file << step << " " << time << " " << e_en;
+#ifndef ES_FIELD_SOLVER
+            // Only write b info if it's available
+            real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz);
+            energy_file << " " << b_en;
+            printf("%d  %f  %e\n",step, time, e_en);
+#else
+            printf("%d  %f  %e  %e\n",step, time, e_en, b_en);
+#endif
+            energy_file << std::endl;
+            energy_file.close();
+}
+
 #endif // pic_EM_fields_h
