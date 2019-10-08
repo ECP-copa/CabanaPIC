@@ -44,6 +44,8 @@ double calculate_abs_error(double A, double B)
     return std::abs(A-B) / std::min(A,B);
 }
 
+// TODO: are relative and absolute used backwards here?
+
 /**
  * @brief Helper function to compare numbers and calculate a relative error
  *
@@ -93,6 +95,7 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
     else { // Do absolute error
 
         err = calculate_abs_error(A, B);
+        std::cout << "err for " << A << " and " << B << " with a tol of " << relative_tolerance << " gives an error of " << err << std::endl;
 
         if (err < relative_tolerance)
         {
