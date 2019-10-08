@@ -205,9 +205,6 @@ int main( int argc, char* argv[] )
 
     } // End Scoping block
 
-    // TODO: add correctness check?
-    printf("#Good!\n");
-
     // Let the user perform any needed finalization
     deck.finalize();
 

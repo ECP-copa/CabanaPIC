@@ -329,6 +329,7 @@ bool compare_energies(
             std::cout << "Writing error output " << errs.size() << std::endl;
             write_error_ouput( errs, err_per_line, err_file_base_name);
         }
+        std::cout << "Exiting test with a result of " << match << std::endl;
         return match;
     }
     catch (const std::exception &exc) // Catching all is bad form, but OK for now..
