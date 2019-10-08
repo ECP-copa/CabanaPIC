@@ -5,8 +5,6 @@
 #include <limits> // epsilon for limit
 #include <utility> // pair
 
-#include <bitset> // TODO: Remove
-
 namespace test_utils {
 /**
  * @brief Helper function to write collective errors to file for further analysis
@@ -41,10 +39,8 @@ void write_error_ouput( std::vector<double> errs, int field_per_line, std::strin
  */
 double calculate_abs_error(double A, double B)
 {
-    return std::abs(A-B) / std::min(A,B);
+     return std::abs(A-B);
 }
-
-// TODO: are relative and absolute used backwards here?
 
 /**
  * @brief Helper function to compare numbers and calculate a relative error
@@ -56,7 +52,7 @@ double calculate_abs_error(double A, double B)
  */
 double calculate_relative_error(double A, double B)
 {
-     return std::abs(A-B);
+    return std::abs(A-B) / std::min(A,B);
 }
 
 /**
@@ -75,12 +71,14 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
 
     // Right now this is pretty arbitrary..
     double abs_threshhold = 10 * std::numeric_limits<float>::epsilon();
+    std::cout << "abs threshhold " << abs_threshhold << std::endl;
 
     // Calculate if we're withing tolerances
     // If we're close to relative, do absolute
     if (std::abs(std::min(A,B)) < abs_threshhold)
     {
-        err = calculate_relative_error(A, B);
+        std::cout << std::abs(std::min(A,B)) << " is smaller than " << abs_threshhold << " so doing abs error " << std::endl;
+        err = calculate_abs_error(A, B);
 
         // Finding a relative error to 0 doesn't make much
         // sense, so lets do absolute error instead
@@ -90,12 +88,12 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
         }
         else {
             within_tol = false;
-            std::cout << "relative marking within tol as false" << std::endl;
+            std::cout << "abs marking within tol as false" << std::endl;
         }
     }
-    else { // Do absolute error
+    else { // Do relative error
 
-        err = calculate_abs_error(A, B);
+        err = calculate_relative_error(A, B);
         std::cout << "err for " << A << " and " << B << " with a tol of " << relative_tolerance << " gives an error of " << err << std::endl;
 
         if (err < relative_tolerance)
@@ -103,7 +101,7 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
             within_tol = true;
         }
         else {
-            std::cout << "marking within tol as false" << std::endl;
+            std::cout << "relative marking within tol as false" << std::endl;
             within_tol = false;
         }
     }
