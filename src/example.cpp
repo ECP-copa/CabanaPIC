@@ -64,6 +64,7 @@ int main( int argc, char* argv[] )
         real_t Lx   = deck.len_x;
         real_t Ly   = deck.len_y;
         real_t Lz   = deck.len_z;
+        real_t v0   = deck.v0;
 
         int nppc = deck.nppc;
         real_t eps0 = deck.eps;
@@ -87,7 +88,7 @@ int main( int argc, char* argv[] )
         //logger << "numSoA " << particles.numSoA() << std::endl;
 
         // Initialize particles.
-        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we );
+        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we, v0 );
 
         grid_t* grid = new grid_t();
 
