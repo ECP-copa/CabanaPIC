@@ -27,7 +27,6 @@ before_script:
     pushd kokkos &&
     mkdir build &&
     pushd build &&
-    #../generate_makefile.bash --prefix=$HOME/kokkos ${KOKKOS_OPTS[@]} &&
     cmake -DCMAKE_INSTALL_PREFIX=$HOME/kokkos ${KOKKOS_OPTS[@]} .. &&
     make -j2 &&
     make install &&
