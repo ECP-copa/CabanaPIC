@@ -12,6 +12,16 @@ enum Boundary {
 };
 
 
+class Run_Finalizer {
+    public:
+        virtual void finalize()
+        {
+            // Default finalization is blank
+        }
+};
+
+// TODO: we can eventually provide a suite of default/sane initializers, such
+// as ones that give the same RNG sequence over multiple procs
 class Particle_Initializer {
 
     public:
@@ -92,9 +102,20 @@ class _Input_Deck {
         // would leak to the init site of _Input_Deck. A normal (non ref, non
         // pointer) variable would avoid the vtable lookup and always call the
         // "default". Perhaps there is a better way?
+        // The original default pointer is pretty likely to leak in custom
+        // decks... at least it does't contain a lot of state
         Particle_Initializer* particle_initer;
 
-        _Input_Deck() : particle_initer(new Particle_Initializer) { }  // empty
+        // Give the user a chance to hook into the end of the run, to do final
+        // things like correctness checks and timing dumping
+        Run_Finalizer* run_finalizer;
+
+        _Input_Deck() :
+            particle_initer(new Particle_Initializer),
+            run_finalizer(new Run_Finalizer)
+        {
+            // empty
+        }
 
         static real_ courant_length( real_ lx, real_ ly, real_ lz,
                 size_t nx, size_t ny, size_t nz ) {
@@ -103,6 +124,15 @@ class _Input_Deck {
             if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
             if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
             return sqrt(1/w1);
+        }
+
+        // We could do this in the destructor, but this has 2 advantages:
+        // 1) It's more explicit
+        // 2) We have finer grained control, so we can more easily ensure it
+        // happens before valuable data is freed
+        void finalize()
+        {
+            run_finalizer->finalize();
         }
 
         void initialize_particles(
@@ -259,7 +289,6 @@ class _Input_Deck {
             Cabana::simd_parallel_for( vec_policy, _init, "init()" );
         }
         */
-        virtual ~_Input_Deck() { } // empty
 };
 
 #ifdef USER_INPUT_DECK
@@ -276,7 +305,6 @@ class Input_Deck : public _Input_Deck {
         // fall back to the default implementation above if the user chosoes
         // not to define one
         Input_Deck();
-        virtual ~Input_Deck();
 };
 #else
 // Default deck -- Weibel

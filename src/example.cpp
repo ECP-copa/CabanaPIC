@@ -217,6 +217,7 @@ int main( int argc, char* argv[] )
             real_t b_en = -1.0; // TODO: give this a better default
 #endif
 
+            // Print energies to screen *and* dump them to disk
             printf("%d  %f  %e  %e\n",step, step*dt, e_en, b_en);
         }
 
@@ -225,6 +226,9 @@ int main( int argc, char* argv[] )
 
     // TODO: add correctness check?
     printf("#Good!\n");
+
+    // Let the user perform any needed finalization
+    deck.finalize();
 
     // Finalize.
     Cabana::finalize();

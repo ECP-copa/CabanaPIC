@@ -30,10 +30,8 @@ class Custom_Particle_Initializer : public Particle_Initializer {
     public:
         using real_ = real_t;
 
-        Custom_Particle_Initializer() {
-            std::cout << "Using Custom Particle cons" << std::endl;
-        }
-
+        // This *has* to be virtual, as we store the object as a pointer to the
+        // base class
         virtual void init(
                 particle_list_t& particles,
                 size_t nx,
@@ -130,6 +128,3 @@ Input_Deck::Input_Deck()
 
     n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
 }
-
-
-Input_Deck::~Input_Deck() { } // empty
