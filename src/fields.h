@@ -182,8 +182,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_y = slice_y(to);
-				// 	    float tmp_slice_z = slice_z(to);
+				// 	    tmp_slice_y = slice_y(to);
+				// 	    tmp_slice_z = slice_z(to);
 
 				// 	    slice_y(to) += slice_y(from);
 				// 	    slice_z(to) += slice_z(from);
@@ -213,8 +213,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_x = slice_x(to);
-				// 	    float tmp_slice_z = slice_z(to);
+				// 	    tmp_slice_x = slice_x(to);
+				// 	    tmp_slice_z = slice_z(to);
 
 				// 	    slice_x(to) += slice_x(from);
 				// 	    slice_z(to) += slice_z(from);
@@ -239,8 +239,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_x = slice_x(to);
-				// 	    float tmp_slice_y = slice_y(to);
+				// 	    tmp_slice_x = slice_x(to);
+				// 	    tmp_slice_y = slice_y(to);
 
 				// 	    slice_x(to) += slice_x(from);
 				// 	    slice_y(to) += slice_y(from);

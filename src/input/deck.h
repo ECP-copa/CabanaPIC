@@ -14,7 +14,7 @@ enum Boundary {
 class _Input_Deck {
     public:
         // TODO: move this into types
-        using real_ = float;
+        using real_ = real_t;
 
         static real_ courant_length( real_ lx, real_ ly, real_ lz,
                 size_t nx, size_t ny, size_t nz ) {
@@ -133,15 +133,12 @@ class _Input_Deck {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f); //
+                    real_t x = pic*dxp+0.5*dxp-1.0;
                     size_t pre_ghost = (2*pi/nppc);
                     //real_t na = 1e-6*sin(6.28318530717959*((x+1.0+pre_ghost*2)/(2*ny)));
-                    //x += dxp*na;
-                    //x += dxp*rand_float(0.0f, 0.002f);
-                    //real_t x = rand_float(-1.0f, 1.0f); //
-                    position_x.access(s,i) = 0;
-                    position_y.access(s,i) = x; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
+                    position_x.access(s,i) = 0.0;
+                    position_y.access(s,i) = x;
+                    position_z.access(s,i) = 0.0;
 
                     weight.access(s,i) = w;
 
@@ -150,7 +147,7 @@ class _Input_Deck {
                     //   size_t ix, iy, iz;
 
                     //cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; 
+                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
                     // Initialize velocity.(each cell length is 2)
 
                     real_t gam = 1.0/sqrt(1.0-v0*v0);
@@ -195,10 +192,10 @@ class _Input_Deck {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f);
+                    real_t x = pic*dxp+0.5*dxp-1.0;
                     position_x.access(s,i) = x;
-                    position_y.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
+                    position_y.access(s,i) = 0.;
+                    position_z.access(s,i) = 0.;
 
 
                     weight.access(s,i) = w;

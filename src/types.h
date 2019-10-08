@@ -167,10 +167,10 @@ enum FieldFields
 
 using FieldDataTypes = Cabana::MemberTypes<
 /*
-  float ex,   ey,   ez,   div_e_err;     // Electric field and div E error
-  float cbx,  cby,  cbz,  div_b_err;     // Magnetic field and div B error
-  float tcax, tcay, tcaz, rhob;          // TCA fields and bound charge density
-  float jfx,  jfy,  jfz,  rhof;          // Free current and charge density
+  ex,   ey,   ez,   div_e_err;     // Electric field and div E error
+  cbx,  cby,  cbz,  div_b_err;     // Magnetic field and div B error
+  tcax, tcay, tcaz, rhob;          // TCA fields and bound charge density
+  jfx,  jfy,  jfz,  rhof;          // Free current and charge density
   material_id ematx, ematy, ematz, nmat; // Material at edge centers and nodes
   material_id fmatx, fmaty, fmatz, cmat; // Material at face and cell centers
   */
