@@ -90,6 +90,7 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
         }
         else {
             within_tol = false;
+            std::cout << "relative marking within tol as false" << std::endl;
         }
     }
     else { // Do absolute error
@@ -102,6 +103,7 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
             within_tol = true;
         }
         else {
+            std::cout << "marking within tol as false" << std::endl;
             within_tol = false;
         }
     }
@@ -275,6 +277,7 @@ bool compare_energies(
                             bool returned_match = returned_err.first;
 
                             if (!returned_match) {
+                                std::cout << "setting match to false " << std::endl;
                                 match = false;
                             }
 
