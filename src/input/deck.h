@@ -13,7 +13,7 @@ enum Boundary {
 
 class _Input_Deck {
     public:
-        // TODO: move this into types
+        // Having this separate lets us initialize us double if required
         using real_ = real_t;
 
         static real_ courant_length( real_ lx, real_ ly, real_ lz,
@@ -103,7 +103,7 @@ class _Input_Deck {
         }
 
         // Function to intitialize the particles.
-        virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
+        virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_ dxp, size_t nppc, real_ w)
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
 
@@ -133,9 +133,8 @@ class _Input_Deck {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0;
+                    real_ x = pic*dxp+0.5*dxp-1.0;
                     size_t pre_ghost = (2*pi/nppc);
-                    //real_t na = 1e-6*sin(6.28318530717959*((x+1.0+pre_ghost*2)/(2*ny)));
                     position_x.access(s,i) = 0.0;
                     position_y.access(s,i) = x;
                     position_z.access(s,i) = 0.0;
@@ -150,7 +149,7 @@ class _Input_Deck {
                     cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
                     // Initialize velocity.(each cell length is 2)
 
-                    real_t gam = 1.0/sqrt(1.0-v0*v0);
+                    real_ gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
@@ -234,14 +233,13 @@ class _Input_Deck {
 // detection
 class Input_Deck : public _Input_Deck {
     public:
-        virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w);
+        virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_ dxp, size_t nppc, real_ w);
         Input_Deck();
 };
 #else
 // Default deck -- Weibel
 class Input_Deck : public _Input_Deck {
     public:
-        //virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w);
         Input_Deck()
         {
             // User puts initialization code here
@@ -258,7 +256,7 @@ class Input_Deck : public _Input_Deck {
             // Can also create temporaries
             real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
-            const real_t default_grid_len = 1.0;
+            const real_ default_grid_len = 1.0;
 
             len_x_global = default_grid_len;
             len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
