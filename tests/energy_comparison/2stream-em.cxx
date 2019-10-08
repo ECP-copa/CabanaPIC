@@ -41,7 +41,6 @@ class Custom_Finalizer : public Run_Finalizer {
                     206 // num to skip, reads 206 to EOF
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
-            if (!e_correct) std::exit(!e_correct);
 
             const unsigned short b_mask = 0b0000001000;
             bool b_correct = test_utils::compare_energies(
@@ -55,7 +54,11 @@ class Custom_Finalizer : public Run_Finalizer {
                     206 // num to skip, reads 206 to EOF
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
-            if (!b_correct) std::exit(!b_correct);
+
+            // Throw error code if either failed
+            if ((!b_correct) || (!e_correct)) {
+                std::exit(!b_correct & !e_correct);
+            }
         }
 };
 
