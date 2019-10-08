@@ -11,6 +11,8 @@ if (OPENMP_FOUND)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+find_package(Kokkos REQUIRED)
+
 include_directories(${PROJECT_SOURCE_DIR})
 
 #### User configuration Options ####

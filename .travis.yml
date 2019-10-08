@@ -17,15 +17,18 @@ addons:
 before_script:
   - sudo ln -s /usr/bin/ccache /usr/lib/ccache/clang++
   - ccache -z
-  - KOKKOS_OPTS=( --with-hwloc=/usr --gcc-toolchain=/usr --with-serial --with-openmp)
+  - KOKKOS_OPTS=( -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DKokkos_ENABLE_HWLOC=ON )
+  - KOKKOS_OPTS+=( --with-hwloc=/usr --gcc-toolchain=/usr --with-serial --with-openmp)
+
     # LD_LIBRARY_PATH workaround for libomp: https://github.com/travis-ci/travis-ci/issues/8613
   - if [[ ${CC} = clang ]]; then export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH; fi
   - if [[ ${CC} = gcc ]]; then export CXX=g++-6; export CC=gcc-6; export FC=gfortran-6; fi
-  - git clone --depth=1 https://github.com/kokkos/kokkos.git &&
+  - git clone --depth=1 https://github.com/kokkos/kokkos.git --branch develop &&
     pushd kokkos &&
     mkdir build &&
     pushd build &&
-    ../generate_makefile.bash --prefix=$HOME/kokkos ${KOKKOS_OPTS[@]} --with-options=disable_deprecated_code &&
+    #../generate_makefile.bash --prefix=$HOME/kokkos ${KOKKOS_OPTS[@]} &&
+    cmake -DCMAKE_INSTALL_PREFIX=$HOME/kokkos ${KOKKOS_OPTS[@]} .. &&
     make -j2 &&
     make install &&
     popd &&
