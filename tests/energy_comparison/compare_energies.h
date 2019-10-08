@@ -334,6 +334,7 @@ bool compare_energies(
     catch (const std::exception &exc) // Catching all is bad form, but OK for now..
     {
         // catch anything thrown within try block that derives from std::exception
+        std::cerr << "Aborting" << std::endl;
         std::cerr << exc.what();
         return false;
     }

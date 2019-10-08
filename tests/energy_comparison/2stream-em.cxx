@@ -12,17 +12,50 @@ class Custom_Finalizer : public Run_Finalizer {
         {
            // Try and validate the final answers
 
-            std::string energy_file_name = "energies";
-            //std::string energy_gold_file_name = EXPAND_AND_STRINGIFY( GOLD_ENERGY_FILE );
-            std::string energy_gold_file_name = "energies_gold";
+#ifndef GOLD_ENERGY_FILE
+            std::cerr << "Cannot find energy gold file, exiting" << std::endl;
+            std::exit(EXIT_FAILURE);
+#endif
 
-            // TODO: VPIC has a newer verson of compare_energies I should pull over
-            // TODO: add propper calls to test functions REQUIRE
+            std::string energy_file_name = "energies.txt";
+            std::string energy_gold_file_name = EXPAND( GOLD_ENERGY_FILE );
 
-            // Mask which fields to sum
-            const unsigned short e_mask = 0b0000001110;
-            test_utils::compare_energies(energy_file_name, energy_gold_file_name,
-                    0.3, e_mask, test_utils::FIELD_ENUM::Sum, 1, "Weibel.e.out");
+            // TODO: port this to a testing framework instead of relying on
+            // error codes?
+
+            // We want to measure 10-50 in science time, so 206 to 1030 in
+            // timestep for the given configuration
+
+            // This does 2 passes through the file, but it's OK for now..
+
+            // Mask which fields to sum, read only 3rd val
+            const unsigned short e_mask = 0b0000000100;
+            bool e_correct = test_utils::compare_energies(
+                    energy_gold_file_name,
+                    energy_file_name,
+                    0.01,  // margin for error
+                    e_mask,
+                    test_utils::FIELD_ENUM::Sum,
+                    1,  // if should diagnostic out
+                    "Weibel.e.out", // diagnostic output file
+                    206 // num to skip, reads 206 to EOF
+            );
+            std::cout << "E Test Pass: " << e_correct << std::endl;
+            if (!e_correct) std::exit(!e_correct);
+
+            const unsigned short b_mask = 0b0000001000;
+            bool b_correct = test_utils::compare_energies(
+                    energy_gold_file_name,
+                    energy_file_name,
+                    0.01,  // margin for error
+                    b_mask,
+                    test_utils::FIELD_ENUM::Sum,
+                    1,  // if should diagnostic out
+                    "Weibel.e.out", // diagnostic output file
+                    206 // num to skip, reads 206 to EOF
+            );
+            std::cout << "B Test Pass: " << b_correct << std::endl;
+            if (!b_correct) std::exit(!b_correct);
         }
 };
 
@@ -37,7 +70,7 @@ Input_Deck::Input_Deck()
     ny = 32;
     nz = 1;
 
-    num_steps = 3000;
+    num_steps = 1030; // gives us 50 in science time
     nppc = 100;
 
     v0 = 0.2;
