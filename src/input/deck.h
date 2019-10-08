@@ -222,6 +222,7 @@ class _Input_Deck {
             Cabana::simd_parallel_for( vec_policy, _init, "init()" );
         }
         */
+        //virtual ~_Input_Deck() { } // empty
 };
 
 #ifdef USER_INPUT_DECK
@@ -233,8 +234,14 @@ class _Input_Deck {
 // detection
 class Input_Deck : public _Input_Deck {
     public:
-        virtual void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_ dxp, size_t nppc, real_ w);
+        // TODO: this may currently force any custom deck to implement an
+        // intitialize_particles function, which is not desired. We want to
+        // fall back to the default implementation above if the user chosoes
+        // not to define one
+        virtual void initialize_particles( particle_list_t particles,size_t
+                nx,size_t ny,size_t nz, real_ dxp, size_t nppc, real_ w);
         Input_Deck();
+        //virtual ~Input_Deck();
 };
 #else
 // Default deck -- Weibel
