@@ -70,19 +70,19 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
     double err = 0.0;
 
     // Right now this is pretty arbitrary..
-    double abs_threshhold = 10 * std::numeric_limits<float>::epsilon();
+    double abs_threshhold = 10 * std::numeric_limits<double>::epsilon();
     std::cout << "abs threshhold " << abs_threshhold << std::endl;
 
     // Calculate if we're withing tolerances
     // If we're close to relative, do absolute
     if (std::abs(std::min(A,B)) < abs_threshhold)
     {
-        std::cout << std::abs(std::min(A,B)) << " is smaller than " << abs_threshhold << " so doing abs error " << std::endl;
         err = calculate_abs_error(A, B);
+        std::cout << std::abs(std::min(A,B)) << " is smaller than " << abs_threshhold << " so doing abs error. err is " << err << " limit is " << 2*std::numeric_limits<double>::epsilon() << std::endl;
 
         // Finding a relative error to 0 doesn't make much
         // sense, so lets do absolute error instead
-        if ( err < std::numeric_limits<double>::epsilon() )
+        if ( err < 2*std::numeric_limits<double>::epsilon() )
         {
             within_tol = true;
         }
