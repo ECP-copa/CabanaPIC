@@ -71,14 +71,12 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
 
     // Right now this is pretty arbitrary..
     double abs_threshhold = 10 * std::numeric_limits<double>::epsilon();
-    std::cout << "abs threshhold " << abs_threshhold << std::endl;
 
     // Calculate if we're withing tolerances
     // If we're close to relative, do absolute
     if (std::abs(std::min(A,B)) < abs_threshhold)
     {
         err = calculate_abs_error(A, B);
-        std::cout << std::abs(std::min(A,B)) << " is smaller than " << abs_threshhold << " so doing abs error. err is " << err << " limit is " << 2*std::numeric_limits<double>::epsilon() << std::endl;
 
         // Finding a relative error to 0 doesn't make much
         // sense, so lets do absolute error instead
@@ -88,20 +86,17 @@ std::pair<bool, double> compare_error(double A, double B, double relative_tolera
         }
         else {
             within_tol = false;
-            std::cout << "abs marking within tol as false" << std::endl;
         }
     }
     else { // Do relative error
 
         err = calculate_relative_error(A, B);
-        std::cout << "err for " << A << " and " << B << " with a tol of " << relative_tolerance << " gives an error of " << err << std::endl;
 
         if (err < relative_tolerance)
         {
             within_tol = true;
         }
         else {
-            std::cout << "relative marking within tol as false" << std::endl;
             within_tol = false;
         }
     }
@@ -275,7 +270,6 @@ bool compare_energies(
                             bool returned_match = returned_err.first;
 
                             if (!returned_match) {
-                                std::cout << "setting match to false " << std::endl;
                                 match = false;
                             }
 
