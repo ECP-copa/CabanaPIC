@@ -16,6 +16,9 @@ class Custom_Finalizer : public Run_Finalizer {
             std::cerr << "Cannot find energy gold file, exiting" << std::endl;
             std::exit(EXIT_FAILURE);
 #endif
+            // TODO: we might need to clear out local energy file first for
+            // this to be sensible? Else we could end up reading old stale
+            // files locally
 
             std::string energy_file_name = "energies.txt";
             std::string energy_gold_file_name = EXPAND( GOLD_ENERGY_FILE );
