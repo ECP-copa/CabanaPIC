@@ -61,6 +61,7 @@ script:
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1
 
 after_success:
+  - ccache -s
   - if [[ ${COVERAGE} ]]; then cd .. && codecov -x gcov-6 -F "${CC}"; fi
 
 cache:
