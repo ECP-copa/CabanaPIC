@@ -28,7 +28,7 @@ Input_Deck deck;
 int main( int argc, char* argv[] )
 {
     // Initialize the kokkos runtime.
-    Cabana::initialize( argc, argv );
+    Kokkos::ScopeGuard scope_guard( argc, argv );
 
     printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
@@ -208,8 +208,6 @@ int main( int argc, char* argv[] )
     // Let the user perform any needed finalization
     deck.finalize();
 
-    // Finalize.
-    Cabana::finalize();
     return 0;
 }
 
