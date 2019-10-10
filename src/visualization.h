@@ -30,9 +30,9 @@ class Visualizer {
         // TODO: all these loops are the same, we could replace it with vtemplate
         void write_particles_position(particle_list_t& particles)
         {
-            auto position_x = particles.slice<PositionX>();
-            auto position_y = particles.slice<PositionY>();
-            auto position_z = particles.slice<PositionZ>();
+            auto position_x = Cabana::slice<PositionX>(particles);
+            auto position_y = Cabana::slice<PositionY>(particles);
+            auto position_z = Cabana::slice<PositionZ>(particles);
 
             size_t write_count = 0;
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
@@ -69,7 +69,7 @@ class Visualizer {
 
         void write_particles_index(particle_list_t& particles)
         {
-            auto cell = particles.slice<Cell_Index>();
+            auto cell = Cabana::slice<Cell_Index>(particles);
 
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
             {
@@ -81,7 +81,7 @@ class Visualizer {
 
         void write_particles_w(particle_list_t& particles)
         {
-            auto weight = particles.slice<Weight>();
+            auto weight = Cabana::slice<Weight>(particles);
 
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
             {
