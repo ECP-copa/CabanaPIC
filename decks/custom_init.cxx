@@ -45,16 +45,16 @@ class Custom_Particle_Initializer : public Particle_Initializer {
         {
             std::cout << "Using Custom Particle Initialization" << std::endl;
 
-            auto position_x = particles.slice<PositionX>();
-            auto position_y = particles.slice<PositionY>();
-            auto position_z = particles.slice<PositionZ>();
+            auto position_x = Cabana::slice<PositionX>(particles);
+            auto position_y = Cabana::slice<PositionY>(particles);
+            auto position_z = Cabana::slice<PositionZ>(particles);
 
-            auto velocity_x = particles.slice<VelocityX>();
-            auto velocity_y = particles.slice<VelocityY>();
-            auto velocity_z = particles.slice<VelocityZ>();
+            auto velocity_x = Cabana::slice<VelocityX>(particles);
+            auto velocity_y = Cabana::slice<VelocityY>(particles);
+            auto velocity_z = Cabana::slice<VelocityZ>(particles);
 
-            auto weight = particles.slice<Weight>();
-            auto cell = particles.slice<Cell_Index>();
+            auto weight = Cabana::slice<Weight>(particles);
+            auto cell = Cabana::slice<Cell_Index>(particles);
 
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
