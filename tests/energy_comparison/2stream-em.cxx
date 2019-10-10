@@ -33,7 +33,7 @@ class Custom_Finalizer : public Run_Finalizer {
             // TODO: port this to a testing framework instead of relying on
             // error codes?
 
-            // We want to measure 18-50 in science time, so 273 to 1030 in
+            // We want to measure 18-50 in science time, so 371 to 1030 in
             // timestep for the given configuration
 
             // This does 2 passes through the file, but it's OK for now..
@@ -48,7 +48,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "Weibel.e.out", // diagnostic output file
-                    273 // num to skip, reads 273 to EOF
+                    371 // num to skip, reads 371 to EOF
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
 
@@ -61,7 +61,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "Weibel.b.out", // diagnostic output file
-                    273 // num to skip, reads 273 to EOF
+                    371 // num to skip, reads 371 to EOF
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
