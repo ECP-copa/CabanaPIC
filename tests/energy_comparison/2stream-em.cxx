@@ -16,6 +16,13 @@ class Custom_Finalizer : public Run_Finalizer {
             std::cerr << "Cannot find energy gold file, exiting" << std::endl;
             std::exit(EXIT_FAILURE);
 #endif
+
+#ifdef CUSTOM_ERROR_MARGIN
+            double error_margin = CUSTOM_ERROR_MARGIN
+#else
+            double error_margin = 0.1;
+#endif
+
             // TODO: we might need to clear out local energy file first for
             // this to be sensible? Else we could end up reading old stale
             // files locally
@@ -36,7 +43,7 @@ class Custom_Finalizer : public Run_Finalizer {
             bool e_correct = test_utils::compare_energies(
                     energy_gold_file_name,
                     energy_file_name,
-                    0.01,  // margin for error
+                    error_margin,  // margin for error
                     e_mask,
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
@@ -49,7 +56,7 @@ class Custom_Finalizer : public Run_Finalizer {
             bool b_correct = test_utils::compare_energies(
                     energy_gold_file_name,
                     energy_file_name,
-                    0.01,  // margin for error
+                    error_margin,  // margin for error
                     b_mask,
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
