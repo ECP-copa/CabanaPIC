@@ -28,16 +28,16 @@ KOKKOS_INLINE_FUNCTION int allow_for_ghosts(int pre_ghost)
 // Function to print out the data for every particle.
 void print_particles( const particle_list_t particles )
 {
-    auto position_x = particles.slice<PositionX>();
-    auto position_y = particles.slice<PositionY>();
-    auto position_z = particles.slice<PositionZ>();
+    auto position_x = Cabana::slice<PositionX>(particles);
+    auto position_y = Cabana::slice<PositionY>(particles);
+    auto position_z = Cabana::slice<PositionZ>(particles);
 
-    auto velocity_x = particles.slice<VelocityX>();
-    auto velocity_y = particles.slice<VelocityY>();
-    auto velocity_z = particles.slice<VelocityZ>();
+    auto velocity_x = Cabana::slice<VelocityX>(particles);
+    auto velocity_y = Cabana::slice<VelocityY>(particles);
+    auto velocity_z = Cabana::slice<VelocityZ>(particles);
 
-    auto weight = particles.slice<Weight>();
-    auto cell = particles.slice<Cell_Index>();
+    auto weight = Cabana::slice<Weight>(particles);
+    auto cell = Cabana::slice<Cell_Index>(particles);
 
     auto _print =
         KOKKOS_LAMBDA( const int s, const int i )

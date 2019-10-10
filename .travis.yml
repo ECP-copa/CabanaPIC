@@ -52,7 +52,6 @@ env:
     - CCACHE_CPP2=yes
   matrix:
     - COVERAGE=ON
-    - COVERAGE=OFF
     - REAL_TYPE=double
 
 script:
