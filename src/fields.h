@@ -263,13 +263,13 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 				//constructor
 				Field_Solver(field_array_t& fields)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _init_fields =
 								KOKKOS_LAMBDA( const int i )
@@ -346,17 +346,17 @@ class ES_Field_Solver
 								real_t dt_eps0
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
 						// NOTE: this does work on ghosts that is extra, but it simplifies
 						// the logic and is fairly cheap
@@ -382,9 +382,9 @@ class ES_Field_Solver
 								size_t nz
         )
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
 								lsum += ex(i) * ex(i)
@@ -414,9 +414,9 @@ class ES_Field_Solver_1D
 								size_t nz
         )
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
 								lsum += ex(i) * ex(i)
@@ -442,12 +442,12 @@ class ES_Field_Solver_1D
 								real_t dt_eps0
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
 						serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
 
@@ -483,9 +483,9 @@ class EM_Field_Solver
 								size_t nz
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
 								//lsum += ez(i)*ez(i);
@@ -508,9 +508,9 @@ class EM_Field_Solver
 								size_t nz
 								)
 				{
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _b_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
@@ -537,15 +537,15 @@ class EM_Field_Solver
 								)
 				{
 						//    auto ng = Parameters::instance().num_ghosts;
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 
 						serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
@@ -590,13 +590,13 @@ class EM_Field_Solver
 						//fy = &f(x,  y+1,z  );
 						//fz = &f(x,  y,  z+1);
 
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _advance_b = KOKKOS_LAMBDA( const int x, const int y, const int z)
 						{

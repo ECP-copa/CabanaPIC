@@ -47,17 +47,18 @@ before_script:
        mkdir -p $HOME/.local/bin && wget -O $HOME/.local/bin/codecov https://codecov.io/bash && chmod +x $HOME/.local/bin/codecov;
      fi
 
-env: 
+env:
   global:
     - CCACHE_CPP2=yes
   matrix:
     - COVERAGE=ON
     - COVERAGE=OFF
+    - REAL_TYPE=double
 
 script:
   - mkdir build && cd build
   - pwd
-  - PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=$HOME/kokkos -DCABANA_DIR=$HOME/Cabana .. &&
+  - PATH="$HOME/bin:/usr/lib/ccache:$PATH" cmake -DENABLE_TESTS=ON ${REAL_TYPE:+-DREAL_TYPE=${REAL_TYPE}} ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -DKOKKOS_DIR=$HOME/kokkos -DCABANA_DIR=$HOME/Cabana .. &&
     make -j4 VERBOSE=1 && make test CTEST_OUTPUT_ON_FAILURE=1
 
 after_success:
