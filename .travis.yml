@@ -62,7 +62,8 @@ script:
 
 after_success:
   - ccache -s
-  - if [[ ${COVERAGE} ]]; then cd .. && codecov -x gcov-6 -F "${CC}"; fi
+  - if [[ ${COVERAGE} ]]; then pwd && cd .. && pwd &&
+    codecov -x gcov-6 -F "${CC}"; fi
 
 cache:
   directories:
