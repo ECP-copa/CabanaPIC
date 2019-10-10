@@ -81,9 +81,7 @@ int main( int argc, char* argv[] )
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
         // Create the particle list.
-        particle_list_t particles( num_particles );
-        //logger << "size " << particles.size() << std::endl;
-        //logger << "numSoA " << particles.numSoA() << std::endl;
+        particle_list_t particles( "particles", num_particles );
 
         // Initialize particles.
         deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we, v0 );
@@ -95,16 +93,16 @@ int main( int argc, char* argv[] )
         //print_particles( particles );
 
         // Allocate Cabana Data
-        interpolator_array_t interpolators(num_cells);
+        interpolator_array_t interpolators("interpolator", num_cells);
 
-        accumulator_array_t accumulators("Accumulator View", num_cells);
+        accumulator_array_t accumulators("accumulator", num_cells);
 
         auto scatter_add = Kokkos::Experimental::create_scatter_view(accumulators);
         //<Kokkos::Experimental::ScatterSum,
         //KOKKOS_SCATTER_DUPLICATED,
         //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
-        field_array_t fields(num_cells);
+        field_array_t fields("fields", num_cells);
 
         // Zero out the interpolator
         // Techincally this is optional?
