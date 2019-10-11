@@ -20,7 +20,7 @@ class Custom_Finalizer : public Run_Finalizer {
 #ifdef CUSTOM_ERROR_MARGIN
             double error_margin = CUSTOM_ERROR_MARGIN
 #else
-            double error_margin = 0.1;
+            double error_margin = 0.12;
 #endif
 
             // TODO: we might need to clear out local energy file first for
