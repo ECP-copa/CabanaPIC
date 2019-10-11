@@ -84,6 +84,10 @@ if (ENABLE_GPU)
     endif(CUDA_FOUND)
 endif(ENABLE_GPU)
 
+if(ENABLE_COVERAGE_BUILD)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif(ENABLE_COVERAGE_BUILD)
+
 INCLUDE_DIRECTORIES(./src)
 file(GLOB SOURCES "src/*.cpp")
 
@@ -109,8 +113,3 @@ if (ENABLE_TESTS)
   include_directories(${TEST_DIR})
   add_subdirectory(tests)
 endif(ENABLE_TESTS)
-
-if(ENABLE_COVERAGE_BUILD)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
-endif(ENABLE_COVERAGE_BUILD)
-
