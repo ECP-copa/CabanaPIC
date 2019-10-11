@@ -21,6 +21,7 @@ class Custom_Finalizer : public Run_Finalizer {
             double error_margin = CUSTOM_ERROR_MARGIN
 #else
             double error_margin = 0.12;
+            // TODO: add constexpr if for if real_T is double to decrease the toll
 #endif
 
             // TODO: we might need to clear out local energy file first for
