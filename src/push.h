@@ -26,16 +26,16 @@ void push(
     //auto slice = a0.slice<0>();
     //decltype(slice)::atomic_access_slice _a = slice;
 
-    auto position_x = particles.slice<PositionX>();
-    auto position_y = particles.slice<PositionY>();
-    auto position_z = particles.slice<PositionZ>();
+    auto position_x = Cabana::slice<PositionX>(particles);
+    auto position_y = Cabana::slice<PositionY>(particles);
+    auto position_z = Cabana::slice<PositionZ>(particles);
 
-    auto velocity_x = particles.slice<VelocityX>();
-    auto velocity_y = particles.slice<VelocityY>();
-    auto velocity_z = particles.slice<VelocityZ>();
+    auto velocity_x = Cabana::slice<VelocityX>(particles);
+    auto velocity_y = Cabana::slice<VelocityY>(particles);
+    auto velocity_z = Cabana::slice<VelocityZ>(particles);
 
-    auto weight = particles.slice<Weight>();
-    auto cell = particles.slice<Cell_Index>();
+    auto weight = Cabana::slice<Weight>(particles);
+    auto cell = Cabana::slice<Cell_Index>(particles);
 
     //const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
@@ -43,24 +43,24 @@ void push(
     const real_t two_fifteenths = 2./15.;
 
     // We prefer making slices out side of the llambda
-    auto _ex = f0.slice<EX>();
-    auto _dexdy = f0.slice<DEXDY>();
-    auto _dexdz = f0.slice<DEXDZ>();
-    auto _d2exdydz = f0.slice<D2EXDYDZ>();
-    auto _ey = f0.slice<EY>();
-    auto _deydz = f0.slice<DEYDZ>();
-    auto _deydx = f0.slice<DEYDX>();
-    auto _d2eydzdx = f0.slice<D2EYDZDX>();
-    auto _ez = f0.slice<EZ>();
-    auto _dezdx = f0.slice<DEZDX>();
-    auto _dezdy = f0.slice<DEZDY>();
-    auto _d2ezdxdy = f0.slice<D2EZDXDY>();
-    auto _cbx = f0.slice<CBX>();
-    auto _dcbxdx = f0.slice<DCBXDX>();
-    auto _cby = f0.slice<CBY>();
-    auto _dcbydy = f0.slice<DCBYDY>();
-    auto _cbz = f0.slice<CBZ>();
-    auto _dcbzdz = f0.slice<DCBZDZ>();
+    auto _ex = Cabana::slice<EX>(f0);
+    auto _dexdy = Cabana::slice<DEXDY>(f0);
+    auto _dexdz = Cabana::slice<DEXDZ>(f0);
+    auto _d2exdydz = Cabana::slice<D2EXDYDZ>(f0);
+    auto _ey = Cabana::slice<EY>(f0);
+    auto _deydz = Cabana::slice<DEYDZ>(f0);
+    auto _deydx = Cabana::slice<DEYDX>(f0);
+    auto _d2eydzdx = Cabana::slice<D2EYDZDX>(f0);
+    auto _ez = Cabana::slice<EZ>(f0);
+    auto _dezdx = Cabana::slice<DEZDX>(f0);
+    auto _dezdy = Cabana::slice<DEZDY>(f0);
+    auto _d2ezdxdy = Cabana::slice<D2EZDXDY>(f0);
+    auto _cbx = Cabana::slice<CBX>(f0);
+    auto _dcbxdx = Cabana::slice<DCBXDX>(f0);
+    auto _cby = Cabana::slice<CBY>(f0);
+    auto _dcbydy = Cabana::slice<DCBYDY>(f0);
+    auto _cbz = Cabana::slice<CBZ>(f0);
+    auto _dcbzdz = Cabana::slice<DCBZDZ>(f0);
 
     auto _push =
         KOKKOS_LAMBDA( const int s, const int i )

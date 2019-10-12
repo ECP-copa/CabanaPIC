@@ -56,9 +56,9 @@ void unload_accumulator_array(
 )
 {
 
-    auto jfx = fields.slice<FIELD_JFX>();
-    auto jfy = fields.slice<FIELD_JFY>();
-    auto jfz = fields.slice<FIELD_JFZ>();
+    auto jfx = Cabana::slice<FIELD_JFX>(fields);
+    auto jfy = Cabana::slice<FIELD_JFY>(fields);
+    auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
     // TODO: give these real values
     //    printf("cx %e dy %e dz %e dt %e \n", dy, dz, dt);

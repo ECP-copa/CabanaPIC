@@ -11,10 +11,111 @@ enum Boundary {
     Periodic
 };
 
+
+class Run_Finalizer {
+    public:
+        virtual void finalize()
+        {
+            // Default finalization is blank
+        }
+};
+
+// TODO: we can eventually provide a suite of default/sane initializers, such
+// as ones that give the same RNG sequence over multiple procs
+class Particle_Initializer {
+
+    public:
+        using real_ = real_t;
+
+        Particle_Initializer() { } // blank
+
+        virtual void init(
+                particle_list_t& particles,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                real_ dxp,
+                size_t nppc,
+                real_ w,
+                real_ v0
+                )
+        {
+            // TODO: this doesnt currently do anything with nppc/num_cells
+            std::cout << "Default particle init" << std::endl;
+
+            auto position_x = Cabana::slice<PositionX>(particles);
+            auto position_y = Cabana::slice<PositionY>(particles);
+            auto position_z = Cabana::slice<PositionZ>(particles);
+
+            auto velocity_x = Cabana::slice<VelocityX>(particles);
+            auto velocity_y = Cabana::slice<VelocityY>(particles);
+            auto velocity_z = Cabana::slice<VelocityZ>(particles);
+
+            auto weight = Cabana::slice<Weight>(particles);
+            auto cell = Cabana::slice<Cell_Index>(particles);
+
+            auto _init =
+                KOKKOS_LAMBDA( const int s, const int i )
+                {
+                    // Initialize position.
+                    int sign =  -1;
+                    size_t pi2 = (s)*particle_list_t::vector_length+i;
+                    size_t pi = ((pi2) / 2);
+                    if (pi2%2 == 0) {
+                        sign = 1;
+                    }
+                    size_t pic = (2*pi)%nppc;
+
+                    real_ x = pic*dxp+0.5*dxp-1.0;
+                    size_t pre_ghost = (2*pi/nppc);
+                    position_x.access(s,i) = 0.0;
+                    position_y.access(s,i) = x;
+                    position_z.access(s,i) = 0.0;
+
+                    weight.access(s,i) = w;
+
+                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
+
+                    // Initialize velocity.(each cell length is 2)
+                    real_ gam = 1.0/sqrt(1.0-v0*v0);
+                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+                    velocity_y.access(s,i) = 0;
+                    velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
+                    velocity_z.access(s,i) = 1e-7*sign;
+                };
+
+            Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
+                vec_policy( 0, particles.size() );
+            Cabana::simd_parallel_for( vec_policy, _init, "init()" );
+        }
+};
+
 class _Input_Deck {
     public:
-        // TODO: move this into types
-        using real_ = float;
+        // Having this separate lets us initialize us double if required
+        using real_ = real_t;
+
+        // I would prefer that this wasn't a pointer, but it seems to be
+        // necessary. We need it to be able to do a vtable lookup for the init
+        // function call, which means we need a ref or a pointer. The ref has
+        // to be initialized which means the initialization of Particle_Initializer
+        // would leak to the init site of _Input_Deck. A normal (non ref, non
+        // pointer) variable would avoid the vtable lookup and always call the
+        // "default". Perhaps there is a better way?
+        // The original default pointer is pretty likely to leak in custom
+        // decks... at least it does't contain a lot of state
+        Particle_Initializer* particle_initer;
+
+        // Give the user a chance to hook into the end of the run, to do final
+        // things like correctness checks and timing dumping
+        Run_Finalizer* run_finalizer;
+
+        _Input_Deck() :
+            particle_initer(new Particle_Initializer),
+            run_finalizer(new Run_Finalizer)
+        {
+            // empty
+        }
 
         static real_ courant_length( real_ lx, real_ ly, real_ lz,
                 size_t nx, size_t ny, size_t nz ) {
@@ -23,6 +124,29 @@ class _Input_Deck {
             if( ny>1 ) w0 = ny/ly, w1 += w0*w0;
             if( nz>1 ) w0 = nz/lz, w1 += w0*w0;
             return sqrt(1/w1);
+        }
+
+        // We could do this in the destructor, but this has 2 advantages:
+        // 1) It's more explicit
+        // 2) We have finer grained control, so we can more easily ensure it
+        // happens before valuable data is freed
+        void finalize()
+        {
+            run_finalizer->finalize();
+        }
+
+        void initialize_particles(
+                particle_list_t& particles,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                real_ dxp,
+                size_t nppc,
+                real_ w,
+                real_ v0
+        )
+        {
+            particle_initer->init(particles, nx, ny, nz, dxp, nppc, w, v0);
         }
 
         real_ de = 1.0; // Length normalization (electron inertial length)
@@ -103,73 +227,6 @@ class _Input_Deck {
         }
 
         // Function to intitialize the particles.
-        void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
-        {
-            // TODO: this doesnt currently do anything with nppc/num_cells
-
-            auto position_x = particles.slice<PositionX>();
-            auto position_y = particles.slice<PositionY>();
-            auto position_z = particles.slice<PositionZ>();
-
-            auto velocity_x = particles.slice<VelocityX>();
-            auto velocity_y = particles.slice<VelocityY>();
-            auto velocity_z = particles.slice<VelocityZ>();
-
-            auto weight = particles.slice<Weight>();
-            auto cell = particles.slice<Cell_Index>();
-
-            // TODO: sensible way to do rand in parallel?
-            //srand (static_cast <unsigned> (time(0)));
-
-            auto _init =
-                KOKKOS_LAMBDA( const int s, const int i )
-                {
-                    // Initialize position.
-                    int sign =  -1;
-                    size_t pi2 = (s)*particle_list_t::vector_length+i;
-                    size_t pi = ((pi2) / 2);
-                    if (pi2%2 == 0) {
-                        sign = 1;
-                    }
-                    size_t pic = (2*pi)%nppc;
-
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f); //
-                    size_t pre_ghost = (2*pi/nppc);
-                    //real_t na = 1e-6*sin(6.28318530717959*((x+1.0+pre_ghost*2)/(2*ny)));
-		    //x += dxp*na;
-		    //x += dxp*rand_float(0.0f, 0.002f);
-                    //real_t x = rand_float(-1.0f, 1.0f); //
-                    position_x.access(s,i) = 0;
-                    position_y.access(s,i) = x; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
-
-
-                    weight.access(s,i) = w;
-
-                    // gives me a num in the range 0..num_real_cells
-                    //int pre_ghost = (s % Parameters::instance().num_real_cells);
-                    //   size_t ix, iy, iz;
-
-
-
-                    //cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
-		    //test y
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; 
-                    // Initialize velocity.(each cell length is 2)
-
-                    
-
-                    real_t gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_y.access(s,i) = 0;
-                    velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-		    velocity_z.access(s,i) = 1e-7*sign;
-                };
-
-            Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
-                vec_policy( 0, particles.size() );
-            Cabana::simd_parallel_for( vec_policy, _init, "init()" );
-        }
         /*
         void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
         {
@@ -201,10 +258,10 @@ class _Input_Deck {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f);
+                    real_t x = pic*dxp+0.5*dxp-1.0;
                     position_x.access(s,i) = x;
-                    position_y.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
+                    position_y.access(s,i) = 0.;
+                    position_z.access(s,i) = 0.;
 
 
                     weight.access(s,i) = w;
@@ -243,6 +300,10 @@ class _Input_Deck {
 // detection
 class Input_Deck : public _Input_Deck {
     public:
+        // TODO: this may currently force any custom deck to implement an
+        // intitialize_particles function, which is not desired. We want to
+        // fall back to the default implementation above if the user chosoes
+        // not to define one
         Input_Deck();
 };
 #else
@@ -265,7 +326,7 @@ class Input_Deck : public _Input_Deck {
             // Can also create temporaries
             real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
-            const real_t default_grid_len = 1.0;
+            const real_ default_grid_len = 1.0;
 
             len_x_global = default_grid_len;
             len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?

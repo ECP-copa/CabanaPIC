@@ -1,3 +1,6 @@
+add_subdirectory(decks)
+add_subdirectory(energy_comparison)
+
 LIST(APPEND TESTS example)
 
 foreach (test ${TESTS})

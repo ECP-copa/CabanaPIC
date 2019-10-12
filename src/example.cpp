@@ -14,7 +14,7 @@
 
 #include "push.h"
 
-#include "visualization.h"
+//#include "visualization.h"
 
 #include "input/deck.h"
 
@@ -28,14 +28,12 @@ Input_Deck deck;
 int main( int argc, char* argv[] )
 {
     // Initialize the kokkos runtime.
-    Cabana::initialize( argc, argv );
+    Kokkos::ScopeGuard scope_guard( argc, argv );
 
     printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-        //Visualizer vis;
-
         // num_cells (without ghosts), num_particles_per_cell
         size_t npc = 100;
 
@@ -64,6 +62,7 @@ int main( int argc, char* argv[] )
         real_t Lx   = deck.len_x;
         real_t Ly   = deck.len_y;
         real_t Lz   = deck.len_z;
+        real_t v0   = deck.v0;
 
         int nppc = deck.nppc;
         real_t eps0 = deck.eps;
@@ -82,12 +81,10 @@ int main( int argc, char* argv[] )
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
         // Create the particle list.
-        particle_list_t particles( num_particles );
-        //logger << "size " << particles.size() << std::endl;
-        //logger << "numSoA " << particles.numSoA() << std::endl;
+        particle_list_t particles( "particles", num_particles );
 
         // Initialize particles.
-        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we );
+        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we, v0 );
 
         grid_t* grid = new grid_t();
 
@@ -96,24 +93,26 @@ int main( int argc, char* argv[] )
         //print_particles( particles );
 
         // Allocate Cabana Data
-        interpolator_array_t interpolators(num_cells);
+        interpolator_array_t interpolators("interpolator", num_cells);
 
-        accumulator_array_t accumulators("Accumulator View", num_cells);
+        accumulator_array_t accumulators("accumulator", num_cells);
 
         auto scatter_add = Kokkos::Experimental::create_scatter_view(accumulators);
         //<Kokkos::Experimental::ScatterSum,
         //KOKKOS_SCATTER_DUPLICATED,
         //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
-        field_array_t fields(num_cells);
+        field_array_t fields("fields", num_cells);
 
         // Zero out the interpolator
         // Techincally this is optional?
         initialize_interpolator(interpolators);
 
         // Can obviously supply solver type at compile time
-        Field_Solver<EM_Field_Solver> field_solver(fields);
+        //Field_Solver<EM_Field_Solver> field_solver(fields);
         //Field_Solver<ES_Field_Solver_1D> field_solver(fields);
+        // This is able to deduce solver type from compile options
+        auto field_solver = make_field_solver(fields);
 
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
@@ -179,21 +178,17 @@ int main( int argc, char* argv[] )
                 );
 
             Kokkos::Experimental::contribute(accumulators, scatter_add);
-            //for ( int zz = 0; zz < num_cells; zz++)
-            //{
-                //std::cout << "post accum " << zz << " = " << accumulators(zz, 0, 0) << std::endl;
-            //}
 
             // Only reset the data if these two are not the same arrays
             scatter_add.reset_except(accumulators);
 
             // TODO: boundaries? MPI
-            // boundary_p(); // Implies Parallel?
+            //boundary_p(); // Implies Parallel?
 
             // Map accumulator current back onto the fields
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
 
-            //     // Half advance the magnetic field from B_0 to B_{1/2}
+            // Half advance the magnetic field from B_0 to B_{1/2}
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             // Advance the electric field from E_0 to E_1
@@ -202,20 +197,15 @@ int main( int argc, char* argv[] )
             // Half advance the magnetic field from B_{1/2} to B_1
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            //     // Output vis
-            //     vis.write_vis(particles, step);
-
-            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
+            dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz);
         }
 
 
     } // End Scoping block
 
-    // TODO: add correctness check?
-    printf("#Good!\n");
+    // Let the user perform any needed finalization
+    deck.finalize();
 
-    // Finalize.
-    Cabana::finalize();
     return 0;
 }
 

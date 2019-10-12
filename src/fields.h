@@ -6,6 +6,7 @@
 
 // TODO: Namespace this stuff?
 
+
 template<class Slice_X, class Slice_Y, class Slice_Z>
 KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts_B(
@@ -181,8 +182,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_y = slice_y(to);
-				// 	    float tmp_slice_z = slice_z(to);
+				// 	    tmp_slice_y = slice_y(to);
+				// 	    tmp_slice_z = slice_z(to);
 
 				// 	    slice_y(to) += slice_y(from);
 				// 	    slice_z(to) += slice_z(from);
@@ -212,8 +213,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_x = slice_x(to);
-				// 	    float tmp_slice_z = slice_z(to);
+				// 	    tmp_slice_x = slice_x(to);
+				// 	    tmp_slice_z = slice_z(to);
 
 				// 	    slice_x(to) += slice_x(from);
 				// 	    slice_z(to) += slice_z(from);
@@ -238,8 +239,8 @@ void serial_update_ghosts(
 				// 	    // TODO: once we're in parallel this needs to be a second loop with
 				// 	    // a buffer
 				// 	    // Cache value to so we don't lose it during the update
-				// 	    float tmp_slice_x = slice_x(to);
-				// 	    float tmp_slice_y = slice_y(to);
+				// 	    tmp_slice_x = slice_x(to);
+				// 	    tmp_slice_y = slice_y(to);
 
 				// 	    slice_x(to) += slice_x(from);
 				// 	    slice_y(to) += slice_y(from);
@@ -260,15 +261,15 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 		public:
 
 				//constructor
-				Field_Solver(field_array_t fields)
+				Field_Solver(field_array_t& fields)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _init_fields =
 								KOKKOS_LAMBDA( const int i )
@@ -286,7 +287,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 				}
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -299,7 +300,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 						Solver_Type::advance_b( fields, px, py, pz, nx, ny, nz, ng);
 				}
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -320,7 +321,7 @@ class ES_Field_Solver
 		public:
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -334,7 +335,7 @@ class ES_Field_Solver
 				}
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -345,17 +346,17 @@ class ES_Field_Solver
 								real_t dt_eps0
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
 						// NOTE: this does work on ghosts that is extra, but it simplifies
 						// the logic and is fairly cheap
@@ -370,6 +371,32 @@ class ES_Field_Solver
 						Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
 						Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
 				}
+
+				real_t e_energy(
+								field_array_t& fields,
+								real_t px,
+								real_t py,
+								real_t pz,
+								size_t nx,
+								size_t ny,
+								size_t nz
+        )
+				{
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
+						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+						{
+								lsum += ex(i) * ex(i)
+										+ey(i) * ey(i)
+										+ez(i) * ez(i);
+						};
+
+						real_t e_tot_energy=0;
+						Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+						Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
+						return e_tot_energy*0.5f;
+				}
 };
 
 
@@ -378,19 +405,18 @@ class ES_Field_Solver_1D
 		public:
 
 				real_t e_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
 								size_t nx,
 								size_t ny,
-								size_t nz,
-								size_t ng
-								)
+								size_t nz
+        )
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
 								lsum += ex(i) * ex(i)
@@ -405,7 +431,7 @@ class ES_Field_Solver_1D
 				}
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -416,12 +442,12 @@ class ES_Field_Solver_1D
 								real_t dt_eps0
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
 						serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
 
@@ -448,7 +474,7 @@ class EM_Field_Solver
 		public:
 
 				real_t e_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -457,9 +483,9 @@ class EM_Field_Solver
 								size_t nz
 								)
 				{
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 						auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
 								//lsum += ez(i)*ez(i);
@@ -473,7 +499,7 @@ class EM_Field_Solver
 				}
 
 				real_t b_energy(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -482,9 +508,9 @@ class EM_Field_Solver
 								size_t nz
 								)
 				{
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _b_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 						{
@@ -499,7 +525,7 @@ class EM_Field_Solver
 
 
 				void advance_e(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -511,15 +537,15 @@ class EM_Field_Solver
 								)
 				{
 						//    auto ng = Parameters::instance().num_ghosts;
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
-						auto jfx = fields.slice<FIELD_JFX>();
-						auto jfy = fields.slice<FIELD_JFY>();
-						auto jfz = fields.slice<FIELD_JFZ>();
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
+						auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 
 						serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
@@ -549,7 +575,7 @@ class EM_Field_Solver
 
 
 				void advance_b(
-								field_array_t fields,
+								field_array_t& fields,
 								real_t px,
 								real_t py,
 								real_t pz,
@@ -564,13 +590,13 @@ class EM_Field_Solver
 						//fy = &f(x,  y+1,z  );
 						//fz = &f(x,  y,  z+1);
 
-						auto ex = fields.slice<FIELD_EX>();
-						auto ey = fields.slice<FIELD_EY>();
-						auto ez = fields.slice<FIELD_EZ>();
+						auto ex = Cabana::slice<FIELD_EX>(fields);
+						auto ey = Cabana::slice<FIELD_EY>(fields);
+						auto ez = Cabana::slice<FIELD_EZ>(fields);
 
-						auto cbx = fields.slice<FIELD_CBX>();
-						auto cby = fields.slice<FIELD_CBY>();
-						auto cbz = fields.slice<FIELD_CBZ>();
+						auto cbx = Cabana::slice<FIELD_CBX>(fields);
+						auto cby = Cabana::slice<FIELD_CBY>(fields);
+						auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 						auto _advance_b = KOKKOS_LAMBDA( const int x, const int y, const int z)
 						{
@@ -600,9 +626,53 @@ class EM_Field_Solver
 						Kokkos::parallel_for( zyx_policy, _advance_b, "advance_b()" );
 						serial_update_ghosts_B(cbx, cby, cbz, nx, ny, nz, ng);
 				}
-
-
 };
 
+// Requires C++14
+static auto make_field_solver(field_array_t& fields)
+{
+    // TODO: make this support 1/2/3d
+#ifdef ES_FIELD_SOLVER
+    std::cout << "Initialized ES Solver" << std::endl;
+    Field_Solver<ES_Field_Solver> field_solver(fields);
+#else // EM
+    std::cout << "Initialized EM Solver" << std::endl;
+    Field_Solver<EM_Field_Solver> field_solver(fields);
+#endif
+    return field_solver;
+}
+
+template<typename field_solver_t>
+void dump_energies(
+        field_solver_t& field_solver,
+        field_array_t& fields,
+        int step,
+        real_t time,
+        real_t px,
+        real_t py,
+        real_t pz,
+        size_t nx,
+        size_t ny,
+        size_t nz
+        )
+{
+            real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz);
+            // Print energies to screen *and* dump them to disk
+            // TODO: is it ok to keep opening and closing the file like this?
+            // one per time step is probably fine?
+            std::ofstream energy_file;
+            energy_file.open("energies.txt", std::ios::app); // append
+            energy_file << step << " " << time << " " << e_en;
+#ifndef ES_FIELD_SOLVER
+            // Only write b info if it's available
+            real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz);
+            energy_file << " " << b_en;
+            printf("%d  %f  %e  %e\n",step, time, e_en, b_en);
+#else
+            printf("%d  %f  %e\n",step, time, e_en);
+#endif
+            energy_file << std::endl;
+            energy_file.close();
+}
 
 #endif // pic_EM_fields_h

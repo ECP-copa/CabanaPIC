@@ -14,32 +14,32 @@ void load_interpolator_array(
     size_t y_offset = (1*(nx+ng*2)); // VOXEL(x,  y+1,z,   nx,ny,nz);
     size_t z_offset = (1*(nx+ng*2)*(ny+ng*2)); // VOXEL(x,  y,  z+1, nx,ny,nz);
 
-    auto field_ex = fields.slice<FIELD_EX>();
-    auto field_ey = fields.slice<FIELD_EY>();
-    auto field_ez = fields.slice<FIELD_EZ>();
+    auto field_ex = Cabana::slice<FIELD_EX>(fields);
+    auto field_ey = Cabana::slice<FIELD_EY>(fields);
+    auto field_ez = Cabana::slice<FIELD_EZ>(fields);
 
-    auto field_cbx = fields.slice<FIELD_CBX>();
-    auto field_cby = fields.slice<FIELD_CBY>();
-    auto field_cbz = fields.slice<FIELD_CBZ>();
+    auto field_cbx = Cabana::slice<FIELD_CBX>(fields);
+    auto field_cby = Cabana::slice<FIELD_CBY>(fields);
+    auto field_cbz = Cabana::slice<FIELD_CBZ>(fields);
 
-    auto interp_ex = interpolators.slice<EX>();
-    auto interp_dexdy = interpolators.slice<DEXDY>();
-    auto interp_dexdz = interpolators.slice<DEXDZ>();
-    auto interp_d2exdydz = interpolators.slice<D2EXDYDZ>();
-    auto interp_ey = interpolators.slice<EY>();
-    auto interp_deydz = interpolators.slice<DEYDZ>();
-    auto interp_deydx = interpolators.slice<DEYDX>();
-    auto interp_d2eydzdx = interpolators.slice<D2EYDZDX>();
-    auto interp_ez = interpolators.slice<EZ>();
-    auto interp_dezdx = interpolators.slice<DEZDX>();
-    auto interp_dezdy = interpolators.slice<DEZDY>();
-    auto interp_d2ezdxdy = interpolators.slice<D2EZDXDY>();
-    auto interp_cbx = interpolators.slice<CBX>();
-    auto interp_dcbxdx = interpolators.slice<DCBXDX>();
-    auto interp_cby = interpolators.slice<CBY>();
-    auto interp_dcbydy = interpolators.slice<DCBYDY>();
-    auto interp_cbz = interpolators.slice<CBZ>();
-    auto interp_dcbzdz = interpolators.slice<DCBZDZ>();
+    auto interp_ex = Cabana::slice<EX>(interpolators);
+    auto interp_dexdy = Cabana::slice<DEXDY>(interpolators);
+    auto interp_dexdz = Cabana::slice<DEXDZ>(interpolators);
+    auto interp_d2exdydz = Cabana::slice<D2EXDYDZ>(interpolators);
+    auto interp_ey = Cabana::slice<EY>(interpolators);
+    auto interp_deydz = Cabana::slice<DEYDZ>(interpolators);
+    auto interp_deydx = Cabana::slice<DEYDX>(interpolators);
+    auto interp_d2eydzdx = Cabana::slice<D2EYDZDX>(interpolators);
+    auto interp_ez = Cabana::slice<EZ>(interpolators);
+    auto interp_dezdx = Cabana::slice<DEZDX>(interpolators);
+    auto interp_dezdy = Cabana::slice<DEZDY>(interpolators);
+    auto interp_d2ezdxdy = Cabana::slice<D2EZDXDY>(interpolators);
+    auto interp_cbx = Cabana::slice<CBX>(interpolators);
+    auto interp_dcbxdx = Cabana::slice<DCBXDX>(interpolators);
+    auto interp_cby = Cabana::slice<CBY>(interpolators);
+    auto interp_dcbydy = Cabana::slice<DCBYDY>(interpolators);
+    auto interp_cbz = Cabana::slice<CBZ>(interpolators);
+    auto interp_dcbzdz = Cabana::slice<DCBZDZ>(interpolators);
 
     const real_t fourth = 1.0 / 4.0;
     const real_t half = 1.0 / 2.0;
@@ -124,24 +124,24 @@ void load_interpolator_array(
 }
 void initialize_interpolator(interpolator_array_t& f0)
 {
-    auto ex = f0.slice<EX>();
-    auto dexdy  = f0.slice<DEXDY>();
-    auto dexdz  = f0.slice<DEXDZ>();
-    auto d2exdydz  = f0.slice<D2EXDYDZ>();
-    auto ey  = f0.slice<EY>();
-    auto deydz  = f0.slice<DEYDZ>();
-    auto deydx  = f0.slice<DEYDX>();
-    auto d2eydzdx  = f0.slice<D2EYDZDX>();
-    auto ez  = f0.slice<EZ>();
-    auto dezdx  = f0.slice<DEZDX>();
-    auto dezdy  = f0.slice<DEZDY>();
-    auto d2ezdxdy  = f0.slice<D2EZDXDY>();
-    auto cbx  = f0.slice<CBX>();
-    auto dcbxdx   = f0.slice<DCBXDX>();
-    auto cby  = f0.slice<CBY>();
-    auto dcbydy  = f0.slice<DCBYDY>();
-    auto cbz  = f0.slice<CBZ>();
-    auto dcbzdz  = f0.slice<DCBZDZ>();
+    auto ex = Cabana::slice<EX>(f0);
+    auto dexdy  = Cabana::slice<DEXDY>(f0);
+    auto dexdz  = Cabana::slice<DEXDZ>(f0);
+    auto d2exdydz  = Cabana::slice<D2EXDYDZ>(f0);
+    auto ey  = Cabana::slice<EY>(f0);
+    auto deydz  = Cabana::slice<DEYDZ>(f0);
+    auto deydx  = Cabana::slice<DEYDX>(f0);
+    auto d2eydzdx  = Cabana::slice<D2EYDZDX>(f0);
+    auto ez  = Cabana::slice<EZ>(f0);
+    auto dezdx  = Cabana::slice<DEZDX>(f0);
+    auto dezdy  = Cabana::slice<DEZDY>(f0);
+    auto d2ezdxdy  = Cabana::slice<D2EZDXDY>(f0);
+    auto cbx  = Cabana::slice<CBX>(f0);
+    auto dcbxdx   = Cabana::slice<DCBXDX>(f0);
+    auto cby  = Cabana::slice<CBY>(f0);
+    auto dcbydy  = Cabana::slice<DCBYDY>(f0);
+    auto cbz  = Cabana::slice<CBZ>(f0);
+    auto dcbzdz  = Cabana::slice<DCBZDZ>(f0);
 
     auto _init_interpolator =
         KOKKOS_LAMBDA( const int i )

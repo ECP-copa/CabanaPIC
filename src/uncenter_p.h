@@ -8,16 +8,16 @@ void uncenter_particles(
     )
 {
 
-    auto position_x = particles.slice<PositionX>();
-    auto position_y = particles.slice<PositionY>();
-    auto position_z = particles.slice<PositionZ>();
+    auto position_x = Cabana::slice<PositionX>(particles);
+    auto position_y = Cabana::slice<PositionY>(particles);
+    auto position_z = Cabana::slice<PositionZ>(particles);
 
-    auto velocity_x = particles.slice<VelocityX>();
-    auto velocity_y = particles.slice<VelocityY>();
-    auto velocity_z = particles.slice<VelocityZ>();
+    auto velocity_x = Cabana::slice<VelocityX>(particles);
+    auto velocity_y = Cabana::slice<VelocityY>(particles);
+    auto velocity_z = Cabana::slice<VelocityZ>(particles);
 
-    auto charge = particles.slice<Charge>();
-    auto cell = particles.slice<Cell_Index>();
+    auto charge = Cabana::slice<Charge>(particles);
+    auto cell = Cabana::slice<Cell_Index>(particles);
 
     const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
@@ -36,24 +36,24 @@ void uncenter_particles(
 
             // Grab interpolator values
             // TODO: hoist slice call?
-            auto ex = f0.slice<EX>()(ii);
-            auto dexdy  = f0.slice<DEXDY>()(ii);
-            auto dexdz  = f0.slice<DEXDZ>()(ii);
-            auto d2exdydz  = f0.slice<D2EXDYDZ>()(ii);
-            auto ey  = f0.slice<EY>()(ii);
-            auto deydz  = f0.slice<DEYDZ>()(ii);
-            auto deydx  = f0.slice<DEYDX>()(ii);
-            auto d2eydzdx  = f0.slice<D2EYDZDX>()(ii);
-            auto ez  = f0.slice<EZ>()(ii);
-            auto dezdx  = f0.slice<DEZDX>()(ii);
-            auto dezdy  = f0.slice<DEZDY>()(ii);
-            auto d2ezdxdy  = f0.slice<D2EZDXDY>()(ii);
-            auto cbx  = f0.slice<CBX>()(ii);
-            auto dcbxdx   = f0.slice<DCBXDX>()(ii);
-            auto cby  = f0.slice<CBY>()(ii);
-            auto dcbydy  = f0.slice<DCBYDY>()(ii);
-            auto cbz  = f0.slice<CBZ>()(ii);
-            auto dcbzdz  = f0.slice<DCBZDZ>()(ii);
+            auto ex       = Cabana::slice<EX>(f0)(ii);
+            auto dexdy    = Cabana::slice<DEXDY>(f0)(ii);
+            auto dexdz    = Cabana::slice<DEXDZ>(f0)(ii);
+            auto d2exdydz = Cabana::slice<D2EXDYDZ>(f0)(ii);
+            auto ey       = Cabana::slice<EY>(f0)(ii);
+            auto deydz    = Cabana::slice<DEYDZ>(f0)(ii);
+            auto deydx    = Cabana::slice<DEYDX>(f0)(ii);
+            auto d2eydzdx = Cabana::slice<D2EYDZDX>(f0)(ii);
+            auto ez       = Cabana::slice<EZ>(f0)(ii);
+            auto dezdx    = Cabana::slice<DEZDX>(f0)(ii);
+            auto dezdy    = Cabana::slice<DEZDY>(f0)(ii);
+            auto d2ezdxdy = Cabana::slice<D2EZDXDY>(f0)(ii);
+            auto cbx      = Cabana::slice<CBX>(f0)(ii);
+            auto dcbxdx   = Cabana::slice<DCBXDX>(f0)(ii);
+            auto cby      = Cabana::slice<CBY>(f0)(ii);
+            auto dcbydy   = Cabana::slice<DCBYDY>(f0)(ii);
+            auto cbz      = Cabana::slice<CBZ>(f0)(ii);
+            auto dcbzdz   = Cabana::slice<DCBZDZ>(f0)(ii);
 
             // Calculate field values
             real_t hax = qdt_2mc*(( ex + dy*dexdy ) + dz*( dexdz + dy*d2exdydz ));
