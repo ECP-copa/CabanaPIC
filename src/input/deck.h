@@ -34,6 +34,7 @@ class Particle_Initializer {
                 size_t nx,
                 size_t ny,
                 size_t nz,
+		size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
@@ -64,17 +65,23 @@ class Particle_Initializer {
                     if (pi2%2 == 0) {
                         sign = 1;
                     }
-                    size_t pic = (2*pi)%nppc;
+                    size_t pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
 
                     real_ x = pic*dxp+0.5*dxp-1.0;
-                    size_t pre_ghost = (2*pi/nppc);
+                    size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+		    size_t ix,iy,iz;
+		    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+		    ix += ng;
+		    iy += ng;
+		    iz += ng;
+		    
                     position_x.access(s,i) = 0.0;
                     position_y.access(s,i) = x;
                     position_z.access(s,i) = 0.0;
 
                     weight.access(s,i) = w;
 
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
+                    cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
                     // Initialize velocity.(each cell length is 2)
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
@@ -140,13 +147,14 @@ class _Input_Deck {
                 size_t nx,
                 size_t ny,
                 size_t nz,
+		size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
                 real_ v0
         )
         {
-            particle_initer->init(particles, nx, ny, nz, dxp, nppc, w, v0);
+	  particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0);
         }
 
         real_ de = 1.0; // Length normalization (electron inertial length)

@@ -84,7 +84,7 @@ int main( int argc, char* argv[] )
         particle_list_t particles( "particles", num_particles );
 
         // Initialize particles.
-        deck.initialize_particles( particles, nx, ny, nz, dxp, npc, we, v0 );
+        deck.initialize_particles( particles, nx, ny, nz, num_ghosts, dxp, npc, we, v0 );
 
         grid_t* grid = new grid_t();
 
