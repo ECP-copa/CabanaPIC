@@ -69,12 +69,13 @@ class Particle_Initializer {
 
                     real_ x = pic*dxp+0.5*dxp-1.0;
                     size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
-		    size_t ix,iy,iz;
-		    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
-		    ix += ng;
-		    iy += ng;
-		    iz += ng;
-		    
+
+                    size_t ix,iy,iz;
+                    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+                    ix += ng;
+                    iy += ng;
+                    iz += ng;
+
                     position_x.access(s,i) = 0.0;
                     position_y.access(s,i) = x;
                     position_z.access(s,i) = 0.0;

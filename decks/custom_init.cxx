@@ -66,27 +66,34 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     int sign =  -1;
                     size_t pi2 = (s)*particle_list_t::vector_length+i;
                     size_t pi = ((pi2) / 2);
-                    if (pi2%2 == 1) {
+                    if (pi2%2 == 0) {
                         sign = 1;
                     }
-                    size_t pic = (2*pi)%nppc;
+                    size_t pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f); //
-                    size_t pre_ghost = (2*pi/nppc);
+                    real_ x = pic*dxp+0.5*dxp-1.0;
+                    size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
-                    position_x.access(s,i) = 0;
-                    position_y.access(s,i) = x; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
+                    size_t ix,iy,iz;
+                    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+                    ix += ng;
+                    iy += ng;
+                    iz += ng;
+
+                    position_x.access(s,i) = 0.0;
+                    position_y.access(s,i) = x;
+                    position_z.access(s,i) = 0.0;
 
                     weight.access(s,i) = w;
 
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
+                    cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
-                    real_t gam = 1.0/sqrt(1.0-v0*v0);
+                    // Initialize velocity.(each cell length is 2)
+                    real_ gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-                    velocity_z.access(s,i) = 1e-8*sign;
+                    velocity_z.access(s,i) = 1e-7*sign;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
