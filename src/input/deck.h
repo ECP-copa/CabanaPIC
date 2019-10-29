@@ -34,7 +34,7 @@ class Particle_Initializer {
                 size_t nx,
                 size_t ny,
                 size_t nz,
-		size_t ng,
+                size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
