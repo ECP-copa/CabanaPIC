@@ -55,6 +55,8 @@ class Particle_Initializer {
             auto weight = Cabana::slice<Weight>(particles);
             auto cell = Cabana::slice<Cell_Index>(particles);
 
+            printf("dxp = %e \n", dxp);
+
             auto _init =
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
@@ -65,12 +67,12 @@ class Particle_Initializer {
                     if (pi2%2 == 0) {
                         sign = 1;
                     }
-                    size_t pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
+                    int pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
 
                     real_ x = pic*dxp+0.5*dxp-1.0;
-                    size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    int pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
-                    size_t ix,iy,iz;
+                    int ix,iy,iz;
                     RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
                     ix += ng;
                     iy += ng;
@@ -90,6 +92,8 @@ class Particle_Initializer {
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     velocity_z.access(s,i) = 1e-7*sign;
+
+                    printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i) );
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -328,7 +332,7 @@ class Input_Deck : public _Input_Deck {
             nz = 1;
 
             num_steps = 3000;
-            nppc = 100;
+            nppc = 10;
 
             v0 = 0.2;
 

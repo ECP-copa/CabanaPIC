@@ -34,13 +34,11 @@ int main( int argc, char* argv[] )
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-        // num_cells (without ghosts), num_particles_per_cell
-        size_t npc = 100;
-
         deck.derive_params();
         deck.print_run_details();
 
         // Cache some values locally for printing
+        const int npc = deck.nppc;
         const int nx = deck.nx;
         const int ny = deck.ny;
         const int nz = deck.nz;
