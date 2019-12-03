@@ -74,12 +74,13 @@ class Particle_Initializer {
 
                     int ix,iy,iz;
                     RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+
                     ix += ng;
                     iy += ng;
                     iz += ng;
 
-                    position_x.access(s,i) = 0.0;
-                    position_y.access(s,i) = x;
+                    position_x.access(s,i) = x;
+                    position_y.access(s,i) = 0.0;
                     position_z.access(s,i) = 0.0;
 
                     weight.access(s,i) = w;
@@ -87,13 +88,14 @@ class Particle_Initializer {
                     cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
                     // Initialize velocity.(each cell length is 2)
+		    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+                    velocity_x.access(s,i) = sign * v0*gam *(1.0+na); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     velocity_z.access(s,i) = 1e-7*sign;
 
-                    printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i) );
+                    //printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d,ix/y/z=%d,%d,%d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i),ix,iy,iz );
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -327,22 +329,22 @@ class Input_Deck : public _Input_Deck {
         {
             // User puts initialization code here
             // Example: EM 2 Stream in 1d?
-            nx = 1;
-            ny = 32;
+            nx = 32;
+            ny = 1;
             nz = 1;
 
             num_steps = 3000;
-            nppc = 10;
+            nppc = 8000;
 
-            v0 = 0.2;
+            v0 = 0.0866025403784439;
 
             // Can also create temporaries
             real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
             const real_ default_grid_len = 1.0;
 
-            len_x_global = default_grid_len;
-            len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+            len_x_global = 0.628318530717959*(gam*sqrt(gam));
+            len_y_global = default_grid_len;
             len_z_global = default_grid_len;
 
             dt = 0.99*courant_length(
