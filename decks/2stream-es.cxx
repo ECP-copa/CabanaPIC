@@ -37,7 +37,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 size_t nx,
                 size_t ny,
                 size_t nz,
-                size_t ng,
+		size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
@@ -67,34 +67,33 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     int sign =  -1;
                     size_t pi2 = (s)*particle_list_t::vector_length+i;
                     size_t pi = ((pi2) / 2);
-                    if (pi2%2 == 0) {
+                    if (pi2%2 == 1) {
                         sign = 1;
                     }
-                    size_t pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
+                    size_t pic = (2*pi)%nppc;
 
-                    real_ x = pic*dxp+dxp-1.0;
-                    size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    real_t x = pic*dxp+dxp-1.0; //rand_float(-1.0f, 1.0f); //
+                    size_t pre_ghost = (2*pi/nppc);
 
-                    size_t ix,iy,iz;
+		    int ix,iy,iz;
                     RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
-                    ix += ng;
+		    ix += ng; //add the ghost cells
                     iy += ng;
                     iz += ng;
-
-                    position_x.access(s,i) = 0.0;
-                    position_y.access(s,i) = x;
-                    position_z.access(s,i) = 0.0;
+                    cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
+		    
+                    position_x.access(s,i) = x;
+                    position_y.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
 
                     weight.access(s,i) = w;
+		    
 
-                    cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
-
-                    // Initialize velocity.(each cell length is 2)
-                    real_ gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+		    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
+                    real_t gam = 1.0/sqrt(1.0-v0*v0);
+                    velocity_x.access(s,i) = sign * v0*gam*(1.0+na); // *(1.0-na*sign); //0;
                     velocity_y.access(s,i) = 0;
-                    velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-                    velocity_z.access(s,i) = 1e-7*sign;
+                    velocity_z.access(s,i) = 0;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -106,27 +105,22 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 Input_Deck::Input_Deck()
 {
     // User puts initialization code here
-
-    std::cout << "Input_Deck constructor" << std::endl;
-    // Tell the deck to use the custom initer in place of the default
-    particle_initer = new Custom_Particle_Initializer();
-
-    nx = 1;
-    ny = 32;
+    nx = 32;
+    ny = 1;
     nz = 1;
 
-    num_steps = 30;
-    nppc = 100;
+    num_steps = 3000;
+    nppc = 8000;
 
-    v0 = 0.2;
+    v0 = 0.0866025403784439;
 
     // Can also create temporaries
     real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
     const real_t default_grid_len = 1.0;
 
-    len_x_global = default_grid_len;
-    len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_x_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
+    len_y_global = default_grid_len;
     len_z_global = default_grid_len;
 
     dt = 0.99*courant_length(
