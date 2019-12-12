@@ -200,7 +200,7 @@ int main( int argc, char* argv[] )
 
             //     // Output vis
             //     vis.write_vis(particles, step);
-            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz),field_solver.b_energy(fields, px, py, pz, nx, ny, nz));
+            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz, num_ghosts),field_solver.b_energy(fields, px, py, pz, nx, ny, nz, num_ghosts));
         }
 
 

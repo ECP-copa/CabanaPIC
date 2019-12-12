@@ -109,62 +109,59 @@ void serial_update_ghosts(
     }
   else { // assume periodic
     
+    
+/*
+  To fill in contributions from places of periodic BC
+*/
+    
     int x,y,z,from,to;
-    for ( x = 1; x <= nx; x++){
-      //y first
-      from = VOXEL(x, ny+1, 1, nx, ny, nz, ng);
-      to   = VOXEL(x, 1   , 1, nx, ny, nz, ng);
-      slice_x(to) += slice_x(from);
+    for ( x = 1; x <= nx; x++ ){
+      for( z = 1; z <= nz+1; z++ ){
+	//y first
+	from = VOXEL(x, ny+1, z, nx, ny, nz, ng);
+	to   = VOXEL(x, 1   , z, nx, ny, nz, ng);
+	slice_x(to) += slice_x(from);	
+      }
 
-      
-      from = VOXEL(x, ny+1, nz+1, nx, ny, nz, ng);    	
-      to   = VOXEL(x, 1   , nz+1, nx, ny, nz, ng);
-      slice_x(to) += slice_x(from);
-
-    
-      //z next
-      from = VOXEL(x, 1, nz+1, nx, ny, nz, ng);
-      to   = VOXEL(x, 1, 1   , nx, ny, nz, ng);
-      slice_x(to) += slice_x(from);
-
+      for( y = 1; y <= ny+1; y++ ){    
+	//z next
+	from = VOXEL(x, y, nz+1, nx, ny, nz, ng);
+	to   = VOXEL(x, y, 1   , nx, ny, nz, ng);
+	slice_x(to) += slice_x(from);
+      }
     }
 
-    for ( y = 1; y <= ny; y++){
-      //z first
-      from = VOXEL(1   , y, nz+1, nx, ny, nz, ng);
-      to   = VOXEL(1   , y, 1   , nx, ny, nz, ng);
-      slice_y(to) += slice_y(from);
+    for ( y = 1; y <= ny; y++ ){
+      for (x = 1; x <= nx+1; x++ ){
+	//z first
+	from = VOXEL(x   , y, nz+1, nx, ny, nz, ng);
+	to   = VOXEL(x   , y, 1   , nx, ny, nz, ng);
+	slice_y(to) += slice_y(from);
+      }
 
-      
-      from = VOXEL(nx+1, y, nz+1, nx, ny, nz, ng);    	
-      to   = VOXEL(nx+1, y, 1   , nx, ny, nz, ng);
-      slice_y(to) += slice_y(from);
-
-    
-      //x next
-      from = VOXEL(nx+1, y, 1   , nx, ny, nz, ng);
-      to   = VOXEL(1   , y, 1   , nx, ny, nz, ng);
-      slice_y(to) += slice_y(from);
+      for (z = 1; z <= nz+1; z++ ){    
+	//x next
+	from = VOXEL(nx+1, y, z   , nx, ny, nz, ng);
+	to   = VOXEL(1   , y, z   , nx, ny, nz, ng);
+	slice_y(to) += slice_y(from);
+      }
     }
 
-    for ( z = 1; z <= nz; z++){
-      //x first
-      from = VOXEL(nx+1, 1   , z, nx, ny, nz, ng);
-      to   = VOXEL(1   , 1   , z, nx, ny, nz, ng);
-      slice_z(to) += slice_z(from);
+    for ( z = 1; z <= nz; z++ ){
+      for ( y = 1; y <= ny+1; y++ ){
+	//x first
+	from = VOXEL(nx+1, y   , z, nx, ny, nz, ng);
+	to   = VOXEL(1   , y   , z, nx, ny, nz, ng);
+	slice_z(to) += slice_z(from);
+      }
 
-      
-      from = VOXEL(nx+1, ny+1, z, nx, ny, nz, ng);    	
-      to   = VOXEL(1   , ny+1, z, nx, ny, nz, ng);
-      slice_z(to) += slice_z(from);
-
-    
-      //y next
-      from = VOXEL(1   , ny+1, z, nx, ny, nz, ng);
-      to   = VOXEL(1   , 1   , z, nx, ny, nz, ng);
-      slice_z(to) += slice_z(from);
+      for ( x = 1; x <= nx+1; x++ ){    
+	//y next
+	from = VOXEL(x   , ny+1, z, nx, ny, nz, ng);
+	to   = VOXEL(x   , 1   , z, nx, ny, nz, ng);
+	slice_z(to) += slice_z(from);
+      }
     }
-    
     
 
     // // Copy x from RHS -> LHS
@@ -447,58 +444,69 @@ public:
 class EM_Field_Solver
 {
 public:
+  
 
   real_t e_energy(
-		  field_array_t fields,
-		  real_t px,
-		  real_t py,
-		  real_t pz,
-		  size_t nx,
-		  size_t ny,
-		  size_t nz
-		  )
-  {
-    auto ex = fields.slice<FIELD_EX>();
-    auto ey = fields.slice<FIELD_EY>();
-    auto ez = fields.slice<FIELD_EZ>();
-    auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
-      {
-	//lsum += ez(i)*ez(i);
-	lsum += ex(i)*ex(i) + ey(i)*ey(i) + ez(i)*ez(i);
-      };
+		  field_array_t& fields,
+    real_t px,
+    real_t py,
+    real_t pz,
+    size_t nx,
+    size_t ny,
+    size_t nz,
+    size_t ng
+    )
+    {
+      auto ex = Cabana::slice<FIELD_EX>(fields);
+      auto ey = Cabana::slice<FIELD_EY>(fields);
+      auto ez = Cabana::slice<FIELD_EZ>(fields);
+      auto _e_energy = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+	{
+	  //lsum += ez(i)*ez(i);
 
-    real_t e_tot_energy=0;
-    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-    Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
-    return e_tot_energy*0.5f;
-  }
+	  const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+	  lsum += ex(i)*ex(i) + ey(i)*ey(i) + ez(i)*ez(i);
+	};
+
+      real_t e_tot_energy=0;
+      //Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+      //Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
+      Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
+      Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
+      //TODO: no access to parameters here
+      double dV = 1; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
+      return e_tot_energy*0.5f*dV;
+    }
 
   real_t b_energy(
-		  field_array_t fields,
+		  field_array_t& fields,
 		  real_t px,
 		  real_t py,
 		  real_t pz,
 		  size_t nx,
 		  size_t ny,
-		  size_t nz
+		  size_t nz,
+		  size_t ng
 		  )
   {
-    auto cbx = fields.slice<FIELD_CBX>();
-    auto cby = fields.slice<FIELD_CBY>();
-    auto cbz = fields.slice<FIELD_CBZ>();
+    auto cbx = Cabana::slice<FIELD_CBX>(fields);
+    auto cby = Cabana::slice<FIELD_CBY>(fields);
+    auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
-    auto _b_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+    auto _b_energy = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
       {
+	const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
 	lsum += cbx(i)*cbx(i) + cby(i)*cby(i) + cbz(i)*cbz(i);
       };
 
     real_t b_tot_energy=0;
-    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+    Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
     Kokkos::parallel_reduce("b_energy", exec_policy, _b_energy, b_tot_energy );
-    return b_tot_energy*0.5f;
+    //TODO: no access to parameters here
+    double dV = 1; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
+    return b_tot_energy*0.5f*dV;
   }
-  
-  
+
   void advance_e(
 		 field_array_t fields,
 		 real_t px,

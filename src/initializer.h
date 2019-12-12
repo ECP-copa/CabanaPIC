@@ -20,7 +20,7 @@ class Initializer {
             //logger << "Importing Default Input Deck" << std::endl;
             const real_t default_grid_len = 1.0;
 	    //1D
-            Parameters::instance().NX_global = 1;
+            Parameters::instance().NX_global = 1; //_nc;
             Parameters::instance().NY_global = _nc;
             Parameters::instance().NZ_global = 1; //_nc;
 
@@ -43,18 +43,18 @@ class Initializer {
             Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_real_cells;
 
 
-            Parameters::instance().num_steps = 3000;
+            Parameters::instance().num_steps = 6000;
 
-            Parameters::instance().v0 = 0.2; //0.0866025403784439;
+            Parameters::instance().v0 = 0.0866025403784439;
             real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
 	      
             Parameters::instance().len_x_global = default_grid_len;
-            Parameters::instance().len_y_global = 3.14159265358979*0.5; //6.28318530717959; //default_grid_len;
+            Parameters::instance().len_y_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
 
-            Parameters::instance().len_x = Parameters::instance().len_x_global; //default_grid_len;
+            Parameters::instance().len_x = Parameters::instance().len_x_global; //default_grid_len;default_grid_len;
             Parameters::instance().len_y = Parameters::instance().len_y_global; //default_grid_len;
-            Parameters::instance().len_z = Parameters::instance().len_z_global; //default_grid_len;
+            Parameters::instance().len_z = Parameters::instance().len_z_global; //default_grid_len;default_grid_len;
 
             Parameters::instance().dx = Parameters::instance().len_x / Parameters::instance().nx;
             Parameters::instance().dy = Parameters::instance().len_y / Parameters::instance().ny;
@@ -104,15 +104,10 @@ class Initializer {
                     }
                     size_t pic = (2*pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f); //
-                    size_t pre_ghost = (2*pi/nppc);
-                    //real_t na = 1e-6*sin(6.28318530717959*((x+1.0+pre_ghost*2)/(2*ny)));
-		    //x += dxp*na;
-		    //x += dxp*rand_float(0.0f, 0.002f);
-                    //real_t x = rand_float(-1.0f, 1.0f); //
-                    position_x.access(s,i) = 0;
-                    position_y.access(s,i) = x; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0; //rand_float(-1.0f, 1.0f);
+                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f);
+                    position_x.access(s,i) = 0; //x;
+                    position_y.access(s,i) = x; //0.; //rand_float(-1.0f, 1.0f);
+                    position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
 
 
                     weight.access(s,i) = w;
@@ -121,20 +116,21 @@ class Initializer {
                     //int pre_ghost = (s % Parameters::instance().num_real_cells);
                     //   size_t ix, iy, iz;
 
-
+                    size_t pre_ghost = (2*pi/nppc);
 
                     //cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
 		    //test y
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; 
-                    // Initialize velocity.(each cell length is 2)
+                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
 
-                    
+                    // Initialize velocity.(each cell length is 2)
+                    //real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
+                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
+                    //
 
                     real_t gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+                    velocity_x.access(s,i) = sign * v0 *gam*(1.0+na*sign); //0;
                     velocity_y.access(s,i) = 0;
-                    velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-		    velocity_z.access(s,i) = 1e-7*sign;
+                    velocity_z.access(s,i) = 0;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -168,7 +164,7 @@ class Initializer {
                 KOKKOS_LAMBDA( const int i )
                 {
                     // Throw in some place holder values
-                    ex(i) = 0.0;
+                    ex(i) = 0.1;
                     dexdy(i) = 0.0;
                     dexdz(i) = 0.0;
                     d2exdydz(i) = 0.0;
