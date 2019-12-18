@@ -20,7 +20,7 @@ class Custom_Finalizer : public Run_Finalizer {
 #ifdef CUSTOM_ERROR_MARGIN
             double error_margin = CUSTOM_ERROR_MARGIN
 #else
-            double error_margin = 0.05;
+            double error_margin = 0.10; // 10%
             // TODO: add constexpr if for if real_T is double to decrease the toll
 #endif
 
@@ -48,8 +48,8 @@ class Custom_Finalizer : public Run_Finalizer {
                     e_mask,
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
-                    "Weibel.e.out", // diagnostic output file
-                    0 //371 // num to skip, reads 371 to EOF
+                    "e.out", // diagnostic output file
+                    3581 //371 // num to skip, reads 3581 to EOF
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
 
@@ -61,8 +61,8 @@ class Custom_Finalizer : public Run_Finalizer {
                     b_mask,
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
-                    "Weibel.b.out", // diagnostic output file
-                    0 //371 // num to skip, reads 371 to EOF
+                    "b.out", // diagnostic output file
+                    3581 //371 // num to skip, reads 3581 to EOF
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
