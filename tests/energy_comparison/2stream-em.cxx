@@ -20,7 +20,7 @@ class Custom_Finalizer : public Run_Finalizer {
 #ifdef CUSTOM_ERROR_MARGIN
             double error_margin = CUSTOM_ERROR_MARGIN
 #else
-            double error_margin = 0.12;
+            double error_margin = 0.05;
             // TODO: add constexpr if for if real_T is double to decrease the toll
 #endif
 
@@ -49,7 +49,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "Weibel.e.out", // diagnostic output file
-                    371 // num to skip, reads 371 to EOF
+                    0 //371 // num to skip, reads 371 to EOF
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
 
@@ -62,7 +62,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "Weibel.b.out", // diagnostic output file
-                    371 // num to skip, reads 371 to EOF
+                    0 //371 // num to skip, reads 371 to EOF
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
@@ -73,21 +73,20 @@ class Custom_Finalizer : public Run_Finalizer {
         }
 };
 
+// This relies on the default particle init, changing that will break this..
 Input_Deck::Input_Deck()
 {
     // User puts initialization code here
     // Example: EM 2 Stream in 1d?
-
-    run_finalizer = new Custom_Finalizer();
-
     nx = 1;
     ny = 32;
     nz = 1;
 
-    num_steps = 1030; // gives us 50 in science time
+    num_steps = 6000;
     nppc = 100;
 
-    v0 = 0.2;
+    //v0 = 0.2;
+    v0 = 0.0866025403784439;
 
     // Can also create temporaries
     real_ gam = 1.0 / sqrt(1.0 - v0*v0);
@@ -95,7 +94,8 @@ Input_Deck::Input_Deck()
     const real_ default_grid_len = 1.0;
 
     len_x_global = default_grid_len;
-    len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    //len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_y_global = 0.628318530717959*(gam*sqrt(gam));
     len_z_global = default_grid_len;
 
     dt = 0.99*courant_length(
