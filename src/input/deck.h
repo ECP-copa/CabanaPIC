@@ -72,11 +72,11 @@ class Particle_Initializer {
                     real_ x = pic*dxp+0.5*dxp-1.0;
                     int pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
-                    int ix,iy,iz;
-                    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
-                    ix += ng;
-                    iy += ng;
-                    iz += ng;
+                    //int ix,iy,iz;
+                    //RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+                    //ix += ng;
+                    //iy += ng;
+                    //iz += ng;
 
                     position_x.access(s,i) = 0.0;
                     position_y.access(s,i) = x;
@@ -84,14 +84,19 @@ class Particle_Initializer {
 
                     weight.access(s,i) = w;
 
-                    cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
+                    //cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
+                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1;
 
                     // Initialize velocity.(each cell length is 2)
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+
+                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
+
+                    //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+                    velocity_x.access(s,i) = sign *v0*gam*(1.0+na*sign);
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-                    velocity_z.access(s,i) = 1e-7*sign;
+                    //velocity_z.access(s,i) = 1e-7*sign;
 
                     printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i) );
                 };
@@ -152,14 +157,14 @@ class _Input_Deck {
                 size_t nx,
                 size_t ny,
                 size_t nz,
-		size_t ng,
+                size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
                 real_ v0
         )
         {
-	  particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0);
+            particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0);
         }
 
         real_ de = 1.0; // Length normalization (electron inertial length)
@@ -331,10 +336,11 @@ class Input_Deck : public _Input_Deck {
             ny = 32;
             nz = 1;
 
-            num_steps = 3000;
-            nppc = 10;
+            num_steps = 6000;
+            nppc = 100;
 
-            v0 = 0.2;
+            //v0 = 0.2;
+            v0 = 0.0866025403784439;
 
             // Can also create temporaries
             real_ gam = 1.0 / sqrt(1.0 - v0*v0);
@@ -342,7 +348,8 @@ class Input_Deck : public _Input_Deck {
             const real_ default_grid_len = 1.0;
 
             len_x_global = default_grid_len;
-            len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+            //len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+            len_y_global = 0.628318530717959*(gam*sqrt(gam));
             len_z_global = default_grid_len;
 
             dt = 0.99*courant_length(

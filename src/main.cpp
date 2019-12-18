@@ -195,7 +195,7 @@ int main( int argc, char* argv[] )
             // Half advance the magnetic field from B_{1/2} to B_1
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz);
+            dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
         }
 
 

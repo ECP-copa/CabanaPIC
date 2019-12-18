@@ -43,7 +43,7 @@ void load_interpolator_array(
 
     const real_t fourth = 1.0 / 4.0;
     const real_t half = 1.0 / 2.0;
-    
+
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _load_interpolator = KOKKOS_LAMBDA( const int x, const int y, const int z)
     {
@@ -147,7 +147,7 @@ void initialize_interpolator(interpolator_array_t& f0)
         KOKKOS_LAMBDA( const int i )
         {
             // Throw in some place holder values
-            ex(i) = 0.0;
+            ex(i) = 0.1; // TODO: is this important?
             dexdy(i) = 0.0;
             dexdz(i) = 0.0;
             d2exdydz(i) = 0.0;
