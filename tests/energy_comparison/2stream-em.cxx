@@ -39,6 +39,8 @@ class Custom_Finalizer : public Run_Finalizer {
 
             // This does 2 passes through the file, but it's OK for now..
 
+            // Test steps 3581..5081 as it covers approx 60..100 sim time
+
             // Mask which fields to sum, read only 3rd val
             const unsigned short e_mask = 0b0000000100;
             bool e_correct = test_utils::compare_energies(
@@ -49,7 +51,8 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "e.out", // diagnostic output file
-                    3581 //371 // num to skip, reads 3581 to EOF
+                    3581, //371 // num to skip, reads 3581
+                    1500 // check 1500 lines
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
 
@@ -62,7 +65,8 @@ class Custom_Finalizer : public Run_Finalizer {
                     test_utils::FIELD_ENUM::Sum,
                     1,  // if should diagnostic out
                     "b.out", // diagnostic output file
-                    3581 //371 // num to skip, reads 3581 to EOF
+                    3581, //371 // num to skip, reads 3581 to EOF
+                    1500 // check 1500 lines
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
