@@ -98,7 +98,7 @@ class Particle_Initializer {
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
-                    printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i) );
+                    //printf("%d %d %d pre-g %d putting particle at y=%e with ux = %e pi = %d \n", pic, s, i, pre_ghost, position_y.access(s,i), velocity_x.access(s,i), cell.access(s,i) );
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

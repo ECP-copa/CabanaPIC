@@ -78,6 +78,9 @@ Input_Deck::Input_Deck()
 {
     // User puts initialization code here
     // Example: EM 2 Stream in 1d?
+
+    run_finalizer = new Custom_Finalizer();
+
     nx = 1;
     ny = 32;
     nz = 1;
