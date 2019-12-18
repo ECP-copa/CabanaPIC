@@ -1,14 +1,14 @@
 #ifndef pic_EM_fields_h
 #define pic_EM_fields_h
 
+#include <fstream>
 #include "Cabana_Parallel.hpp" // Simd parallel for
 #include "input/deck.h"
 
 // TODO: Namespace this stuff?
 
-
 template<class Slice_X, class Slice_Y, class Slice_Z>
-KOKKOS_INLINE_FUNCTION
+//KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts_B(
         //field_array_t& fields,
         Slice_X slice_x,
@@ -92,7 +92,7 @@ void serial_update_ghosts_B(
 }
 
 template<class Slice_X, class Slice_Y, class Slice_Z>
-KOKKOS_INLINE_FUNCTION
+//KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts(
         //field_array_t& fields,
         Slice_X slice_x,
@@ -259,6 +259,11 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
         //constructor
         Field_Solver(field_array_t& fields)
         {
+            init(fields);
+        }
+
+        void init(field_array_t& fields)
+        {
             auto ex = Cabana::slice<FIELD_EX>(fields);
             auto ey = Cabana::slice<FIELD_EY>(fields);
             auto ez = Cabana::slice<FIELD_EZ>(fields);
@@ -279,7 +284,6 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
                 };
 
             Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
-
         }
 
         void advance_b(

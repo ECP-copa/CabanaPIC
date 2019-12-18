@@ -67,11 +67,6 @@ void unload_accumulator_array(
     real_t cy = 0.25 / (dz * dx * dt);
     real_t cz = 0.25 / (dx * dy * dt);
 
-    // This is a hang over for VPIC's nasty type punting
-    const size_t JX_OFFSET = 0;
-    const size_t JY_OFFSET = 4;
-    const size_t JZ_OFFSET = 8;
-
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _unload_accumulator = KOKKOS_LAMBDA( const int x, const int y, const int z )
     {
