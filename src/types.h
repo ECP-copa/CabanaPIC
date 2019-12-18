@@ -26,7 +26,7 @@ const std::size_t array_size = VLEN;
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
 #ifdef USE_GPU
-using MemorySpace = Kokkos::CudaUVMSpace;
+using MemorySpace = Kokkos::CudaSpace;
 using ExecutionSpace = Kokkos::Cuda;
 #else
   #ifdef USE_SERIAL_CPU

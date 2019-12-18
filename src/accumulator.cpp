@@ -104,6 +104,7 @@ void unload_accumulator_array(
                     accumulators(xy_down, accumulator_var::jz, 3)
                 );
     };
+
     //may not be enough if particles run into ghost cells
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng+1, ny+ng+1, nz+ng+1} ); // Try not to into ghosts // TODO: dry this
     Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );

@@ -23,71 +23,78 @@ void serial_update_ghosts_B(
         exit(1);
     }
     else { // assume periodic
-        int from, to;
 
-        for (int z = 1; z < nz+1; z++)
+        // TODO: it may be worth turning these into fewer kernels, as they
+        // really don't have a lot of work
+
+        //for (int z = 1; z < nz+1; z++) {
+            //for (int y = 1; y < ny+1; y++) {
+        auto _zy_boundary = KOKKOS_LAMBDA( const int z, const int y )
         {
-            for (int y = 1; y < ny+1; y++)
-            {
-                // Copy x from LHS -> RHS
-                from = VOXEL(1   , y, z, nx, ny, nz, ng);
-                to   = VOXEL(nx+1, y, z, nx, ny, nz, ng);
+            // Copy x from LHS -> RHS
+            int from = VOXEL(1   , y, z, nx, ny, nz, ng);
+            int to   = VOXEL(nx+1, y, z, nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
 
-                // Copy x from RHS -> LHS
-                from = VOXEL(nx  , y, z, nx, ny, nz, ng);
-                to   = VOXEL(0   , y, z, nx, ny, nz, ng);
+            // Copy x from RHS -> LHS
+            from = VOXEL(nx  , y, z, nx, ny, nz, ng);
+            to   = VOXEL(0   , y, z, nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
-            }
-        }
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
+        };
+        //}
 
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>> zy_policy({1,1}, {nz+1,ny+1});
+        Kokkos::parallel_for( zy_policy, _zy_boundary, "zy boundary()" );
 
-        for (int x = 0; x < nx+2; x++)
+        //for (int x = 0; x < nx+2; x++) {
+            //for (int z = 1; z < nz+1; z++) {
+        auto _xz_boundary = KOKKOS_LAMBDA( const int x, const int z )
         {
-            for (int z = 1; z < nz+1; z++)
-            {
-                from = VOXEL(x,    1, z, nx, ny, nz, ng);
-                to   = VOXEL(x, ny+1, z, nx, ny, nz, ng);
+            int from = VOXEL(x,    1, z, nx, ny, nz, ng);
+            int to   = VOXEL(x, ny+1, z, nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
 
-                from = VOXEL(x, ny  , z, nx, ny, nz, ng);
-                to   = VOXEL(x, 0   , z, nx, ny, nz, ng);
+            from = VOXEL(x, ny  , z, nx, ny, nz, ng);
+            to   = VOXEL(x, 0   , z, nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
-            }
-        }
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
+        };
+        //}
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>> xz_policy({0,1}, {nx+2,nz+1});
+        Kokkos::parallel_for( xz_policy, _xz_boundary, "xz boundary()" );
 
-
-        for (int y = 0; y < ny+2; y++)
+        //for (int y = 0; y < ny+2; y++) {
+            //for (int x = 0; x < nx+2; x++) {
+        auto _yx_boundary = KOKKOS_LAMBDA( const int y, const int x )
         {
-            for (int x = 0; x < nx+2; x++)
-            {
-                from = VOXEL(x, y, 1   , nx, ny, nz, ng);
-                to   = VOXEL(x, y, nz+1, nx, ny, nz, ng);
+            int from = VOXEL(x, y, 1   , nx, ny, nz, ng);
+            int to   = VOXEL(x, y, nz+1, nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
 
-                from = VOXEL(x, y, nz  , nx, ny, nz, ng);
-                to   = VOXEL(x, y, 0   , nx, ny, nz, ng);
+            from = VOXEL(x, y, nz  , nx, ny, nz, ng);
+            to   = VOXEL(x, y, 0   , nx, ny, nz, ng);
 
-                slice_x(to) = slice_x(from);
-                slice_y(to) = slice_y(from);
-                slice_z(to) = slice_z(from);
-            }
-        }
+            slice_x(to) = slice_x(from);
+            slice_y(to) = slice_y(from);
+            slice_z(to) = slice_z(from);
+        };
+        //}
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>> yx_policy({0,0}, {ny+2,nx+2});
+        Kokkos::parallel_for( yx_policy, _yx_boundary, "yx boundary()" );
     }
 }
 
@@ -113,55 +120,67 @@ void serial_update_ghosts(
         /*
            To fill in contributions from places of periodic BC
            */
+        //TODO: theses again don't have a sensible amount of work
 
-        int x,y,z,from,to;
-        for ( x = 1; x <= nx; x++ ){
-            for( z = 1; z <= nz+1; z++ ){
+        //for ( x = 1; x <= nx; x++ ){
+        auto _x_boundary = KOKKOS_LAMBDA( const int x )
+        {
+            for(int z = 1; z <= nz+1; z++){
                 //y first
-                from = VOXEL(x, ny+1, z, nx, ny, nz, ng);
-                to   = VOXEL(x, 1   , z, nx, ny, nz, ng);
+                int from = VOXEL(x, ny+1, z, nx, ny, nz, ng);
+                int to   = VOXEL(x, 1   , z, nx, ny, nz, ng);
                 slice_x(to) += slice_x(from);
             }
 
-            for( y = 1; y <= ny+1; y++ ){
+            for(int y = 1; y <= ny+1; y++){
                 //z next
-                from = VOXEL(x, y, nz+1, nx, ny, nz, ng);
-                to   = VOXEL(x, y, 1   , nx, ny, nz, ng);
+                int from = VOXEL(x, y, nz+1, nx, ny, nz, ng);
+                int to   = VOXEL(x, y, 1   , nx, ny, nz, ng);
                 slice_x(to) += slice_x(from);
             }
-        }
+        };
+        Kokkos::RangePolicy<ExecutionSpace> x_policy(1, nx+1);
+        Kokkos::parallel_for( x_policy, _x_boundary, "_x_boundary()" );
 
-        for ( y = 1; y <= ny; y++ ){
-            for (x = 1; x <= nx+1; x++ ){
+        //for ( y = 1; y <= ny; y++ ){
+        auto _y_boundary = KOKKOS_LAMBDA( const int y )
+        {
+            for (int x = 1; x <= nx+1; x++){
                 //z first
-                from = VOXEL(x   , y, nz+1, nx, ny, nz, ng);
-                to   = VOXEL(x   , y, 1   , nx, ny, nz, ng);
+                int from = VOXEL(x   , y, nz+1, nx, ny, nz, ng);
+                int to   = VOXEL(x   , y, 1   , nx, ny, nz, ng);
                 slice_y(to) += slice_y(from);
             }
 
-            for (z = 1; z <= nz+1; z++ ){
+            for (int z = 1; z <= nz+1; z++){
                 //x next
-                from = VOXEL(nx+1, y, z   , nx, ny, nz, ng);
-                to   = VOXEL(1   , y, z   , nx, ny, nz, ng);
+                int from = VOXEL(nx+1, y, z   , nx, ny, nz, ng);
+                int to   = VOXEL(1   , y, z   , nx, ny, nz, ng);
                 slice_y(to) += slice_y(from);
             }
-        }
+        };
+        Kokkos::RangePolicy<ExecutionSpace> y_policy(1, ny+1);
+        Kokkos::parallel_for( y_policy, _y_boundary, "_y_boundary()" );
 
-        for ( z = 1; z <= nz; z++ ){
-            for ( y = 1; y <= ny+1; y++ ){
+        //for ( z = 1; z <= nz; z++ ){
+        auto _z_boundary = KOKKOS_LAMBDA( const int z )
+        {
+            for (int y = 1; y <= ny+1; y++){
                 //x first
-                from = VOXEL(nx+1, y   , z, nx, ny, nz, ng);
-                to   = VOXEL(1   , y   , z, nx, ny, nz, ng);
+                int from = VOXEL(nx+1, y   , z, nx, ny, nz, ng);
+                int to   = VOXEL(1   , y   , z, nx, ny, nz, ng);
                 slice_z(to) += slice_z(from);
             }
 
-            for ( x = 1; x <= nx+1; x++ ){
+            for (int x = 1; x <= nx+1; x++){
                 //y next
-                from = VOXEL(x   , ny+1, z, nx, ny, nz, ng);
-                to   = VOXEL(x   , 1   , z, nx, ny, nz, ng);
+                int from = VOXEL(x   , ny+1, z, nx, ny, nz, ng);
+                int to   = VOXEL(x   , 1   , z, nx, ny, nz, ng);
                 slice_z(to) += slice_z(from);
             }
-        }
+        };
+        Kokkos::RangePolicy<ExecutionSpace> z_policy(1, nz+1);
+        Kokkos::parallel_for( z_policy, _z_boundary, "_z_boundary()" );
 
         // // Copy x from RHS -> LHS
         // int x = 1;
@@ -501,7 +520,7 @@ class EM_Field_Solver
             //Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
             Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
-            double dV = 1; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
+            real_t dV = 1.0; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
             return e_tot_energy*0.5f*dV;
         }
 
@@ -530,7 +549,7 @@ class EM_Field_Solver
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
             Kokkos::parallel_reduce("b_energy", exec_policy, _b_energy, b_tot_energy );
             //TODO: no access to parameters here
-            double dV = 1; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
+            real_t dV = 1.0; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
             return b_tot_energy*0.5f*dV;
         }
 
