@@ -89,8 +89,7 @@ if(ENABLE_COVERAGE_BUILD)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
 endif(ENABLE_COVERAGE_BUILD)
 
-INCLUDE_DIRECTORIES(./src)
-file(GLOB SOURCES "../src/*.cpp")
+INCLUDE_DIRECTORIES(../src)
 
 ##### Build Executable ########
 INCLUDE_DIRECTORIES(${CABANA_DIR}/include/)
@@ -101,9 +100,12 @@ LINK_DIRECTORIES(${CABANA_DIR}/lib64)
 INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
-add_executable(${TARGET} ${SOURCES} ${INPUT_DECK})
-# TODO: why is hwloc needed here for travis?
-target_link_libraries(${TARGET} cabanacore kokkos dl hwloc)
+#file(GLOB SOURCES "*.cpp")
+add_subdirectory(cpp)
+
+#add_executable(${TARGET} ${SOURCES} ${INPUT_DECK})
+## TODO: why is hwloc needed here for travis?
+#target_link_libraries(${TARGET} cabanacore kokkos dl hwloc)
 
 
 ##### TESTS ######

@@ -1,3 +1,5 @@
+#include <Cabana_Core.hpp> // Using this to get Kokkos lambda
+
 using real_t = float;
 
 struct particle_t {
@@ -27,15 +29,114 @@ typedef struct interpolator
 int main()
 {
     // Init Data
-    // TODO
+    // TODO: read from command line?
+    int nx = 64;
+    int ny = 64;
+    int nz = 64;
+    int nppc = 100;
+
+    int num_cells = nx * ny * nz;
+    int np = nx*ny*nz * nppc;
+
+    // Consts
+    real_t c = 1.0; // Speed of light
+    real_t ec = 1.0; // Charge normalization
+    real_t qsp = -ec;
+    real_t me = 1.0;
+    real_t dt = 1.954867e-02;
+    real_t qdt_2mc = qsp*dt/(2*me*c);
+
+    // Create data
+    particle_t* particles = new particle_t[np];
+    interpolator_t* interpolator = new interpolator_t[num_cells];
+
+    // Initialize interpolators
+    for (int i = 0; i < num_cells; i++)
+    {
+        interpolator[i].ex = 0.0;
+        interpolator[i].dexdy = 0.0;
+        interpolator[i].dexdz = 0.0;
+        interpolator[i].d2exdydz = 0.0;
+        interpolator[i].ey = 0.0;
+        interpolator[i].deydz = 0.0;
+        interpolator[i].deydx = 0.0;
+        interpolator[i].d2eydzdx = 0.0;
+        interpolator[i].ez = 0.0;
+        interpolator[i].dezdx = 0.0;
+        interpolator[i].dezdy = 0.0;
+        interpolator[i].d2ezdxdy = 0.0;
+        interpolator[i].cbx = 0.0;
+        interpolator[i].dcbxdx = 0.0;
+        interpolator[i].cby = 0.0;
+        interpolator[i].dcbydy = 0.0;
+        interpolator[i].cbz = 0.0;
+        interpolator[i].dcbzdz = 0.0;
+    }
+
+    // Place particles
+    for (int x = 0; x < nx; x++)
+    {
+        for (int y = 0; y < ny; y++)
+        {
+            for (int z = 0; z < nz; z++)
+            {
+                for (int j = 0; j < nppc; j++)
+                {
+                    int index = nx * ny * nz + j;
+
+                    // Distribute between -0.5 to 0.5
+                    particles[index].dx = (1.0 / nppc) - 0.5;
+                    particles[index].dy = 0.0;
+                    particles[index].dz = 0.0;
+
+                    particles[index].ux = 0.01;
+                    particles[index].uy = 0.01;
+                    particles[index].uz = 0.01;
+
+                    particles[index].w = 1.0;
+                    particles[index].i = nx*ny*nz;
+                }
+            }
+        }
+    }
+
+    const float one = 1.0f;
+    const float one_third = 1.0f/3.0f;
+    const float two_fifteenths = 2.0f/15.0f;
 
     // Define Kernel
     auto _push =
         KOKKOS_LAMBDA( const int i )
         {
-            real_t dx = position_x.access(s,i);   // Load position
-            real_t dy = position_y.access(s,i);   // Load position
-            real_t dz = position_z.access(s,i);   // Load position
+            real_t dx = particles[i].dx;   // Load position
+            real_t dy = particles[i].dy;   // Load position
+            real_t dz = particles[i].dz;   // Load position
+
+            int ii = particles[i].i;
+
+            auto& ex = interpolator[ii].ex;
+            auto& ey = interpolator[ii].ey;
+            auto& ez = interpolator[ii].ez;
+
+            auto& dexdy = interpolator[ii].dexdy;
+            auto& dexdz = interpolator[ii].dexdz;
+            auto& d2exdydz = interpolator[ii].d2exdydz;
+
+            auto& deydz = interpolator[ii].deydz;
+            auto& deydx = interpolator[ii].deydx;
+            auto& d2eydzdx = interpolator[ii].d2eydzdx;
+
+            auto& dezdx = interpolator[ii].dezdx;
+            auto& dezdy = interpolator[ii].dezdy;
+            auto& d2ezdxdy = interpolator[ii].d2ezdxdy;
+
+            auto& dcbxdx = interpolator[ii].dcbxdx;
+            auto& dcbydy = interpolator[ii].dcbydy;
+            auto& dcbzdz = interpolator[ii].dcbzdz;
+
+            auto& _cbx = interpolator[ii].cbx;
+            auto& _cby = interpolator[ii].cby;
+            auto& _cbz = interpolator[ii].cbz;
 
             real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
                     dz*( dexdz + dy*d2exdydz ) );
@@ -44,13 +145,13 @@ int main()
             real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
                     dy*( dezdy + dx*d2ezdxdy ) );
 
-            cbx  = cbx + dx*dcbxdx;             // Interpolate B
-            cby  = cby + dy*dcbydy;
-            cbz  = cbz + dz*dcbzdz;
+            real_t cbx  = _cbx + dx*dcbxdx;             // Interpolate B
+            real_t cby  = _cby + dy*dcbydy;
+            real_t cbz  = _cbz + dz*dcbzdz;
 
-            real_t ux = velocity_x.access(s,i);   // Load velocity
-            real_t uy = velocity_y.access(s,i);   // Load velocity
-            real_t uz = velocity_z.access(s,i);   // Load velocity
+            real_t ux = particles[i].ux;   // Load velocity
+            real_t uy = particles[i].uy;   // Load velocity
+            real_t uz = particles[i].uz;   // Load velocity
 
             ux  += hax;                               // Half advance E
             uy  += hay;
@@ -73,9 +174,9 @@ int main()
             uy  += hay;
             uz  += haz;
 
-            velocity_x.access(s,i) = ux;
-            velocity_y.access(s,i) = uy;
-            velocity_z.access(s,i) = uz;
+            particles[i].ux = ux;
+            particles[i].uy = uy;
+            particles[i].uz = uz;
         };
 
     // Run Kernel
