@@ -26,7 +26,7 @@ typedef struct interpolator
 
 // TODO: aligned alloc?
 
-int main()
+int main(int argc, char *argv[])
 {
     // Init Data
     // TODO: read from command line?
@@ -94,7 +94,7 @@ int main()
                     particles[index].uz = 0.01;
 
                     particles[index].w = 1.0;
-                    particles[index].i = nx*ny*nz;
+                    particles[index].i = x*y*z;
                 }
             }
         }
@@ -180,4 +180,8 @@ int main()
         };
 
     // Run Kernel
+    for (int i = 0; i < np; i++)
+    {
+        _push(i);
+    }
 }

@@ -102,6 +102,7 @@ LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
 #file(GLOB SOURCES "*.cpp")
 add_subdirectory(cpp)
+add_subdirectory(kokkos)
 
 #add_executable(${TARGET} ${SOURCES} ${INPUT_DECK})
 ## TODO: why is hwloc needed here for travis?
