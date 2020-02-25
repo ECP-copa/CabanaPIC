@@ -1,3 +1,4 @@
+#include <chrono>
 #include <Cabana_Core.hpp> // Using this to get Kokkos lambda
 
 using real_t = float;
@@ -74,6 +75,8 @@ namespace interpolator_var {
 
 int main(int argc, char *argv[])
 {
+    auto start_time = std::chrono::system_clock::now();
+
     Kokkos::ScopeGuard scope_guard(argc, argv);
     // Init Data
     // TODO: read from command line?
@@ -227,10 +230,20 @@ int main(int argc, char *argv[])
             particles(i, particle_var::uz) = uz;
         };
 
+    auto start_kernel = std::chrono::system_clock::now();
     // Run Kernel
     Kokkos::parallel_for(
         "advance_p",
         Kokkos::RangePolicy < Kokkos::DefaultExecutionSpace > (0, np),
         _push
     );
+    Kokkos::fence();
+
+    auto end_kernel = std::chrono::system_clock::now();
+    auto kernel_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_kernel - start_kernel).count() / 1000.0;
+    std::cout << "> Kernel runtime " << kernel_time << " seconds " << std::endl;
+
+    auto end_time = std::chrono::system_clock::now();
+    auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / 1000.0;
+    std::cout << "Total runtime " << total_time << " seconds " << std::endl;
 }

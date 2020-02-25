@@ -1,3 +1,4 @@
+#include <chrono>
 #include <Cabana_Core.hpp> // Using this to get Kokkos lambda
 
 using real_t = float;
@@ -28,6 +29,8 @@ typedef struct interpolator
 
 int main(int argc, char *argv[])
 {
+    auto start_time = std::chrono::system_clock::now();
+
     // Init Data
     // TODO: read from command line?
     int nx = 64;
@@ -179,9 +182,17 @@ int main(int argc, char *argv[])
             particles[i].uz = uz;
         };
 
+    auto start_kernel = std::chrono::system_clock::now();
     // Run Kernel
     for (int i = 0; i < np; i++)
     {
         _push(i);
     }
+    auto end_kernel = std::chrono::system_clock::now();
+    auto kernel_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_kernel - start_kernel).count() / 1000.0;
+    std::cout << "> Kernel runtime " << kernel_time << " seconds " << std::endl;
+
+    auto end_time = std::chrono::system_clock::now();
+    auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / 1000.0;
+    std::cout << "Total runtime " << total_time << " seconds " << std::endl;
 }
