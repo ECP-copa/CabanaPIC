@@ -1,7 +1,6 @@
 #ifndef pic_init_h
 #define pic_init_h
 
-
 class Initializer {
     public:
   // Compute the Courant length on a regular mesh
@@ -20,7 +19,7 @@ class Initializer {
             //logger << "Importing Default Input Deck" << std::endl;
             const real_t default_grid_len = 1.0;
 	    //1D
-            Parameters::instance().NX_global = 1; //_nc;
+            Parameters::instance().NX_global = _nc;
             Parameters::instance().NY_global = _nc;
             Parameters::instance().NZ_global = 1; //_nc;
 
@@ -40,16 +39,18 @@ class Initializer {
 
             Parameters::instance().NPPC = _nppc;
 
-            Parameters::instance().num_particles =  Parameters::instance().NPPC  *  Parameters::instance().num_real_cells;
+            Parameters::instance().num_particles =  Parameters::instance().NPPC  *  (Parameters::instance().ny/8*Parameters::instance().nx); //Parameters::instance().num_real_cells;
 
 
-            Parameters::instance().num_steps = 6000;
+            Parameters::instance().num_steps = 20000;
 
-            Parameters::instance().v0 = 0.0866025403784439;
+            Parameters::instance().v0 = 0.0;
             real_t gam = 1.0/sqrt(1.0-Parameters::instance().v0*Parameters::instance().v0);
-	      
-            Parameters::instance().len_x_global = default_grid_len;
-            Parameters::instance().len_y_global = 0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
+
+	    real_t a = 0.1;
+
+            Parameters::instance().len_x_global = 16*a; //default_grid_len;
+            Parameters::instance().len_y_global = 16*a; //0.628318530717959*(gam*sqrt(gam)); //default_grid_len;
             Parameters::instance().len_z_global = default_grid_len;
 
             Parameters::instance().len_x = Parameters::instance().len_x_global; //default_grid_len;default_grid_len;
@@ -61,18 +62,19 @@ class Initializer {
             Parameters::instance().dz = Parameters::instance().len_z / Parameters::instance().nz;
 
             Parameters::instance().dt = 0.99*courant_length(Parameters::instance().len_x,Parameters::instance().len_y,Parameters::instance().len_z,Parameters::instance().nx,Parameters::instance().ny,Parameters::instance().nz)/Parameters::instance().c;
-	    Parameters::instance().n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
+	    Parameters::instance().n0 = 1.0;
             Parameters::instance().print_run_details();
 	    
         }
 
-        static real_t rand_float(real_t min = 0, real_t max = 1)
-        {
-            return min + static_cast <real_t> (rand()) /( static_cast <real_t> (RAND_MAX/(max-min)));
-        }
+#define rand_float(min, max) (min + (max-min)*rand()/RAND_MAX)
+        // static real_t rand_float(real_t min = 0, real_t max = 1)
+        // {
+        //     return min + static_cast <real_t> (rand()) /( static_cast <real_t> (RAND_MAX/(max-min)));
+        // }
 
         // Function to intitialize the particles.
-        static void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, real_t dxp, size_t nppc, real_t w)
+  static void initialize_particles( particle_list_t particles,size_t nx,size_t ny,size_t nz, size_t ng, real_t dxp, size_t nppc, real_t w,real_t Lx, real_t Ly, real_t Lz)
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
 
@@ -88,7 +90,11 @@ class Initializer {
             auto cell = particles.slice<Cell_Index>();
 
             real_t v0 = Parameters::instance().v0;
-
+	    real_t hx = Lx/nx;
+	    real_t hy = Ly/ny;
+	    real_t hz = Lz/nz;
+	    real_t xmin = -0.5*Lx;
+	    real_t ymin = -0.5*Ly;
             // TODO: sensible way to do rand in parallel?
             //srand (static_cast <unsigned> (time(0)));
 
@@ -96,46 +102,67 @@ class Initializer {
                 KOKKOS_LAMBDA( const int s, const int i )
                 {
                     // Initialize position.
-                    int sign =  -1;
-                    size_t pi2 = (s)*particle_list_t::vector_length+i;
-                    size_t pi = ((pi2) / 2);
-                    if (pi2%2 == 0) {
-                        sign = 1;
-                    }
-                    size_t pic = (2*pi)%nppc;
+                    size_t pi = (s)*particle_list_t::vector_length+i;
+                    size_t pic = (pi)%nppc;
 
-                    real_t x = pic*dxp+0.5*dxp-1.0; //rand_float(-1.0f, 1.0f);
-                    position_x.access(s,i) = 0; //x;
-                    position_y.access(s,i) = x; //0.; //rand_float(-1.0f, 1.0f);
-                    position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
+                    // real_t x = rand_float(-1.0f, 1.0f); //pic*dxp+0.5*dxp-1.0; //
+                    // position_x.access(s,i) = x;
+                    // position_y.access(s,i) = rand_float(-1.0f, 1.0f);
+                    // position_z.access(s,i) = 0.; //rand_float(-1.0f, 1.0f);
+		    size_t ix, iy, iz;
+		    real_t x, y, z;
+		    x = rand_float(-0.5*Lx,0.5*Lx);
+		    x= (x-xmin)/hx;
+		    ix = (size_t) x;
+		    x -= (real_t) ix;
+		    x = x+x-1;
+		    if(ix==nx) x = 1;
+		    if(ix==nx) ix = nx-1;
 
+		    y = rand_float(-0.1f, 0.1f); //a = 0.1
+		    y = (y-ymin)/hy;
+		    iy = (size_t) y;
+		    y -= (real_t) iy;
+		    y = y+y-1;
+		    if(iy==ny) y = 1;
+		    if(iy==ny) iy = ny-1;
+
+		    z = 0;
+		    iz = 0;
+		    
+		    position_x.access(s,i) = x;
+		    position_y.access(s,i) = y;
+		    position_z.access(s,i) = z;
+		    
+                    cell.access(s,i) = VOXEL(ix+1,iy+1,iz+1,nx,ny,nz,ng); //needs to be more general
 
                     weight.access(s,i) = w;
 
+		    
                     // gives me a num in the range 0..num_real_cells
                     //int pre_ghost = (s % Parameters::instance().num_real_cells);
                     //   size_t ix, iy, iz;
 
-                    size_t pre_ghost = (2*pi/nppc);
+                    // size_t pre_ghost = (pi/nppc);
 
-                    //cell.access(s,i) = pre_ghost + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
-		    //test y
-                    cell.access(s,i) = pre_ghost*(nx+2) + (nx+2)*(ny+2) + (nx+2) + 1; //13; //allow_for_ghosts(pre_ghost);
+		    // RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+		    
+                    // cell.access(s,i) = VOXEL(ix+1,iy+29,iz+1,nx,ny,nz,ng); //needs to be more general
 
                     // Initialize velocity.(each cell length is 2)
                     //real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*nx)));
-                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
+                    real_t na = 0; //0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
                     //
 
                     real_t gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0 *gam*(1.0+na*sign); //0;
+                    velocity_x.access(s,i) = 0; //sign * v0 *gam*(1.0+na*sign); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0;
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
                 vec_policy( 0, particles.size() );
-            Cabana::simd_parallel_for( vec_policy, _init, "init()" );
+            Cabana::simd_parallel_for( vec_policy, _init, "init()" );	    
         }
 
 

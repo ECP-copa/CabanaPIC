@@ -174,8 +174,6 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         // 	a0(ii,offset+3) += v3;
 
        accumulate_j(x,y,z);
-       // printf("move_p deposit v0 %e to %d \n",
-       //         v0, ii);
        _asa(ii, accumulator_var::jx, 0) += v0; // q*ux;
        _asa(ii, accumulator_var::jx, 1) += v1; // 0.0;
        _asa(ii, accumulator_var::jx, 2) += v2; // 0.0;

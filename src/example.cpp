@@ -31,14 +31,16 @@ int main( int argc, char* argv[] )
             typeid (Kokkos::DefaultExecutionSpace).name ());
     // Cabana scoping block
     {
-
+      FILE *fptr = fopen("partloc","w");
+      FILE *fpfd = fopen("ex1d","w");
+      
         Visualizer vis;
 
         // Initialize input deck params.
 
         // num_cells (without ghosts), num_particles_per_cell
-        size_t npc = 100;
-        Initializer::initialize_params(32, npc);
+        size_t npc = 40;
+        Initializer::initialize_params(64, npc);
 
         // Cache some values locally for printing
         const size_t nx = Parameters::instance().nx;
@@ -63,8 +65,8 @@ int main( int argc, char* argv[] )
         real_t Lz   = Parameters::instance().len_z;
         size_t nppc = Parameters::instance().NPPC;
 	real_t eps0 = Parameters::instance().eps;
-        real_t Npe  = n0*Lx*Ly*Lz;
-        size_t Ne=  (nppc*nx*ny*nz);
+        real_t Npe  = n0*Lx*0.2*Lz;
+        size_t Ne=  (nppc*nx*ny*nz)/8;
         real_t qsp = -ec;
         real_t qdt_2mc = qsp*dt/(2*me*c);
         real_t cdt_dx = c*dt/dx;
@@ -80,13 +82,15 @@ int main( int argc, char* argv[] )
         //logger << "numSoA " << particles.numSoA() << std::endl;
 
         // Initialize particles.
-        Initializer::initialize_particles( particles, nx, ny, nz, dxp, npc, we );
-
+        Initializer::initialize_particles( particles, nx, ny, nz, num_ghosts, dxp, npc, we, Lx,Ly,Lz );
+	
         grid_t* grid = new grid_t();
 
         // Print initial particle positions
         //logger << "Initial:" << std::endl;
-        //print_particles( particles );
+        //print_particles( fptr, particles, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
+	fprintf(fptr,"#step=0\n");	
+        print_particles( fptr, particles, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
 
         // Allocate Cabana Data
         interpolator_array_t interpolators(num_cells);
@@ -103,8 +107,10 @@ int main( int argc, char* argv[] )
         Initializer::initialize_interpolator(interpolators);
 
         // Can obviously supply solver type at compile time
-        Field_Solver<EM_Field_Solver> field_solver(fields);
+        Field_Solver<EM_Field_Solver> field_solver(fields, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
         //Field_Solver<ES_Field_Solver_1D> field_solver(fields);
+
+	field_solver.print_fields(fpfd,fields, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
 
         // Grab some global values for use later
         const Boundary boundary = Parameters::instance().BOUNDARY_TYPE;
@@ -137,9 +143,11 @@ int main( int argc, char* argv[] )
         printf ( "#dy/de = %f\n" , Ly/(ny) );
         printf ( "#dz/de = %f\n" , Lz/(nz) );
         printf ( "#n0 = %f\n" , n0 );
+        printf ( "#we = %f\n" , we );
         printf( "" );
 
-        for (size_t step = 0; step < num_steps; step++)
+	for (size_t step = 1; step < num_steps+1; step++)
+        //for (size_t step = 1; step < 11; step++)
         {
             //     //std::cout << "Step " << step << std::endl;
             // Convert fields to interpolators
@@ -195,14 +203,22 @@ int main( int argc, char* argv[] )
 	    // Half advance the magnetic field from B_{1/2} to B_1
 	    field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            //     // Print particles.
-            //     print_particles( particles );
+	    //
+	    //	    exit(1);
+	    // Print particles.
+	    if((step)%100==0){
+	      fprintf(fpfd,"#step=%d\n",step);
+	      field_solver.print_fields(fpfd,fields, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
+	      fprintf(fptr,"#step=%d\n",step);
+	      print_particles( fptr, particles, -Lx/2.0, -Ly/2.0, -Lz/2.0, dx,dy,dz,nx,ny,nz,num_ghosts );
+	      printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz, num_ghosts),field_solver.b_energy(fields, px, py, pz, nx, ny, nz, num_ghosts));	      
+	    }
 
             //     // Output vis
             //     vis.write_vis(particles, step);
-            printf("%d  %f  %e  %e\n",step, step*dt,field_solver.e_energy(fields, px, py, pz, nx, ny, nz, num_ghosts),field_solver.b_energy(fields, px, py, pz, nx, ny, nz, num_ghosts));
-        }
 
+        }
+    fclose(fptr);
 
     } // End Scoping block
 

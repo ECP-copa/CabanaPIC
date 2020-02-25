@@ -258,7 +258,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 public:
 
   //constructor
-  Field_Solver(field_array_t fields)
+  Field_Solver(field_array_t fields, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
   {
     auto ex = fields.slice<FIELD_EX>();
     auto ey = fields.slice<FIELD_EY>();
@@ -267,20 +267,35 @@ public:
     auto cbx = fields.slice<FIELD_CBX>();
     auto cby = fields.slice<FIELD_CBY>();
     auto cbz = fields.slice<FIELD_CBZ>();
+
+    real_t b0 = sqrt(20.0);
+    real_t a  = 0.1;
     
     auto _init_fields =
       KOKKOS_LAMBDA( const int i )
       {
 	ex(i) = 0.0;
-	ey(i) = 0.0;
+	//ey(i) = 0.0;
 	ez(i) = 0.0;
 	cbx(i) = 0.0;
 	cby(i) = 0.0;
-	cbz(i) = 0.0;
+	cbz(i) = b0;
+	size_t ix,iy,iz;
+	RANK_TO_INDEX(i, ix,iy,iz,nx+2*ng,ny+2*ng);
+	real_t y = ymin + (iy-0.5)*dy;
+	if(y<-a){
+	  ey(i) = a;
+	}else if(y>a){
+	  ey(i) =-a;
+	}else{
+	  ey(i) =-y;
+	}
+	//printf("%d %e %e\n",iy,y,ey(i));
+	      
       };
 
     Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
-    
+    //exit(1);
   }
   
   void advance_b(
@@ -444,7 +459,44 @@ public:
 class EM_Field_Solver
 {
 public:
-  
+  void print_fields(FILE * fp,
+		    field_array_t& fields,
+    real_t xmin,
+    real_t ymin,
+    real_t zmin,
+    real_t dx,
+    real_t dy,
+    real_t dz,
+    size_t nx,
+    size_t ny,
+    size_t nz,
+    size_t ng
+    )
+    {
+      auto ex  = fields.slice<FIELD_EX>();
+      auto ey  = fields.slice<FIELD_EY>();
+      auto ez  = fields.slice<FIELD_EZ>();
+      auto jfx = fields.slice<FIELD_JFX>();
+      auto jfy = fields.slice<FIELD_JFY>();
+      auto jfz = fields.slice<FIELD_JFZ>();
+      auto cbx = fields.slice<FIELD_CBX>();
+      auto cby = fields.slice<FIELD_CBY>();
+      auto cbz = fields.slice<FIELD_CBZ>();
+      for(int j=ny/2+1; j<ny/2+2; j++){
+	for( int i=1; i<nx+1; i++){
+	//	for( int j=1; j<ny+1; j++){
+	  real_t x = xmin + (i-0.5)*dx;
+	  real_t y = ymin + (j-0.5)*dy;
+	  size_t ii = VOXEL(i,j,1,nx,ny,nz,ng);
+	  //	  fprintf(fp,"%e %e %e %e %e %e %e\n",x,y,ey(ii),jfx(ii),jfy(ii),jfz(ii),cbz(ii));
+	  fprintf(fp,"%e %e\n",x,ex(ii));
+	}
+	fprintf(fp,"\n");
+      }
+
+      fprintf(fp,"\n\n");
+
+    }
 
   real_t e_energy(
 		  field_array_t& fields,

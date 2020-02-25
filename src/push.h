@@ -120,6 +120,7 @@ void push(
             real_t dx = position_x.access(s,i);   // Load position
             real_t dy = position_y.access(s,i);   // Load position
             real_t dz = position_z.access(s,i);   // Load position
+	    // printf("dx,y,z=%e %e %e\n",dx,dy,dz);
 
             real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
                     dz*( dexdz + dy*d2exdydz ) );
@@ -140,11 +141,14 @@ void push(
             real_t ux = velocity_x.access(s,i);   // Load velocity
             real_t uy = velocity_y.access(s,i);   // Load velocity
             real_t uz = velocity_z.access(s,i);   // Load velocity
-
+	    // printf("ux,y,z=%e %e %e\n",ux,uy,uz);
+	    // printf("hax,y,z=%e %e %e\n",hax,hay,haz);
+	    // printf("cbx,y,z=%e %e %e\n",cbx,cby,cbz);
+	    
             ux  += hax;                               // Half advance E
             uy  += hay;
             uz  += haz;
-
+	    // printf("ux,y,z=%e %e %e\n",ux,uy,uz);	  
             real_t v0   = qdt_2mc/sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
             /**/                                      // Boris - scalars
             real_t v1   = cbx*cbx + (cby*cby + cbz*cbz);
@@ -166,6 +170,7 @@ void push(
             velocity_y.access(s,i) = uy;
             velocity_z.access(s,i) = uz;
 
+
             v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
             /**/                                      // Get norm displacement
             ux  *= cdt_dx;
@@ -174,6 +179,8 @@ void push(
             ux  *= v0;
             uy  *= v0;
             uz  *= v0;
+	    // printf("cdt_dx,y,z=%e %e %e, v0=%e\n",cdt_dx,cdt_dy,cdt_dz,v0);
+	    // printf("ux,y,z=%e %e %e\n",ux,uy,uz);	    	    
             v0   = dx + ux;                           // Streak midpoint (inbnds)
             v1   = dy + uy;
             v2   = dz + uz;
@@ -238,8 +245,8 @@ void push(
                 accumulators_scatter_access(ii, accumulator_var::jx, 2) += v2; // q*ux*(1-dy)*(1+dz);
                 accumulators_scatter_access(ii, accumulator_var::jx, 3) += v3; // q*ux*(1+dy)*(1+dz);
 
-                // printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
-                //         v0, ii, ux, uy, uz);
+		// printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
+                //          v0, ii, ux, uy, uz);
 
                 CALC_J( y,z,x );
                 accumulators_scatter_access(ii, accumulator_var::jy, 0) += v0; // q*ux;

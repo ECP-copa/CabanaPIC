@@ -62,8 +62,8 @@ void unload_accumulator_array(
 
     // TODO: give these real values
     //    printf("cx %e dy %e dz %e dt %e \n", dy, dz, dt);
-    real_t cx = 0.25 * (1.0 / (dy * dz)) / dt;
-    //real_t cx = 0.25 / (dy * dz * dt);
+    //    real_t cx = 0.25 * (1.0 / (dy * dz)) / dt;
+    real_t cx = 0.25 / (dy * dz * dt);
     real_t cy = 0.25 / (dz * dx * dt);
     real_t cz = 0.25 / (dx * dy * dt);
 
