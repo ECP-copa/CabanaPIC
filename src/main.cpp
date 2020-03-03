@@ -64,7 +64,11 @@ int main( int argc, char* argv[] )
 
         int nppc = deck.nppc;
         real_t eps0 = deck.eps;
-        real_t Npe  = n0*Lx*Ly*Lz;
+
+        // TODO: this is a hack, remove this and return to old value
+        real_t Npe  = n0*Lx*0.2*Lz;
+        //real_t Npe  = n0*Lx*Ly*Lz;
+
         size_t Ne=  (nppc*nx*ny*nz);
         real_t qsp = -ec;
         real_t qdt_2mc = qsp*dt/(2*me*c);
@@ -112,6 +116,20 @@ int main( int argc, char* argv[] )
         // This is able to deduce solver type from compile options
         auto field_solver = make_field_solver(fields);
 
+        deck.initialize_fields(
+            fields,
+            nx,
+            ny,
+            nz,
+            num_ghosts,
+            Lx,
+            Ly,
+            Lz,
+            dx,
+            dy,
+            dz
+        );
+
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
 
@@ -143,10 +161,13 @@ int main( int argc, char* argv[] )
         printf( "#dy/de = %f\n" , Ly/(ny) );
         printf( "#dz/de = %f\n" , Lz/(nz) );
         printf( "#n0 = %f\n" , n0 );
+        printf( "#we = %f\n" , we );
         printf( "*****\n" );
 
         for (int step = 0; step < num_steps; step++)
         {
+            //printf("Step %d \n", step);
+
             // Convert fields to interpolators
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
 

@@ -109,11 +109,6 @@ void serial_update_ghosts(
     }
     else { // assume periodic
 
-
-        /*
-           To fill in contributions from places of periodic BC
-           */
-
         int x,y,z,from,to;
         for ( x = 1; x <= nx; x++ ){
             for( z = 1; z <= nz+1; z++ ){
@@ -259,27 +254,8 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
         //constructor
         Field_Solver(field_array_t& fields)
         {
-            auto ex = Cabana::slice<FIELD_EX>(fields);
-            auto ey = Cabana::slice<FIELD_EY>(fields);
-            auto ez = Cabana::slice<FIELD_EZ>(fields);
-
-            auto cbx = Cabana::slice<FIELD_CBX>(fields);
-            auto cby = Cabana::slice<FIELD_CBY>(fields);
-            auto cbz = Cabana::slice<FIELD_CBZ>(fields);
-
-            auto _init_fields =
-                KOKKOS_LAMBDA( const int i )
-                {
-                    ex(i) = 0.0;
-                    ey(i) = 0.0;
-                    ez(i) = 0.0;
-                    cbx(i) = 0.0;
-                    cby(i) = 0.0;
-                    cbz(i) = 0.0;
-                };
-
-            Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
-
+            // Empty?
+            // Assume fields are zeroed by the initializer?
         }
 
         void advance_b(
@@ -640,10 +616,10 @@ static auto make_field_solver(field_array_t& fields)
 {
     // TODO: make this support 1/2/3d
 #ifdef ES_FIELD_SOLVER
-    std::cout << "Initialized ES Solver" << std::endl;
+    std::cout << "Created ES Solver" << std::endl;
     Field_Solver<ES_Field_Solver> field_solver(fields);
 #else // EM
-    std::cout << "Initialized EM Solver" << std::endl;
+    std::cout << "Created EM Solver" << std::endl;
     Field_Solver<EM_Field_Solver> field_solver(fields);
 #endif
     return field_solver;
