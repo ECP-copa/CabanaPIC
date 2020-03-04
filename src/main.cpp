@@ -52,22 +52,20 @@ int main( int argc, char* argv[] )
         const real_t dy = deck.dy;
         const real_t dz = deck.dz;
 
-        real_t dt   = deck.dt;
-        real_t c    = deck.c;
-        real_t me   = deck.me;
-        real_t n0   = deck.n0;
-        real_t ec   = deck.ec;
-        real_t Lx   = deck.len_x;
-        real_t Ly   = deck.len_y;
-        real_t Lz   = deck.len_z;
-        real_t v0   = deck.v0;
+        real_t dt = deck.dt;
+        real_t c = deck.c;
+        real_t me = deck.me;
+        real_t n0 = deck.n0;
+        real_t ec = deck.ec;
+        real_t Lx = deck.len_x;
+        real_t Ly = deck.len_y;
+        real_t Lz = deck.len_z;
+        real_t v0 = deck.v0;
 
         int nppc = deck.nppc;
         real_t eps0 = deck.eps;
 
-        // TODO: this is a hack, remove this and return to old value
-        real_t Npe  = n0*Lx*0.2*Lz;
-        //real_t Npe  = n0*Lx*Ly*Lz;
+        real_t Npe = deck.Npe;
 
         size_t Ne=  (nppc*nx*ny*nz);
         real_t qsp = -ec;

@@ -45,6 +45,8 @@ Input_Deck::Input_Deck()
     len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
     len_z_global = default_grid_len;
 
+    Npe = n0*len_x_global*len_y_global*len_z_global;
+
     dt = 0.99*courant_length(
             len_x_global, len_y_global, len_z_global,
             nx, ny, nz

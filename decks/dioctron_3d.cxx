@@ -189,6 +189,8 @@ Input_Deck::Input_Deck()
     len_y_global = 16*a;
     len_z_global = default_grid_len;
 
+    Npe = n0*len_x_global*0.2*len_z_global;
+
     dt = 0.99*courant_length(
             len_x_global, len_y_global, len_z_global,
             nx, ny, nz

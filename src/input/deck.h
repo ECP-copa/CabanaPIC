@@ -276,6 +276,8 @@ class _Input_Deck {
         real_ len_y_global = 1.0;
         real_ len_z_global = 1.0;
 
+        real_t Npe = n0*len_x_global*len_y_global*len_z_global;
+
         //real_ local_x_min;
         //real_ local_y_min;
         //real_ local_z_min;
