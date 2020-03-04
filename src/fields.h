@@ -254,8 +254,36 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
         //constructor
         Field_Solver(field_array_t& fields)
         {
-            // Empty?
-            // Assume fields are zeroed by the initializer?
+            // Zero the fields so everything has a safe value.
+            // This occurs before we parse any custom fields in a user deck
+            //
+            auto ex = Cabana::slice<FIELD_EX>(fields);
+            auto ey = Cabana::slice<FIELD_EY>(fields);
+            auto ez = Cabana::slice<FIELD_EZ>(fields);
+
+            auto cbx = Cabana::slice<FIELD_CBX>(fields);
+            auto cby = Cabana::slice<FIELD_CBY>(fields);
+            auto cbz = Cabana::slice<FIELD_CBZ>(fields);
+
+            auto jfx = Cabana::slice<FIELD_JFX>(fields);
+            auto jfy = Cabana::slice<FIELD_JFY>(fields);
+            auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+
+            auto _init_fields =
+                KOKKOS_LAMBDA( const int i )
+                {
+                    ex(i) = 0.0;
+                    ey(i) = 0.0;
+                    ez(i) = 0.0;
+                    cbx(i) = 0.0;
+                    cby(i) = 0.0;
+                    cbz(i) = 0.0;
+                    jfx(i) = 0.0;
+                    jfy(i) = 0.0;
+                    jfz(i) = 0.0;
+                };
+
+            Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
         }
 
         void advance_b(
