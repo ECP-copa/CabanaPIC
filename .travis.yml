@@ -21,11 +21,11 @@ before_script:
     # LD_LIBRARY_PATH workaround for libomp: https://github.com/travis-ci/travis-ci/issues/8613
   - if [[ ${CC} = clang ]]; then export LD_LIBRARY_PATH=/usr/local/clang/lib:$LD_LIBRARY_PATH; fi
   - if [[ ${CC} = gcc ]]; then export CXX=g++-6; export CC=gcc-6; export FC=gfortran-6; fi
-  - git clone --depth=1 https://github.com/kokkos/kokkos.git &&
+  - git clone --depth=1 --branch 3.0.00 https://github.com/kokkos/kokkos.git &&
     pushd kokkos &&
     mkdir build &&
     pushd build &&
-    ../generate_makefile.bash --prefix=$HOME/kokkos ${KOKKOS_OPTS[@]} &&
+    cmake -DCMAKE_INSTALL_PREFIX=$HOME/kokkos ${KOKKOS_OPTS[@]} .. &&
     make -j2 &&
     make install &&
     popd &&
@@ -35,6 +35,8 @@ before_script:
   - pushd Cabana && mkdir build && pushd build &&
     cmake -DCMAKE_PREFIX_PATH=$HOME/kokkos
           -DCMAKE_INSTALL_PREFIX=$HOME/Cabana
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          -DKokkos_INSTALL_PATH="$HOME/kokkos"
           -DCabana_ENABLE_Serial=ON -DCabana_ENABLE_OpenMP=ON
           -DCabana_ENABLE_MPI=OFF
           -DCabana_ENABLE_TESTING=OFF -DCabana_ENABLE_EXAMPLES=OFF
