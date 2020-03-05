@@ -692,15 +692,24 @@ void dump_energies(
     // TODO: is it ok to keep opening and closing the file like this?
     // one per time step is probably fine?
     std::ofstream energy_file;
-    energy_file.open("energies.txt", std::ios::app); // append
+
+    if (step == 0)
+    {
+        // delete what is there
+        energy_file.open("energies.txt", std::ofstream::out | std::ofstream::trunc);
+    }
+    else {
+        energy_file.open("energies.txt", std::ios::app); // append
+    }
+
     energy_file << step << " " << time << " " << e_en;
 #ifndef ES_FIELD_SOLVER
     // Only write b info if it's available
     real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz, ng);
     energy_file << " " << b_en;
-    printf("%d  %f  %e  %e\n",step, time, e_en, b_en);
+    printf("%d %f %e %e\n",step, time, e_en, b_en);
 #else
-    printf("%d  %f  %e\n",step, time, e_en);
+    printf("%d %f %e\n",step, time, e_en);
 #endif
     energy_file << std::endl;
     energy_file.close();
