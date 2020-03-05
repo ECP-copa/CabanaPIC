@@ -5,6 +5,8 @@
 #include <limits> // epsilon for limit
 #include <utility> // pair
 
+#include <vector>
+
 namespace test_utils {
 /**
  * @brief Helper function to write collective errors to file for further analysis
