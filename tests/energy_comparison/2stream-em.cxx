@@ -52,7 +52,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     1,  // if should diagnostic out
                     "e.out", // diagnostic output file
                     3581, //371 // num to skip, reads 3581
-                    1500 // check 1500 lines
+                    1300 // check 1500 lines
             );
             std::cout << "E Test Pass: " << e_correct << std::endl;
 
@@ -66,7 +66,7 @@ class Custom_Finalizer : public Run_Finalizer {
                     1,  // if should diagnostic out
                     "b.out", // diagnostic output file
                     3581, //371 // num to skip, reads 3581 to EOF
-                    1500 // check 1500 lines
+                    1300 // check 1500 lines
             );
             std::cout << "B Test Pass: " << b_correct << std::endl;
 
