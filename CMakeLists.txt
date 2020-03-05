@@ -13,6 +13,9 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR})
 
+# find kokkos
+find_package(Kokkos 3 REQUIRED)
+
 #### User configuration Options ####
 option(ENABLE_GPU OFF)
 option(ENABLE_SERIAL OFF)
@@ -98,8 +101,8 @@ INCLUDE_DIRECTORIES(${CABANA_DIR}/include/Cabana/)
 LINK_DIRECTORIES(${CABANA_DIR}/lib)
 LINK_DIRECTORIES(${CABANA_DIR}/lib64)
 
-INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
-LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
+#INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
+#LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
 # TODO: why is hwloc needed here for travis?
