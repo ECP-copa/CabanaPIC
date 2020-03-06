@@ -15,6 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 # find kokkos
 find_package(Kokkos 3 REQUIRED)
+find_package(Cabana)
 
 #### User configuration Options ####
 option(ENABLE_GPU OFF)
@@ -94,19 +95,9 @@ endif(ENABLE_COVERAGE_BUILD)
 INCLUDE_DIRECTORIES(./src)
 file(GLOB SOURCES "src/*.cpp")
 
-
-##### Build Executable ########
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include/)
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include/Cabana/)
-LINK_DIRECTORIES(${CABANA_DIR}/lib)
-LINK_DIRECTORIES(${CABANA_DIR}/lib64)
-
-#INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
-#LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
-
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
 # TODO: why is hwloc needed here for travis?
-target_link_libraries(minipic cabanacore kokkoscore dl hwloc)
+target_link_libraries(minipic PUBLIC Cabana::cabanacore Kokkos::kokkoscore dl hwloc)
 
 
 ##### TESTS ######
