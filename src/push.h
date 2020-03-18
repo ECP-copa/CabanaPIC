@@ -68,7 +68,7 @@ void push(
         KOKKOS_LAMBDA( const int s, const int i )
         {
             // Skip if no mask
-            if (mask(i) == 0) { return; }
+            if (mask.access(s, i) == 0) { return; }
 
             auto accumulators_scatter_access = a0.access();
 
