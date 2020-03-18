@@ -193,17 +193,17 @@ int main( int argc, char* argv[] )
         sorter.find_bin_counts(keys, mask);
         sorter.find_bin_offsets(keys);
 
-        std::cout << "Pre sort " << std::endl;
-        print_particles(particles);
+        //std::cout << "Pre sort " << std::endl;
+        //print_particles(particles);
 
         sorter.perform_sort(keys, particles);
 
-        std::cout << "Post sort " << std::endl;
-        print_particles(particles);
+        //std::cout << "Post sort " << std::endl;
+        //print_particles(particles);
 
         for (int step = 0; step < num_steps; step++)
         {
-            printf("Step %d \n", step);
+            //printf("Step %d \n", step);
 
             // Convert fields to interpolators
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
@@ -256,9 +256,6 @@ int main( int argc, char* argv[] )
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
-
-            print_particles(particles);
-
         }
 
 
