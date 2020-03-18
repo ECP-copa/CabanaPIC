@@ -214,8 +214,8 @@ int main( int argc, char* argv[] )
             // required for this incarnation)
             // Sort by cell index
             // TODO: Make this sort such that AoSoAs are sparse
-            auto keys = particles.slice<Cell_Index>();
-            auto bin_data = Cabana::sortByKey( keys );
+            //auto keys = Cabana::slice<Cell_Index>(particles);
+            //auto bin_data = Cabana::sortByKey( keys );
 
             // Move
             push(
