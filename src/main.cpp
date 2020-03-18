@@ -185,18 +185,15 @@ int main( int argc, char* argv[] )
         // TODO: sort can now "grow" the list, we need to make sure we have
         // enough capacity...
 
-        auto sorter = Sparse_sorter<ExecutionSpace>(num_cells, 0);
+        //auto sorter = Sparse_sorter<ExecutionSpace>(num_cells, 0);
 
-        auto keys = Cabana::slice<Cell_Index>(particles);
-        auto mask = Cabana::slice<Mask>(particles);
-
-        sorter.find_bin_counts(keys, mask);
-        sorter.find_bin_offsets(keys);
+        ///auto keys = Cabana::slice<Cell_Index>(particles);
+        ///auto mask = Cabana::slice<Mask>(particles);
 
         //std::cout << "Pre sort " << std::endl;
         //print_particles(particles);
 
-        sorter.perform_sort(keys, particles);
+        //sorter.bin_sort(keys, particles, mask);
 
         //std::cout << "Post sort " << std::endl;
         //print_particles(particles);
@@ -214,8 +211,15 @@ int main( int argc, char* argv[] )
             // required for this incarnation)
             // Sort by cell index
             // TODO: Make this sort such that AoSoAs are sparse
-            //auto keys = Cabana::slice<Cell_Index>(particles);
+            auto sorter = Sparse_sorter<ExecutionSpace>(num_cells, 0);
+
+            auto keys = Cabana::slice<Cell_Index>(particles);
+            auto mask = Cabana::slice<Mask>(particles);
             //auto bin_data = Cabana::sortByKey( keys );
+
+            // TODO: this sort can be amortized into the push
+            sorter.bin_sort(keys, particles, mask);
+            //print_particles( particles );
 
             // Move
             push(

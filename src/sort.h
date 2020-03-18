@@ -33,6 +33,8 @@ class Sparse_sorter
     {
         int num_data = keys.size();
 
+        Kokkos::deep_copy( bin_count, 0 );
+
         // TODO: should this be 1d or 2d?
         auto bin_count_kernel = KOKKOS_LAMBDA(const int i)
         {
@@ -96,8 +98,22 @@ class Sparse_sorter
 
         // TODO: find out if we have a propper copy semantic. What I want is a
         // shallow copy and to then overwrite the underlying data pointer
-        // TODO: this is getting needlessly initialized
-        AoSoA_t scratch( particles.label(), particles.size() );
+
+        // Remember, we have the potential to grow the list
+        // Last offset + last count
+        int new_size = bin_offset[ bin_offset.size() - 1] + bin_count[ bin_count.size() -1 ] + 1; // TODO: remove this debug +1
+        std::cout << "Growing from " << particles.size() << " to " << new_size << std::endl;
+        AoSoA_t scratch( particles.label(), new_size );
+
+        // TODO: this is getting needlessly initialized if Cabana sets things
+        // to  0 for us.
+        auto scratch_mask = Cabana::slice<Mask>(scratch);
+        auto zero_scratch = KOKKOS_LAMBDA(const int i)
+        {
+            scratch_mask(i) = 0;
+        };
+        Kokkos::RangePolicy<Space> scratch_range_policy( 0, scratch.size() );
+        Kokkos::parallel_for("zero scratch", scratch_range_policy, zero_scratch);
 
         auto masks = Cabana::slice<Mask>(particles);
 
@@ -122,6 +138,17 @@ class Sparse_sorter
 
         // TODO: can we do a pointer swap?
         particles = scratch;
+    }
+
+    template<class slice_t, class AoSoA_t, class mask_t> void bin_sort(
+            slice_t& keys, 
+            AoSoA_t& particles,
+            mask_t& mask
+    )
+    {
+        find_bin_counts(keys, mask);
+        find_bin_offsets(keys);
+        perform_sort(keys, particles);
     }
 
     // TODO: delete me
