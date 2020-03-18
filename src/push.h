@@ -64,16 +64,29 @@ void push(
     auto _cbz = Cabana::slice<CBZ>(f0);
     auto _dcbzdz = Cabana::slice<DCBZDZ>(f0);
 
-    auto _push =
-        KOKKOS_LAMBDA( const int s, const int i )
-        {
+    const int vec_len = particle_list_t::vector_length;
+    const int num_soa = particles.numSoA(); // TODO: double check this doesn't include the empties
+
+    using exec_pol = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+    // TODO: thread or leauge?
+    Kokkos::parallel_for("load interpolator", exec_pol
+      (num_soa, Kokkos::AUTO),
+      KOKKOS_LAMBDA
+      (const exec_pol::member_type &team_member) {
+      int s = team_member.league_rank();
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, vec_len), [=] (int i) {
+    //auto _push =
+        //KOKKOS_LAMBDA( const int s, const int i )
             // Skip if no mask
-            if (mask(i) == 0) { return; }
+
+            //std::cout << "Running for " << s << " " << i << std::endl;
+            if (mask.access(s, i) == 0) {
+                //std::cout << "Skipping " << s << " " << i << std::endl;
+                return;
+            }
 
             auto accumulators_scatter_access = a0.access();
 
-            //for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            //{
             // Setup data accessors
             // This may be cleaner if we hoisted it?
             int ii = cell.access(s,i);
@@ -96,26 +109,6 @@ void push(
             auto dcbydy = _dcbydy(ii);
             auto cbz = _cbz(ii);
             auto dcbzdz = _dcbzdz(ii);
-            /*
-               auto ex  = f0.get<EX>(ii);
-               auto dexdy  = f0.get<DEXDY>(ii);
-               auto dexdz  = f0.get<DEXDZ>(ii);
-               auto d2exdydz  = f0.get<D2EXDYDZ>(ii);
-               auto ey  = f0.get<EY>(ii);
-               auto deydz  = f0.get<DEYDZ>(ii);
-               auto deydx  = f0.get<DEYDX>(ii);
-               auto d2eydzdx  = f0.get<D2EYDZDX>(ii);
-               auto ez  = f0.get<EZ>(ii);
-               auto dezdx  = f0.get<DEZDX>(ii);
-               auto dezdy  = f0.get<DEZDY>(ii);
-               auto d2ezdxdy  = f0.get<D2EZDXDY>(ii);
-               auto cbx  = f0.get<CBX>(ii);
-               auto dcbxdx   = f0.get<DCBXDX>(ii);
-               auto cby  = f0.get<CBY>(ii);
-               auto dcbydy  = f0.get<DCBYDY>(ii);
-               auto cbz  = f0.get<CBZ>(ii);
-               auto dcbzdz  = f0.get<DCBZDZ>(ii);
-               */
 
             // Perform push
 
@@ -272,35 +265,15 @@ void push(
                 //move_p( position_x, position_y, position_z, cell, _a, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
                 move_p( position_x, position_y, position_z, cell, a0, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
 
-                // TODO: renable this
-                //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
-                //if ( move_p( particles, local_pm, a0, g, qsp, s, i ) ) { // Unlikely
-                //if( nm<max_nm ) {
-                //pm[nm++] = local_pm[0];
-                //}
-                //else {
-                //ignore++;                 // Unlikely
-                //} // if
-                //} // if
-
-                /* // Copied from VPIC Kokkos for reference
-                   if( move_p_kokkos( k_particles, k_local_particle_movers,
-                   k_accumulators_sa, g, qsp ) ) { // Unlikely
-                   if( k_nm(0)<max_nm ) {
-                   nm = int(Kokkos::atomic_fetch_add( &k_nm(0), 1 ));
-                   if (nm >= max_nm) Kokkos::abort("overran max_nm");
-                   copy_local_to_pm(nm);
-                   }
-                   }
-                   */
             }
 
-            //} // end VLEN loop
-        };
+                } );
+        } );
 
-        Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
-            vec_policy( 0, particles.size() );
-        Cabana::simd_parallel_for( vec_policy, _push, "push()" );
-        }
+
+        //Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
+            //vec_policy( 0, particles.size() );
+        //Cabana::simd_parallel_for( vec_policy, _push, "push()" );
+}
 
 #endif // pic_push_h
