@@ -13,6 +13,7 @@
 #include "interpolator.h"
 
 #include "push.h"
+#include "sort.h"
 
 //#include "visualization.h"
 
@@ -21,6 +22,22 @@
 // Global variable to hold paramters
 //Parameters params;
 Input_Deck deck;
+
+// Set mask on for all particles. Assume user gives us a dense list
+void set_particle_masks(particle_list_t& particles)
+{
+    std::cout << "Setting mask=1 on original " << particles.size() << " particles " << std::endl;
+
+    auto masks = Cabana::slice<Mask>(particles);
+    auto set_mask =
+        KOKKOS_LAMBDA( const int s, const int i )
+        {
+            masks.access(s, i) = 1;
+        };
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
+        vec_policy( 0, particles.size() );
+    Cabana::simd_parallel_for( vec_policy, set_mask, "mask()" );
+}
 
 //---------------------------------------------------------------------------//
 // Main.
@@ -162,19 +179,43 @@ int main( int argc, char* argv[] )
         printf( "#we = %f\n" , we );
         printf( "*****\n" );
 
+        // Set all particles as "on"
+        set_particle_masks(particles);
+
+        // TODO: sort can now "grow" the list, we need to make sure we have
+        // enough capacity...
+
+        auto sorter = Sparse_sorter<ExecutionSpace>(num_cells, 0);
+
+        auto keys = Cabana::slice<Cell_Index>(particles);
+        auto mask = Cabana::slice<Mask>(particles);
+
+        sorter.find_bin_counts(keys, mask);
+        sorter.find_bin_offsets(keys);
+
+        std::cout << "Pre sort " << std::endl;
+        print_particles(particles);
+
+        sorter.perform_sort(keys, particles);
+
+        std::cout << "Post sort " << std::endl;
+        print_particles(particles);
+
         for (int step = 0; step < num_steps; step++)
         {
-            //printf("Step %d \n", step);
+            printf("Step %d \n", step);
 
             // Convert fields to interpolators
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
 
             clear_accumulator_array(fields, accumulators, nx, ny, nz);
+
             // TODO: Make the frequency of this configurable (every step is not
             // required for this incarnation)
             // Sort by cell index
-            //auto keys = particles.slice<Cell_Index>();
-            //auto bin_data = Cabana::sortByKey( keys );
+            // TODO: Make this sort such that AoSoAs are sparse
+            auto keys = particles.slice<Cell_Index>();
+            auto bin_data = Cabana::sortByKey( keys );
 
             // Move
             push(
@@ -215,6 +256,9 @@ int main( int argc, char* argv[] )
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
             dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+
+            print_particles(particles);
+
         }
 
 

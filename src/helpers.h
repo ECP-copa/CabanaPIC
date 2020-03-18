@@ -39,11 +39,13 @@ void print_particles( const particle_list_t& particles )
     auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
 
+    auto mask = Cabana::slice<Mask>(particles);
+
     auto _print =
         KOKKOS_LAMBDA( const int s, const int i )
         {
-                printf("Struct id %d offset %d \n", s, i);
-                printf("Position x %e y %e z %e \n", position_x.access(s,i), position_y.access(s,i), position_z.access(s,i) );
+            //printf("Struct id %d offset %d \n", s, i);
+            printf("s: %d i: %d Position x %e y %e z %e in cell %d mask %d \n", s, i, position_x.access(s,i), position_y.access(s,i), position_z.access(s,i), cell.access(s,i), mask.access(s, i) );
         };
 
     // TODO: How much sense does printing in parallel make???

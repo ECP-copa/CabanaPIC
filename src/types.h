@@ -55,6 +55,7 @@ enum UserParticleFields
     VelocityZ,
     Weight,
     Cell_Index, // This is stored as per VPIC, such that it includes ghost_offsets
+    Mask
 };
 
 // Designate the types that the particles will hold.
@@ -67,7 +68,8 @@ Cabana::MemberTypes<
     real_t,                        // (4) y-velocity
     real_t,                        // (5) z-velocity
     real_t,                        // (6) weight
-    int                           // (7) Cell index
+    int,                           // (7) Cell index
+    int                            // (8) Mask (TODO: could be a bool)
 >;
 
 // Set the type for the particle AoSoA.
@@ -100,29 +102,31 @@ enum InterpolatorFields
     DCBZDZ
 };
 
-    using InterpolatorDataTypes =
-        Cabana::MemberTypes<
-        real_t, //  ex,
-        real_t , // dexdy,
-        real_t , // dexdz,
-        real_t , // d2exdydz,
-        real_t , // ey,
-        real_t , // deydz,
-        real_t , // deydx,
-        real_t , // d2eydzdx,
-        real_t , // ez,
-        real_t , // dezdx,
-        real_t , // dezdy,
-        real_t , // d2ezdxdy,
-        // Below here is not need for ES? EM only?
-        real_t , // cbx,
-        real_t , // dcbxdx,
-        real_t , // cby,
-        real_t , // dcbydy,
-        real_t , // cbz,
-        real_t // dcbzdz,
-        >;
-    using interpolator_array_t = Cabana::AoSoA<InterpolatorDataTypes,MemorySpace,cell_blocking>;
+using InterpolatorDataTypes =
+    Cabana::MemberTypes<
+    real_t, //  ex,
+    real_t , // dexdy,
+    real_t , // dexdz,
+    real_t , // d2exdydz,
+    real_t , // ey,
+    real_t , // deydz,
+    real_t , // deydx,
+    real_t , // d2eydzdx,
+    real_t , // ez,
+    real_t , // dezdx,
+    real_t , // dezdy,
+    real_t , // d2ezdxdy,
+    // Below here is not need for ES? EM only?
+    real_t , // cbx,
+    real_t , // dcbxdx,
+    real_t , // cby,
+    real_t , // dcbydy,
+    real_t , // cbz,
+    real_t // dcbzdz,
+>;
+
+using interpolator_array_t = Cabana::AoSoA<InterpolatorDataTypes,MemorySpace,cell_blocking>;
+
 using AccumulatorDataTypes =
     Cabana::MemberTypes<
     real_t[12] // jx[4] jy[4] jz[4]
@@ -149,8 +153,6 @@ namespace accumulator_var {
     jz = 2, \
   };
 }
-
-
 
 enum FieldFields
 {

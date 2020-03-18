@@ -37,6 +37,8 @@ void push(
     auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
 
+    auto mask = Cabana::slice<Mask>(particles);
+
     //const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
     const real_t one_third      = 1./3.;
@@ -65,6 +67,9 @@ void push(
     auto _push =
         KOKKOS_LAMBDA( const int s, const int i )
         {
+            // Skip if no mask
+            if (mask(i) == 0) { return; }
+
             auto accumulators_scatter_access = a0.access();
 
             //for ( int i = 0; i < particle_list_t::vector_length; ++i )
@@ -190,7 +195,6 @@ void push(
                 // Common case (inbnds).  Note: accumulator values are 4 times
                 // the total physical charge that passed through the appropriate
                 // current quadrant in a time-step
-
 
                 // Store new position
                 position_x.access(s,i) = v3;
