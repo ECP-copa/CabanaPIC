@@ -74,6 +74,28 @@ void push(
       KOKKOS_LAMBDA
       (const exec_pol::member_type &team_member) {
       int s = team_member.league_rank();
+
+      int ii = cell.access(s,0);
+
+      auto ex = _ex(ii);
+      auto dexdy = _dexdy(ii);
+      auto dexdz = _dexdz(ii);
+      auto d2exdydz = _d2exdydz(ii);
+      auto ey = _ey(ii);
+      auto deydz = _deydz(ii);
+      auto deydx = _deydx(ii);
+      auto d2eydzdx = _d2eydzdx(ii);
+      auto ez = _ez(ii);
+      auto dezdx = _dezdx(ii);
+      auto dezdy = _dezdy(ii);
+      auto d2ezdxdy = _d2ezdxdy(ii);
+      auto this_cbx = _cbx(ii);
+      auto dcbxdx = _dcbxdx(ii);
+      auto this_cby = _cby(ii);
+      auto dcbydy = _dcbydy(ii);
+      auto this_cbz = _cbz(ii);
+      auto dcbzdz = _dcbzdz(ii);
+
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, vec_len), [=] (int i) {
     //auto _push =
         //KOKKOS_LAMBDA( const int s, const int i )
@@ -85,30 +107,10 @@ void push(
                 return;
             }
 
+            // TODO: do it make sense to hoist this
             auto accumulators_scatter_access = a0.access();
 
             // Setup data accessors
-            // This may be cleaner if we hoisted it?
-            int ii = cell.access(s,i);
-
-            auto ex = _ex(ii);
-            auto dexdy = _dexdy(ii);
-            auto dexdz = _dexdz(ii);
-            auto d2exdydz = _d2exdydz(ii);
-            auto ey = _ey(ii);
-            auto deydz = _deydz(ii);
-            auto deydx = _deydx(ii);
-            auto d2eydzdx = _d2eydzdx(ii);
-            auto ez = _ez(ii);
-            auto dezdx = _dezdx(ii);
-            auto dezdy = _dezdy(ii);
-            auto d2ezdxdy = _d2ezdxdy(ii);
-            auto cbx = _cbx(ii);
-            auto dcbxdx = _dcbxdx(ii);
-            auto cby = _cby(ii);
-            auto dcbydy = _dcbydy(ii);
-            auto cbz = _cbz(ii);
-            auto dcbzdz = _dcbzdz(ii);
 
             // Perform push
 
@@ -131,9 +133,9 @@ void push(
             // real_t hay = 0;
             // real_t haz = 0;
 
-            cbx  = cbx + dx*dcbxdx;             // Interpolate B
-            cby  = cby + dy*dcbydy;
-            cbz  = cbz + dz*dcbzdz;
+            auto cbx  = this_cbx + dx*dcbxdx;             // Interpolate B
+            auto cby  = this_cby + dy*dcbydy;
+            auto cbz  = this_cbz + dz*dcbzdz;
 
             real_t ux = velocity_x.access(s,i);   // Load velocity
             real_t uy = velocity_y.access(s,i);   // Load velocity
