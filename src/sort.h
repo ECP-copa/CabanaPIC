@@ -101,7 +101,7 @@ class Sparse_sorter
 
         // Remember, we have the potential to grow the list
         // Last offset + last count
-        int new_size = bin_offset[ bin_offset.size() - 1] + bin_count[ bin_count.size() -1 ] + 1; // TODO: remove this debug +1
+        int new_size = bin_offset[ bin_offset.size() - 1] + bin_count[ bin_count.size() -1 ];
         std::cout << "Growing from " << particles.size() << " to " << new_size << std::endl;
         AoSoA_t scratch( particles.label(), new_size );
 
