@@ -67,41 +67,71 @@ void push(
     const int vec_len = particle_list_t::vector_length;
     const int num_soa = particles.numSoA(); // TODO: double check this doesn't include the empties
 
-    using exec_pol = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+
+    using vec_policy_t = Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>;
+    vec_policy_t vec_policy( 0, particles.size() );
+
+
+    //using exec_pol = Kokkos::TeamPolicy<>;
     // TODO: thread or leauge?
-    Kokkos::parallel_for("load interpolator", exec_pol
-      (num_soa, Kokkos::AUTO),
-      KOKKOS_LAMBDA
-      (const exec_pol::member_type &team_member) {
-      int s = team_member.league_rank();
+    //Kokkos::parallel_for("simd push", exec_pol
+      //(num_soa, Kokkos::AUTO),
+      //KOKKOS_LAMBDA
+      //(const exec_pol::member_type team_member) {
+      //int s = team_member.league_rank();
+      //int s = team_member.team_rank();
 
-      int ii = cell.access(s,0);
 
-      auto ex = _ex(ii);
-      auto dexdy = _dexdy(ii);
-      auto dexdz = _dexdz(ii);
-      auto d2exdydz = _d2exdydz(ii);
-      auto ey = _ey(ii);
-      auto deydz = _deydz(ii);
-      auto deydx = _deydx(ii);
-      auto d2eydzdx = _d2eydzdx(ii);
-      auto ez = _ez(ii);
-      auto dezdx = _dezdx(ii);
-      auto dezdy = _dezdy(ii);
-      auto d2ezdxdy = _d2ezdxdy(ii);
-      auto this_cbx = _cbx(ii);
-      auto dcbxdx = _dcbxdx(ii);
-      auto this_cby = _cby(ii);
-      auto dcbydy = _dcbydy(ii);
-      auto this_cbz = _cbz(ii);
-      auto dcbzdz = _dcbzdz(ii);
+     using team_policy = vec_policy_t::base_type;
 
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, vec_len), [=] (int i) {
+     Kokkos::parallel_for(
+        "push mined", dynamic_cast<const team_policy &>( vec_policy ),
+        KOKKOS_LAMBDA( const typename team_policy::member_type &team ) {
+            team_policy::index_type s = team.league_rank();
+
+
     //auto _push =
-        //KOKKOS_LAMBDA( const int s, const int i )
-            // Skip if no mask
+    //KOKKOS_LAMBDA( const int s, const int i )
+      //printf( "league rank %d  \n", team_member.league_rank() );
 
+            //int ii = cell.access(s,i);
+            int ii = cell.access(s,0);
+
+            auto ex = _ex(ii);
+            auto dexdy = _dexdy(ii);
+            auto dexdz = _dexdz(ii);
+            auto d2exdydz = _d2exdydz(ii);
+            auto ey = _ey(ii);
+            auto deydz = _deydz(ii);
+            auto deydx = _deydx(ii);
+            auto d2eydzdx = _d2eydzdx(ii);
+            auto ez = _ez(ii);
+            auto dezdx = _dezdx(ii);
+            auto dezdy = _dezdy(ii);
+            auto d2ezdxdy = _d2ezdxdy(ii);
+            auto this_cbx = _cbx(ii);
+            auto dcbxdx = _dcbxdx(ii);
+            auto this_cby = _cby(ii);
+            auto dcbydy = _dcbydy(ii);
+            auto this_cbz = _cbz(ii);
+            auto dcbzdz = _dcbzdz(ii);
+
+      //Kokkos::parallel_for(Kokkos::TeamThreadRange(team_member, vec_len), [=] (int i)
+      //Kokkos::parallel_for(Kokkos::ThreadVectorRange(team_member, vec_len), [=] (int i)
+        Kokkos::parallel_for(Kokkos::ThreadVectorRange( team, vec_len), [=] ( const team_policy::index_type i ) {
+
+
+              //int lr = team_member.league_rank();
+              //int tr = team_member.team_rank();
+
+              //printf( "league rank %d  team rank %d \n", lr, tr);
+              //printf("s %d i %d \n", s, i);
             //std::cout << "Running for " << s << " " << i << std::endl;
+
+
+
+            // Skip if no mask
+            //
             if (mask.access(s, i) == 0) {
                 //std::cout << "Skipping " << s << " " << i << std::endl;
                 return;
@@ -271,6 +301,7 @@ void push(
 
                 } );
         } );
+    // };  // end named lambdsa
 
 
         //Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>

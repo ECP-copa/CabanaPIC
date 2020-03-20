@@ -100,6 +100,7 @@ LINK_DIRECTORIES(${CABANA_DIR}/lib64)
 
 INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
+LINK_DIRECTORIES(${KOKKOS_DIR}/lib64)
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
 # TODO: why is hwloc needed here for travis?

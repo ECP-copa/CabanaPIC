@@ -93,16 +93,28 @@ class Sparse_sorter
     {
         int num_data = keys.size();
 
-        // Reset counts so we can reuse it
-        Kokkos::deep_copy( bin_count, 0 );
-
         // TODO: find out if we have a propper copy semantic. What I want is a
         // shallow copy and to then overwrite the underlying data pointer
 
         // Remember, we have the potential to grow the list
         // Last offset + last count
-        int new_size = bin_offset[ bin_offset.size() - 1] + bin_count[ bin_count.size() -1 ];
-        std::cout << "Growing from " << particles.size() << " to " << new_size << std::endl;
+
+        // TODO: if we're smart we could probably grab this as we pass through the offsets and counts
+        //int new_size = bin_offset[ bin_offset.size() - 1] + bin_count[ bin_count.size() -1 ];
+        auto sub_offset_d = Kokkos::subview(bin_offset, Kokkos::make_pair(bin_offset.size() - 1, bin_offset.size() ) );
+        auto sub_count_d = Kokkos::subview(bin_count, Kokkos::make_pair(bin_count.size() - 1, bin_count.size() ) );
+
+        using sub_offset_view_t = decltype(sub_offset_d);
+        using sub_count_view_t = decltype(sub_offset_d);
+        typename sub_offset_view_t::HostMirror sub_offset_h = Kokkos::create_mirror_view(sub_offset_d);
+        typename sub_count_view_t::HostMirror sub_count_h = Kokkos::create_mirror_view(sub_count_d);
+
+        Kokkos::deep_copy(sub_offset_h, sub_offset_d);
+        Kokkos::deep_copy(sub_count_h, sub_count_d);
+
+        int new_size = sub_offset_h(0) + sub_count_h(0);
+
+        //std::cout << "Growing from " << particles.size() << " to " << new_size << std::endl;
         AoSoA_t scratch( particles.label(), new_size );
 
         // TODO: this is getting needlessly initialized if Cabana sets things
@@ -116,6 +128,9 @@ class Sparse_sorter
         Kokkos::parallel_for("zero scratch", scratch_range_policy, zero_scratch);
 
         auto masks = Cabana::slice<Mask>(particles);
+
+        // Reset counts so we can reuse it
+        Kokkos::deep_copy( bin_count, 0 );
 
         auto sort_kernel = KOKKOS_LAMBDA(const int i)
         {
@@ -133,15 +148,16 @@ class Sparse_sorter
             }
         };
 
-        Kokkos::RangePolicy<Space> range_policy( 0, num_data );
+        Kokkos::RangePolicy<Space> range_policy( 0, particles.size() );
         Kokkos::parallel_for("perform sort", range_policy, sort_kernel);
 
         // TODO: can we do a pointer swap?
         particles = scratch;
     }
 
+
     template<class slice_t, class AoSoA_t, class mask_t> void bin_sort(
-            slice_t& keys, 
+            slice_t& keys,
             AoSoA_t& particles,
             mask_t& mask
     )
