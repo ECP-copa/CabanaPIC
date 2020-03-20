@@ -62,15 +62,10 @@ void unload_accumulator_array(
 
     // TODO: give these real values
     //    printf("cx %e dy %e dz %e dt %e \n", dy, dz, dt);
-    //real_t cx = 0.25 * (1.0 / (dy * dz)) / dt;
-    real_t cx = 0.25 / (dy * dz * dt);
+    real_t cx = 0.25 * (1.0 / (dy * dz)) / dt;
+    //real_t cx = 0.25 / (dy * dz * dt);
     real_t cy = 0.25 / (dz * dx * dt);
     real_t cz = 0.25 / (dx * dy * dt);
-
-    // This is a hang over for VPIC's nasty type punting
-    const size_t JX_OFFSET = 0;
-    const size_t JY_OFFSET = 4;
-    const size_t JZ_OFFSET = 8;
 
     // TODO: we have to be careful we don't reach past the ghosts here
     auto _unload_accumulator = KOKKOS_LAMBDA( const int x, const int y, const int z )
@@ -87,6 +82,8 @@ void unload_accumulator_array(
         size_t xz_down = VOXEL(x-1, y,   z-1, nx,ny,nz,ng);
         size_t xy_down = VOXEL(x-1, y-1, z,   nx,ny,nz,ng);
         size_t yz_down = VOXEL(x,   y-1, z-1, nx,ny,nz,ng);
+
+        //printf("Accum into %d %d %d \n", x, y, z );
 
         jfx(i) = cx*(
                     accumulators(i,       accumulator_var::jx, 0) +
@@ -109,6 +106,7 @@ void unload_accumulator_array(
                     accumulators(xy_down, accumulator_var::jz, 3)
                 );
     };
+
     //may not be enough if particles run into ghost cells
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng+1, ny+ng+1, nz+ng+1} ); // Try not to into ghosts // TODO: dry this
     Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );
