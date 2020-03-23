@@ -1,5 +1,5 @@
-#include <Cabana_AoSoA.hpp>
 #include <Cabana_Core.hpp>
+#include <Cabana_AoSoA.hpp>
 #include <Cabana_Sort.hpp> // is this needed if we already have core?
 
 #include <cstdlib>

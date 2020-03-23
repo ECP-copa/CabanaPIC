@@ -35,7 +35,7 @@ using ExecutionSpace = Kokkos::Cuda;
     using ExecutionSpace = Kokkos::Serial;
   #else // CPU Parallel
     using MemorySpace = Cabana::HostSpace;
-    using ExecutionSpace = Kokkos::OpenMP;
+    using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
 

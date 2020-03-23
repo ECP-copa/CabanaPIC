@@ -5,6 +5,8 @@
 #include <limits> // epsilon for limit
 #include <utility> // pair
 
+#include <vector>
+
 namespace test_utils {
 /**
  * @brief Helper function to write collective errors to file for further analysis
@@ -166,6 +168,8 @@ bool compare_energies(
         std::ifstream f2 (file_b);
 
         double max_err = 0.0;
+        double max_err_A = 0.0;
+        double max_err_B = 0.0;
         int max_err_line = -1;
 
         // This is for counting the number of tokens on a line (changes
@@ -215,6 +219,10 @@ bool compare_energies(
                 returned_err.second = -1.0; // set a dummy value to show uninit
 
                 int agg_count = 0;
+
+                // TODO: this is not resilient to whitepsace, and will act
+                // oddly if the input files are not single space delimited
+
                 while (getline(linestream1, item1, ' '))
                 {
                     bool write_this_err_ouput = write_err_ouput;
@@ -256,12 +264,15 @@ bool compare_energies(
                             write_this_err_ouput = false;
 
                             if (agg_count == agg_total) { // final_aggregation
+                                //std::cout << sum_A << " vs " << sum_B << std::endl;
                                 returned_err = compare_error(sum_A, sum_B, relative_tolerance);
                                 write_this_err_ouput = true;
                             }
                         }
                         else // We can just compare this val
                         {
+                            sum_A = A;
+                            sum_B = B;
                             returned_err = compare_error(A, B, relative_tolerance);
                         }
 
@@ -279,6 +290,8 @@ bool compare_energies(
                             if (err > max_err)
                             {
                                 max_err = err;
+                                max_err_A = sum_A;
+                                max_err_B = sum_B;
                                 max_err_line = counter;
                             }
 
@@ -313,7 +326,7 @@ bool compare_energies(
         //std::cout << "Field mask : " << field_mask << std::endl;
         //std::cout << "Fields used : " << line_token_count << std::endl;
 
-        std::cout << "Max found err was " << max_err*100 << "% on line " << max_err_line << " (Threshold: " <<
+        std::cout << "Max found err was " << max_err*100 << "% (" << max_err_A << " vs " << max_err_B << ") on line " << max_err_line << " (Threshold: " <<
             relative_tolerance*100 << "%)" << std::endl;
 
         if (write_err_ouput)
@@ -333,7 +346,7 @@ bool compare_energies(
     catch (const std::exception &exc) // Catching all is bad form, but OK for now..
     {
         // catch anything thrown within try block that derives from std::exception
-        std::cerr << "Aborting" << std::endl;
+        std::cerr << "Caught error... Aborting" << std::endl;
         std::cerr << exc.what();
         return false;
     }
