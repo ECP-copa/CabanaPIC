@@ -8,7 +8,8 @@
 #include "input/deck.h"
 
 // Converts from an index that doesn't know about ghosts to one that does
-KOKKOS_INLINE_FUNCTION int allow_for_ghosts(int pre_ghost)
+//KOKKOS_INLINE_FUNCTION
+int allow_for_ghosts(int pre_ghost)
 {
 
     size_t ix, iy, iz;

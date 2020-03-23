@@ -13,6 +13,9 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR})
 
+# TODO: Tag this once we have a new release
+find_package(Cabana)
+
 #### User configuration Options ####
 option(ENABLE_GPU OFF)
 option(ENABLE_SERIAL OFF)
@@ -54,7 +57,7 @@ set_property(CACHE REAL_TYPE PROPERTY STRINGS ${ALLOWABLE_REALS})
 add_definitions(-DREAL_TYPE=${REAL_TYPE})
 ##### END SET REAL_TYPE #####
 
-# Allow user to select input deck to build against
+###### Allow user to select input deck to build against ######
 set(INPUT_DECK "" CACHE STRING "Path to input deck")
 
 if (NOT ${INPUT_DECK} STREQUAL "")
@@ -67,6 +70,7 @@ if (NOT ${INPUT_DECK} STREQUAL "")
     message(FATAL_ERROR "Cannot find user specified input deck: ${INPUT_DECK}")
     endif()
 endif()
+####### End User Deck ######
 
 if (ENABLE_SERIAL)
     add_definitions(-DUSE_SERIAL_CPU=ON)
@@ -91,19 +95,11 @@ endif(ENABLE_COVERAGE_BUILD)
 INCLUDE_DIRECTORIES(./src)
 file(GLOB SOURCES "src/*.cpp")
 
-
-##### Build Executable ########
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include/)
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include/Cabana/)
-LINK_DIRECTORIES(${CABANA_DIR}/lib)
-LINK_DIRECTORIES(${CABANA_DIR}/lib64)
-
-INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
-LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
-
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
+
 # TODO: why is hwloc needed here for travis?
-target_link_libraries(minipic cabanacore kokkos dl hwloc)
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl hwloc)
+#target_link_libraries(minipic PUBLIC dl hwloc)
 
 
 ##### TESTS ######

@@ -268,7 +268,7 @@ class _Input_Deck {
 
         size_t num_ghosts = 1;
         size_t nppc = 1;
-        double dt = 1.0;
+        real_ dt = 1.0;
         int num_steps = 2;
 
         // Assume domain starts at [0,0,0] and goes to [len,len,len]
