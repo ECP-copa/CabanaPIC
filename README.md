@@ -13,13 +13,14 @@ This code has two major dependencies:
 Instructions on how to obtain and install both can be found [here](https://github.com/ECP-copa/Cabana/wiki/Build-Instructions)
 
 Once these are installed, you can configurable and build this project using
-cmake. To do so, the user should manually tell CMake where to find both Cabana
-and Kokkos.
+cmake. To do so, the user should manually tell CMake where to find Cabana, and
+Cabana should bring Kokkos in for us. If that does not happen, the user should
+specify the path to Kokkos on the CMAKE_PREFIX_PATH.
 
 An example build line will look something like this:
 
 ```
-cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/kokkos/build/install;$HOME/tmp/Cabana/build/install" ..
+cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" ..
 ```
 
 For GPU builds, you additionally need to point the CXX compiler to the Kokkos
@@ -27,7 +28,7 @@ Cuda wrapper, you can do this by doing something like:
 
 
 ```
-cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/kokkos/build/install;$HOME/tmp/Cabana/build/install" -DCMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -DENABLE_GPU=ON ..
+cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DCMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -DENABLE_GPU=ON ..
 ```
 
 Remember: Kokkos and Cabana need to be build with GPU support
@@ -37,7 +38,7 @@ Remember: Kokkos and Cabana need to be build with GPU support
 Users can compile in custom input decks by specifying `INPUT_DECK` at build
 time, e.g:
 
-`CXX=g++-9 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/kokkos/build/install;$HOME/tmp/Cabana/build/install" -DINPUT_DECK=./decks/2steam-short.cxx ..`
+`CXX=g++-9 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DINPUT_DECK=./decks/2steam-short.cxx ..`
 
 Some example decks live in `./decks`. Custom decks must follow the layout put
 forth in `./src/input/decks.h`
