@@ -14,10 +14,6 @@
 #include <Cabana_Parallel.hpp>
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
-#ifndef VLEN
-#define VLEN 16 //32
-#endif
-const std::size_t array_size = VLEN;
 
 #ifndef CELL_BLOCK_FACTOR
 #define CELL_BLOCK_FACTOR 32
@@ -25,16 +21,18 @@ const std::size_t array_size = VLEN;
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
+// TODO: do we even need to explicitly specify these? We only use the default
+// space..
 #ifdef USE_GPU
 using MemorySpace = Kokkos::CudaSpace;
 using ExecutionSpace = Kokkos::Cuda;
 #else
   #ifdef USE_SERIAL_CPU
     //cpu
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::Serial;
   #else // CPU Parallel
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
@@ -72,7 +70,7 @@ Cabana::MemberTypes<
 
 // Set the type for the particle AoSoA.
 using particle_list_t =
-    Cabana::AoSoA<ParticleDataTypes,MemorySpace,array_size>;
+    Cabana::AoSoA<ParticleDataTypes,MemorySpace>;
 
 /////////////// START VPIC TYPE ////////////
 

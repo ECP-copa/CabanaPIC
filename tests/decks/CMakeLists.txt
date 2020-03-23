@@ -9,10 +9,11 @@ INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
 LINK_DIRECTORIES(${CABANA_DIR}/lib)
 LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
 
+# TODO: this should live somewhere more common to reduce code duplication
 foreach (test ${TESTS})
     set(DECK_PATH "${PROJECT_SOURCE_DIR}/decks/${test}")
     add_executable(${test} ${SOURCES} ${DECK_PATH})
     target_compile_definitions(${test} PRIVATE USER_INPUT_DECK=${DECK_PATH})
-    target_link_libraries(${test} cabanacore kokkoscore dl hwloc)
+    target_link_libraries(${test} Cabana::cabanacore dl hwloc)
     add_test(NAME ${test} COMMAND ./${test})
 endforeach(test)
