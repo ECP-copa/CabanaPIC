@@ -27,7 +27,7 @@ int allow_for_ghosts(int pre_ghost)
 }
 
 // Function to print out the data for every particle.
-void print_particles( const particle_list_t& particles )
+void print_particles( FILE * fp, const particle_list_t particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
 {
     auto position_x = Cabana::slice<PositionX>(particles);
     auto position_y = Cabana::slice<PositionY>(particles);
@@ -39,12 +39,23 @@ void print_particles( const particle_list_t& particles )
 
     auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
-
+    
     auto _print =
         KOKKOS_LAMBDA( const int s, const int i )
         {
-                printf("Struct id %d offset %d \n", s, i);
-                printf("Position x %e y %e z %e \n", position_x.access(s,i), position_y.access(s,i), position_z.access(s,i) );
+                // printf("Struct id %d offset %d \n", s, i);
+                // printf("Position x %e y %e z %e \n", position_x.access(s,i), position_y.access(s,i), position_z.access(s,i) );
+	  size_t ix,iy,iz;
+	  int ii = cell.access(s, i);
+	  RANK_TO_INDEX(ii, ix,iy,iz,nx+2*ng,ny+2*ng);
+	  real_t x = xmin + (ix-1+(position_x.access(s,i)+1.0)*0.5)*dx;
+	  real_t v = velocity_x.access(s,i);
+	  fprintf(fp, "%e  %e ", x,v);
+	  
+	  //	  real_t y = ymin + (iy-1+(position_y.access(s,i)+1.0)*0.5)*dy;
+	  //real_t z = zmin + (iz-1+(position_z.access(s,i)+1.0)*0.5)*dz;
+	  //	  fprintf(fp, "%e  %e  %e %d %d %d \n", x,y,z,ix,iy,iz);
+	  
         };
 
     // TODO: How much sense does printing in parallel make???
@@ -56,7 +67,8 @@ void print_particles( const particle_list_t& particles )
 
     Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
 
-    std::cout << std::endl;
+    fprintf(fp, "\n");
+    //    std::cout << std::endl;
 
 }
 void print_fields( const field_array_t& fields )
