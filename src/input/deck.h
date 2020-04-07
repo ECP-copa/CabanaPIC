@@ -303,14 +303,14 @@ class _Input_Deck {
         real_ len_y;
         real_ len_z;
         size_t num_cells; // This should *include* the ghost cells
-        size_t num_particles = -1;
+        long num_particles = -1;
         ////////////////////////////////////////////////////
 
         void print_run_details()
         {
             std::cout << "#~~~ Run Specifications ~~~ " << std::endl;
             std::cout << "#Nx: " << nx << " Ny: " << ny << " Nz: " << nz << " Num Ghosts: " << num_ghosts << ". Cells Total: " << num_cells << std::endl;
-            std::cout << "#Len X: " << len_x << " Len Y: " << len_y << " Len Z: " << len_z << "number of ghosts: "<<num_ghosts << std::endl;
+            std::cout << "#Len X: " << len_x << " Len Y: " << len_y << " Len Z: " << len_z << " number of ghosts: "<<num_ghosts << std::endl;
             std::cout << "#Approx Particle Count: " << num_particles << " (nppc: " << nppc << ")" << std::endl;
             std::cout << "#~~~~~~~~~~~~~~~~~~~~~~~~~~ " << std::endl;
             std::cout << std::endl;
