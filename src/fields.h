@@ -519,7 +519,8 @@ class EM_Field_Solver
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
 
-            for( int i=1; i<nx+1; i++){
+            for( size_t i=1; i<nx+1; i++ )
+            {
                 real_t x = xmin + (i-0.5)*dx;
                 size_t ii = VOXEL(i,1,1,nx,ny,nz,ng);
                 //	  fprintf(fp,"%e %e %e %e %e %e %e\n",x,y,ey(ii),jfx(ii),jfy(ii),jfz(ii),cbz(ii));

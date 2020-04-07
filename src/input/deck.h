@@ -262,7 +262,7 @@ class _Input_Deck {
         // Params
         real_ n0 = 1.0; // Background plasma density
         size_t num_species = 1;
-        size_t nx = 16;
+        size_t nx = 16; // TODO: why is nx a size_t not an int?
         size_t ny = 1;
         size_t nz = 1;
 
@@ -304,6 +304,9 @@ class _Input_Deck {
         real_ len_z;
         size_t num_cells; // This should *include* the ghost cells
         long num_particles = -1;
+
+        bool perform_uncenter = false;
+
         ////////////////////////////////////////////////////
 
         void print_run_details()

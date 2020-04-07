@@ -16,7 +16,7 @@ void uncenter_particles(
     auto velocity_y = Cabana::slice<VelocityY>(particles);
     auto velocity_z = Cabana::slice<VelocityZ>(particles);
 
-    auto charge = Cabana::slice<Charge>(particles);
+    //auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
 
     const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
