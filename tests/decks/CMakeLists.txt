@@ -3,11 +3,7 @@
 LIST(APPEND TESTS custom_init)
 
 # TODO: we shouldn't have to duplicate all this
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include)
-INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
-LINK_DIRECTORIES(${CABANA_DIR}/lib)
-LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
+#INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 
 # TODO: this should live somewhere more common to reduce code duplication
 foreach (test ${TESTS})

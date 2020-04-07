@@ -1,17 +1,14 @@
 # TODO: this will trigger a full rebuild of all files..
 
-LIST(APPEND TESTS 2stream-em)
+#LIST(APPEND TESTS 2stream-em)
 
 # TODO: we shouldn't have to duplicate all this
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${CABANA_DIR}/include)
-INCLUDE_DIRECTORIES(${KOKKOS_DIR}/include)
-LINK_DIRECTORIES(${CABANA_DIR}/lib)
-LINK_DIRECTORIES(${KOKKOS_DIR}/lib)
+#INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 
 list(APPEND gold_file "${CMAKE_CURRENT_SOURCE_DIR}/energies_gold")
 
-# TODO: this should live somewhere more common to reduce code duplication
+
+# TODO: avoid duplicating this link line everywhere
 foreach (test ${TESTS})
     set(DECK_PATH "${test}")
     add_executable(${test} ${SOURCES} ${DECK_PATH})

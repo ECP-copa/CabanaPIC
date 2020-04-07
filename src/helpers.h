@@ -27,7 +27,7 @@ int allow_for_ghosts(int pre_ghost)
 }
 
 // Function to print out the data for every particle.
-void print_particles( const particle_list_t particles )
+void print_particles( const particle_list_t& particles )
 {
     auto position_x = Cabana::slice<PositionX>(particles);
     auto position_y = Cabana::slice<PositionY>(particles);
@@ -55,6 +55,28 @@ void print_particles( const particle_list_t particles )
     //logger << "particles.numSoA() " << particles.numSoA() << std::endl;
 
     Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
+
+    std::cout << std::endl;
+
+}
+void print_fields( const field_array_t& fields )
+{
+    auto ex = Cabana::slice<FIELD_EX>(fields);
+    auto ey = Cabana::slice<FIELD_EY>(fields);
+    auto ez = Cabana::slice<FIELD_EZ>(fields);
+
+    auto jfx = Cabana::slice<FIELD_JFX>(fields);
+    auto jfy = Cabana::slice<FIELD_JFY>(fields);
+    auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+
+    auto _print_fields =
+        KOKKOS_LAMBDA( const int i )
+        {
+            printf("%d e x %e y %e z %e jfx %e jfy %e jfz %e \n", i, ex(i), ey(i), ez(i), jfx(i), jfy(i), jfz(i) );
+        };
+
+    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+    Kokkos::parallel_for( exec_policy, _print_fields, "print()" );
 
     std::cout << std::endl;
 

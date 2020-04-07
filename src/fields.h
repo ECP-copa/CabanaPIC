@@ -116,7 +116,6 @@ void serial_update_ghosts(
     }
     else { // assume periodic
 
-
         /*
            To fill in contributions from places of periodic BC
            */
@@ -278,6 +277,8 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
         //constructor
         Field_Solver(field_array_t& fields)
         {
+            // Zero the fields so everything has a safe value.
+            // This occurs before we parse any custom fields in a user deck
             init(fields);
         }
 
@@ -291,6 +292,10 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
             auto cby = Cabana::slice<FIELD_CBY>(fields);
             auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
+            auto jfx = Cabana::slice<FIELD_JFX>(fields);
+            auto jfy = Cabana::slice<FIELD_JFY>(fields);
+            auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+
             auto _init_fields =
                 KOKKOS_LAMBDA( const int i )
                 {
@@ -300,6 +305,9 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
                     cbx(i) = 0.0;
                     cby(i) = 0.0;
                     cbz(i) = 0.0;
+                    jfx(i) = 0.0;
+                    jfy(i) = 0.0;
+                    jfz(i) = 0.0;
                 };
 
             Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
@@ -663,10 +671,10 @@ static auto make_field_solver(field_array_t& fields)
 {
     // TODO: make this support 1/2/3d
 #ifdef ES_FIELD_SOLVER
-    std::cout << "Initialized ES Solver" << std::endl;
+    std::cout << "Created ES Solver" << std::endl;
     Field_Solver<ES_Field_Solver> field_solver(fields);
 #else // EM
-    std::cout << "Initialized EM Solver" << std::endl;
+    std::cout << "Created EM Solver" << std::endl;
     Field_Solver<EM_Field_Solver> field_solver(fields);
 #endif
     return field_solver;

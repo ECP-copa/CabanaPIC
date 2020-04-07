@@ -147,7 +147,7 @@ void initialize_interpolator(interpolator_array_t& f0)
         KOKKOS_LAMBDA( const int i )
         {
             // Throw in some place holder values
-            ex(i) = 0.1; // TODO: is this important?
+            ex(i) = 0.0; // TODO: is this important?
             dexdy(i) = 0.0;
             dexdz(i) = 0.0;
             d2exdydz(i) = 0.0;

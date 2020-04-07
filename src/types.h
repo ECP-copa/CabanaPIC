@@ -21,6 +21,7 @@
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
+
 // TODO: do we even need to explicitly specify these? We only use the default
 // space..
 #ifdef USE_GPU

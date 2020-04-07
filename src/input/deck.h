@@ -20,6 +20,53 @@ class Run_Finalizer {
         }
 };
 
+class Field_Initializer {
+
+    public:
+        using real_ = real_t;
+        Field_Initializer() { } // blank
+
+        virtual void init(
+                field_array_t& fields,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng,
+                real_ Lx, // TODO: do we prefer xmin or Lx?
+                real_ Ly,
+                real_ Lz,
+                real_ dx,
+                real_ dy,
+                real_ dz
+        )
+        {
+            std::cout << "Default field init" << std::endl;
+
+            // Zero fields
+            auto ex = Cabana::slice<FIELD_EX>(fields);
+            auto ey = Cabana::slice<FIELD_EY>(fields);
+            auto ez = Cabana::slice<FIELD_EZ>(fields);
+
+            auto cbx = Cabana::slice<FIELD_CBX>(fields);
+            auto cby = Cabana::slice<FIELD_CBY>(fields);
+            auto cbz = Cabana::slice<FIELD_CBZ>(fields);
+
+            auto _init_fields =
+                KOKKOS_LAMBDA( const int i )
+                {
+                    ex(i) = 0.0;
+                    ey(i) = 0.0;
+                    ez(i) = 0.0;
+                    cbx(i) = 0.0;
+                    cby(i) = 0.0;
+                    cbz(i) = 0.0;
+                };
+
+            Kokkos::parallel_for( fields.size(), _init_fields, "zero_fields()" );
+
+        }
+};
+
 // TODO: we can eventually provide a suite of default/sane initializers, such
 // as ones that give the same RNG sequence over multiple procs
 class Particle_Initializer {
@@ -38,7 +85,10 @@ class Particle_Initializer {
                 real_ dxp,
                 size_t nppc,
                 real_ w,
-                real_ v0
+                real_ v0,
+                real_ Lx,
+                real_ Ly,
+                real_ Lz
                 )
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
@@ -123,12 +173,15 @@ class _Input_Deck {
         // decks... at least it does't contain a lot of state
         Particle_Initializer* particle_initer;
 
+        Field_Initializer* field_initer;
+
         // Give the user a chance to hook into the end of the run, to do final
         // things like correctness checks and timing dumping
         Run_Finalizer* run_finalizer;
 
         _Input_Deck() :
             particle_initer(new Particle_Initializer),
+            field_initer(new Field_Initializer),
             run_finalizer(new Run_Finalizer)
         {
             // empty
@@ -164,8 +217,39 @@ class _Input_Deck {
                 real_ v0
         )
         {
-            particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0);
+            particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0,
+                    len_x_global, len_y_global, len_z_global);
         }
+
+        void initialize_fields(
+                field_array_t& fields,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng,
+                real_ Lx, // TODO: do we prefer xmin or Lx?
+                real_ Ly,
+                real_ Lz,
+                real_ dx,
+                real_ dy,
+                real_ dz
+        )
+        {
+            field_initer->init(
+                    fields,
+                    nx,
+                    ny,
+                    nz,
+                    ng,
+                    Lx,
+                    Ly,
+                    Lz,
+                    dx,
+                    dy,
+                    dz
+            );
+        }
+
 
         real_ de = 1.0; // Length normalization (electron inertial length)
         real_ ec = 1.0; // Charge normalization
@@ -191,6 +275,8 @@ class _Input_Deck {
         real_ len_x_global = 1.0;
         real_ len_y_global = 1.0;
         real_ len_z_global = 1.0;
+
+        real_t Npe = n0*len_x_global*len_y_global*len_z_global;
 
         //real_ local_x_min;
         //real_ local_y_min;
