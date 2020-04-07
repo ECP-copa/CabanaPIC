@@ -7,6 +7,7 @@
 
 list(APPEND gold_file "${CMAKE_CURRENT_SOURCE_DIR}/energies_gold")
 
+
 # TODO: avoid duplicating this link line everywhere
 foreach (test ${TESTS})
     set(DECK_PATH "${test}")

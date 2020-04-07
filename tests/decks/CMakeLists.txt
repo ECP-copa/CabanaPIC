@@ -5,6 +5,7 @@ LIST(APPEND TESTS custom_init)
 # TODO: we shouldn't have to duplicate all this
 #INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 
+# TODO: this should live somewhere more common to reduce code duplication
 foreach (test ${TESTS})
     set(DECK_PATH "${PROJECT_SOURCE_DIR}/decks/${test}")
     add_executable(${test} ${SOURCES} ${DECK_PATH})
