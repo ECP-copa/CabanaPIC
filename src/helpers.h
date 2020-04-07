@@ -85,6 +85,7 @@ void dump_particles( FILE * fp, const particle_list_t particles, const real_t xm
     //    std::cout << std::endl;
 
 }
+
 void print_fields( const field_array_t& fields )
 {
     auto ex = Cabana::slice<FIELD_EX>(fields);

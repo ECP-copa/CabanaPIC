@@ -250,7 +250,6 @@ class _Input_Deck {
             );
         }
 
-
         real_ de = 1.0; // Length normalization (electron inertial length)
         real_ ec = 1.0; // Charge normalization
         real_ me = 1.0; // Mass normalization

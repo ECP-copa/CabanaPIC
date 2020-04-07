@@ -128,18 +128,18 @@ int main( int argc, char* argv[] )
         auto field_solver = make_field_solver(fields);
 
         deck.initialize_fields(
-                fields,
-                nx,
-                ny,
-                nz,
-                num_ghosts,
-                Lx,
-                Ly,
-                Lz,
-                dx,
-                dy,
-                dz
-                );
+            fields,
+            nx,
+            ny,
+            nz,
+            num_ghosts,
+            Lx,
+            Ly,
+            Lz,
+            dx,
+            dy,
+            dz
+        );
 
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
