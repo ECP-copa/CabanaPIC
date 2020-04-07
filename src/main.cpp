@@ -32,8 +32,16 @@ int main( int argc, char* argv[] )
 
     printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
+
+
+#ifndef ENERGY_DUMP_INTERVAL
+#define ENERGY_DUMP_INTERVAL 100
+#endif
+
     // Cabana scoping block
     {
+        FILE *fptr = fopen("partloc","w");
+        FILE *fpfd = fopen("ex1d","w");
         deck.derive_params();
         deck.print_run_details();
 
@@ -44,7 +52,6 @@ int main( int argc, char* argv[] )
         const int nz = deck.nz;
         const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
-        const size_t num_particles = deck.num_particles;
         real_t dxp = 2.f / (npc);
 
         // Define some consts
@@ -54,7 +61,6 @@ int main( int argc, char* argv[] )
 
         real_t dt = deck.dt;
         real_t c = deck.c;
-        real_t me = deck.me;
         real_t n0 = deck.n0;
         real_t ec = deck.ec;
         real_t Lx = deck.len_x;
@@ -67,8 +73,11 @@ int main( int argc, char* argv[] )
 
         real_t Npe = deck.Npe;
 
-        size_t Ne=  (nppc*nx*ny*nz);
-        real_t qsp = -ec;
+        size_t Ne = deck.Ne; // (nppc*nx*ny*nz)
+
+        real_t qsp = deck.qsp;
+        real_t me = deck.me;
+
         real_t qdt_2mc = qsp*dt/(2*me*c);
 
         real_t cdt_dx = c*dt/dx;
@@ -77,6 +86,8 @@ int main( int argc, char* argv[] )
         real_t dt_eps0 = dt/eps0;
         real_t frac = 1.0f;
         real_t we = (real_t) Npe/(real_t) Ne;
+
+        const size_t num_particles = deck.num_particles;
 
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
@@ -91,6 +102,8 @@ int main( int argc, char* argv[] )
         // Print initial particle positions
         //logger << "Initial:" << std::endl;
         //print_particles( particles );
+        fprintf(fptr,"#step=0\n0 ");
+        dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
 
         // Allocate Cabana Data
         interpolator_array_t interpolators("interpolator", num_cells);
@@ -162,7 +175,8 @@ int main( int argc, char* argv[] )
         printf( "#we = %f\n" , we );
         printf( "*****\n" );
 
-        for (int step = 0; step < num_steps; step++)
+        for (int step = 1; step <= num_steps; step++)
+            //        for (int step = 0; step < 1; step++)
         {
             //printf("Step %d \n", step);
 
@@ -214,9 +228,21 @@ int main( int argc, char* argv[] )
             // Half advance the magnetic field from B_{1/2} to B_1
             field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+            if( step % ENERGY_DUMP_INTERVAL == 0 )
+            {
+                dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+            }
+
+            // TODO: abstract this out
+            fprintf(fpfd,"#step=%d\n",step);
+            field_solver.dump_fields(fpfd,fields, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
+            fprintf(fptr,"#step=%d\n%e ",step,step*dt);
+            dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
+
         }
 
+        fclose(fptr);
+        fclose(fpfd);
 
     } // End Scoping block
 

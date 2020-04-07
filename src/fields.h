@@ -500,6 +500,36 @@ class EM_Field_Solver
 {
     public:
 
+        //how to formalize/generalize this?
+
+        // TODO: is this the right place for this vs in the helper?
+        void dump_fields(FILE * fp,
+                field_array_t& fields,
+                real_t xmin,
+                real_t ymin,
+                real_t zmin,
+                real_t dx,
+                real_t dy,
+                real_t dz,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng
+                )
+        {
+            auto ex = Cabana::slice<FIELD_EX>(fields);
+
+            for( int i=1; i<nx+1; i++){
+                real_t x = xmin + (i-0.5)*dx;
+                size_t ii = VOXEL(i,1,1,nx,ny,nz,ng);
+                //	  fprintf(fp,"%e %e %e %e %e %e %e\n",x,y,ey(ii),jfx(ii),jfy(ii),jfz(ii),cbz(ii));
+                fprintf(fp,"%e %e\n",x,ex(ii));
+            }
+
+            fprintf(fp,"\n\n");
+
+        }
+
         real_t e_energy(
                 field_array_t& fields,
                 real_t px,
@@ -509,7 +539,7 @@ class EM_Field_Solver
                 size_t ny,
                 size_t nz,
                 size_t ng
-            )
+                )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
             auto ey = Cabana::slice<FIELD_EY>(fields);

@@ -1,4 +1,4 @@
-set term png enhanced 
+set term png enhanced
 
 set output '2pcle-minipic.png'
 set xlabel 't'
