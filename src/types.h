@@ -25,16 +25,17 @@ const std::size_t array_size = VLEN;
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
+// TODO: why do we even need this branching? Can't we detect it from Kokkos
 #ifdef USE_GPU
 using MemorySpace = Kokkos::CudaSpace;
 using ExecutionSpace = Kokkos::Cuda;
 #else
   #ifdef USE_SERIAL_CPU
     //cpu
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::Serial;
   #else // CPU Parallel
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
