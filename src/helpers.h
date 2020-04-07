@@ -27,7 +27,7 @@ int allow_for_ghosts(int pre_ghost)
 }
 
 // Function to print out the data for every particle.
-void print_particles( FILE * fp, const particle_list_t particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
+void dump_particles( FILE * fp, const particle_list_t particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
 {
     auto position_x = Cabana::slice<PositionX>(particles);
     auto position_y = Cabana::slice<PositionY>(particles);
@@ -39,7 +39,22 @@ void print_particles( FILE * fp, const particle_list_t particles, const real_t x
 
     auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
-    
+
+
+    for (int i = 0; i < particles.size(); i++)
+    {
+        size_t ix,iy,iz;
+        int ii = cell(i);
+
+        RANK_TO_INDEX(ii, ix,iy,iz,nx+2*ng,ny+2*ng);
+
+        real_t x = xmin + ( ix - 1 + ( position_x(i)+ 1.0 ) * 0.5) * dx;
+        real_t v = velocity_x( i );
+
+        fprintf(fp, "%e  %e ", x,v);
+    }
+    fprintf(fp, "\n");
+    /*
     auto _print =
         KOKKOS_LAMBDA( const int s, const int i )
         {
@@ -51,11 +66,11 @@ void print_particles( FILE * fp, const particle_list_t particles, const real_t x
 	  real_t x = xmin + (ix-1+(position_x.access(s,i)+1.0)*0.5)*dx;
 	  real_t v = velocity_x.access(s,i);
 	  fprintf(fp, "%e  %e ", x,v);
-	  
+
 	  //	  real_t y = ymin + (iy-1+(position_y.access(s,i)+1.0)*0.5)*dy;
 	  //real_t z = zmin + (iz-1+(position_z.access(s,i)+1.0)*0.5)*dz;
 	  //	  fprintf(fp, "%e  %e  %e %d %d %d \n", x,y,z,ix,iy,iz);
-	  
+
         };
 
     // TODO: How much sense does printing in parallel make???
@@ -66,8 +81,7 @@ void print_particles( FILE * fp, const particle_list_t particles, const real_t x
     //logger << "particles.numSoA() " << particles.numSoA() << std::endl;
 
     Cabana::simd_parallel_for( vec_policy, _print, "_print()" );
-
-    fprintf(fp, "\n");
+    */
     //    std::cout << std::endl;
 
 }

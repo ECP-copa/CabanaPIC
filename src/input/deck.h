@@ -258,6 +258,7 @@ class _Input_Deck {
         real_ c = 1.0; // Speed of light
         real_ eps = 1.0; // permittivity of free space
 
+        real_ qsp = -ec;
 
         // Params
         real_ n0 = 1.0; // Background plasma density
@@ -277,6 +278,7 @@ class _Input_Deck {
         real_ len_z_global = 1.0;
 
         real_t Npe = n0*len_x_global*len_y_global*len_z_global;
+        real_t Ne = (nppc*nx*ny*nz);
 
         //real_ local_x_min;
         //real_ local_y_min;
@@ -302,7 +304,7 @@ class _Input_Deck {
         real_ len_y;
         real_ len_z;
         size_t num_cells; // This should *include* the ghost cells
-        size_t num_particles;
+        size_t num_particles = -1;
         ////////////////////////////////////////////////////
 
         void print_run_details()
@@ -327,7 +329,12 @@ class _Input_Deck {
 
             num_cells = (nx+(2*num_ghosts)) * (ny+(2*num_ghosts)) * (nz+(2*num_ghosts));
             //num_real_cells = nx * ny * ny;
-            num_particles = 2; //nx * ny * nz * nppc; //can user define this?
+
+            // TODO: should we just warn the user for not setting this instead?
+            if (num_particles < 0)
+            {
+                num_particles = nx * ny * nz * nppc; //can user define this?
+            }
         }
 
         // Function to intitialize the particles.

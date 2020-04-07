@@ -31,10 +31,10 @@ using ExecutionSpace = Kokkos::Cuda;
 #else
   #ifdef USE_SERIAL_CPU
     //cpu
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::Serial;
   #else // CPU Parallel
-    using MemorySpace = Cabana::HostSpace;
+    using MemorySpace = Kokkos::HostSpace;
     using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
