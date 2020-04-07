@@ -12,6 +12,8 @@
 #include "accumulator.h"
 #include "interpolator.h"
 
+#include "uncenter_p.h"
+
 #include "push.h"
 
 //#include "visualization.h"
@@ -62,7 +64,7 @@ int main( int argc, char* argv[] )
         real_t dt = deck.dt;
         real_t c = deck.c;
         real_t n0 = deck.n0;
-        real_t ec = deck.ec;
+        //real_t ec = deck.ec;
         real_t Lx = deck.len_x;
         real_t Ly = deck.len_y;
         real_t Lz = deck.len_z;
@@ -155,7 +157,7 @@ int main( int argc, char* argv[] )
         const real_t pz =  (nz>1) ? frac*c*dt/dz : 0;
 
         // simulation loop
-        const size_t num_steps = deck.num_steps;
+        const int num_steps = deck.num_steps;
 
         printf( "#***********************************************\n" );
         printf( "#num_step = %ld\n" , num_steps );
@@ -175,8 +177,8 @@ int main( int argc, char* argv[] )
         printf( "#we = %f\n" , we );
         printf( "*****\n" );
 
+        // Main loop
         for (int step = 1; step <= num_steps; step++)
-            //        for (int step = 0; step < 1; step++)
         {
             //printf("Step %d \n", step);
 

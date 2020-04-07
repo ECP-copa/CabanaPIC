@@ -41,7 +41,7 @@ void dump_particles( FILE * fp, const particle_list_t particles, const real_t xm
     auto cell = Cabana::slice<Cell_Index>(particles);
 
 
-    for (int i = 0; i < particles.size(); i++)
+    for (size_t i = 0; i < particles.size(); i++)
     {
         size_t ix,iy,iz;
         int ii = cell(i);

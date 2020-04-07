@@ -62,7 +62,7 @@ class Custom_Field_Initializer : public Field_Initializer {
             // 	    Ex[0] = Ex[nx];
             // 	    Ex[nx+1] = Ex[1];
 
-            for (int i=0; i<nx+2; i++){
+            for (size_t i=0; i<nx+2; i++){
                 real_t xn = x0 + dx*(i-1);
                 if(xn>=xp1&&xn<=xp2)
                     phi[i] = (1.0-xn)*xp1*wi + xn*(1.0-xp2)*wi + (xn*xn-xn)*wi;
@@ -71,7 +71,7 @@ class Custom_Field_Initializer : public Field_Initializer {
                 else if(xn>xp2)
                     phi[i] = (1.0-xn)*xp1*wi + xp2*(1.0-xn)*wi + (xn*xn-xn)*wi;
             }
-            for (int i=1; i<nx+1; i++){
+            for (size_t i=1; i<nx+1; i++){
                 Ex[i] = (phi[i] - phi[i+1])/(dx);
             }
             Ex[0] = Ex[nx];
@@ -84,7 +84,7 @@ class Custom_Field_Initializer : public Field_Initializer {
             // exit(1);
 
 
-            for(int i=0; i<fields.size(); i++){
+            for(size_t i=0; i<fields.size(); i++){
                 ey(i) = 0.0;
                 ez(i) = 0.0;
                 cbx(i) = 0.0;
@@ -229,9 +229,6 @@ Input_Deck::Input_Deck()
     nppc = 1;
 
     v0 = 0.0;
-
-    // Can also create temporaries
-    real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
     const real_t default_grid_len = 1.0;
 
