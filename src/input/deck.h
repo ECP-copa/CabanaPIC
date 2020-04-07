@@ -327,7 +327,7 @@ class _Input_Deck {
 
             num_cells = (nx+(2*num_ghosts)) * (ny+(2*num_ghosts)) * (nz+(2*num_ghosts));
             //num_real_cells = nx * ny * ny;
-            num_particles = 2; //nx * ny * nz * nppc; //can user define this?
+            num_particles = nx * ny * nz * nppc;
         }
 
         // Function to intitialize the particles.
