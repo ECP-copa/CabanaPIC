@@ -160,7 +160,7 @@ int main( int argc, char* argv[] )
         const int num_steps = deck.num_steps;
 
         printf( "#***********************************************\n" );
-        printf( "#num_step = %ld\n" , num_steps );
+        printf( "#num_step = %d\n" , num_steps );
         printf( "#Lx/de = %f\n" , Lx );
         printf( "#Ly/de = %f\n" , Ly );
         printf( "#Lz/de = %f\n" , Lz );
@@ -176,6 +176,17 @@ int main( int argc, char* argv[] )
         printf( "#n0 = %f\n" , n0 );
         printf( "#we = %f\n" , we );
         printf( "*****\n" );
+
+        if (deck.perform_uncenter)
+        {
+            load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
+
+            uncenter_particles(
+                particles,
+                interpolators,
+                qdt_2mc
+            );
+        }
 
         // Main loop
         for (int step = 1; step <= num_steps; step++)
