@@ -37,7 +37,7 @@ int main( int argc, char* argv[] )
 
 
 #ifndef ENERGY_DUMP_INTERVAL
-#define ENERGY_DUMP_INTERVAL 100
+#define ENERGY_DUMP_INTERVAL 1
 #endif
 
     // Cabana scoping block
@@ -74,10 +74,13 @@ int main( int argc, char* argv[] )
         real_t eps0 = deck.eps;
 
         real_t Npe = deck.Npe;
-
         size_t Ne = deck.Ne; // (nppc*nx*ny*nz)
+        printf("nppc %d nx %d ny %d nz %d \n", nppc, nx, ny, nz);
+             printf("n0 %e lx %e nly %e lz %e \n", n0, Lx, Ly, Lz);
+        printf("ne %ld npe %e \n", Ne, Npe);
 
         real_t qsp = deck.qsp;
+        printf("qsp %e \n", qsp);
         real_t me = deck.me;
 
         real_t qdt_2mc = qsp*dt/(2*me*c);

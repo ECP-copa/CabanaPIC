@@ -106,6 +106,7 @@ class Particle_Initializer {
             auto cell = Cabana::slice<Cell_Index>(particles);
 
             printf("dxp = %e \n", dxp);
+            printf("part list len = %ld \n", particles.size());
 
             auto _init =
                 KOKKOS_LAMBDA( const int s, const int i )
@@ -276,8 +277,8 @@ class _Input_Deck {
         real_ len_y_global = 1.0;
         real_ len_z_global = 1.0;
 
-        real_t Npe = n0*len_x_global*len_y_global*len_z_global;
-        real_t Ne = (nppc*nx*ny*nz);
+        real_t Npe = -1;
+        real_t Ne = -1; //(nppc*nx*ny*nz);
 
         //real_ local_x_min;
         //real_ local_y_min;
@@ -336,6 +337,13 @@ class _Input_Deck {
             if (num_particles < 0)
             {
                 num_particles = nx * ny * nz * nppc; //can user define this?
+                if (Ne < 0) {
+                    Ne = num_particles;
+                }
+            }
+            if (Npe < 0)
+            {
+                Npe = n0*len_x_global*len_y_global*len_z_global;
             }
         }
 

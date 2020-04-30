@@ -167,6 +167,9 @@ bool compare_energies(
         std::ifstream f1 (file_a);
         std::ifstream f2 (file_b);
 
+        //std::cout << "file_a " << file_a << std::endl;
+        //std::cout << "file_b " << file_b << std::endl;
+
         double max_err = 0.0;
         double max_err_A = 0.0;
         double max_err_B = 0.0;
@@ -228,7 +231,10 @@ bool compare_energies(
                     bool write_this_err_ouput = write_err_ouput;
                     //std::cout << "Setting write_this_err_ouput tp " << write_this_err_ouput << std::endl;
 
+                    //std::cout << "item 1 " << item1 << std::endl;
+
                     getline(linestream2, item2, ' ');
+                    //std::cout << "item 2 " << item2 << std::endl;
                     total_line_token_count++;
 
                     // Use this field
@@ -246,6 +252,8 @@ bool compare_energies(
 
                         double A = std::stod(item1);
                         double B = std::stod(item2);
+
+                        //std::cout << "A " << A << " vs " << B << std::endl;
 
                         if (
                                 (field_enum == FIELD_ENUM::Sum) && // Need to aggregate
