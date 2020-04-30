@@ -153,10 +153,10 @@ class Custom_Particle_Initializer : public Particle_Initializer {
             auto cell = Cabana::slice<Cell_Index>(particles);
 
             real_t hx = Lx/nx;
-            real_t hy = Ly/ny;
-            real_t hz = Lz/nz;
+            //real_t hy = Ly/ny;
+            //real_t hz = Lz/nz;
             real_t xmin = 0; //-0.5*Lx;
-            real_t ymin = 0; //-0.5*Ly;
+            //real_t ymin = 0; //-0.5*Ly;
 
 #define rand_float(min, max) (min + (max-min)*rand()/RAND_MAX)
 

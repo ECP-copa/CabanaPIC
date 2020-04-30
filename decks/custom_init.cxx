@@ -121,7 +121,7 @@ Input_Deck::Input_Deck()
     v0 = 0.2;
 
     // Can also create local temporaries
-    real_ gam = 1.0 / sqrt(1.0 - v0*v0);
+    //real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
     const real_t default_grid_len = 1.0;
 

@@ -97,9 +97,7 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
 
-# TODO: why is hwloc needed here for travis?
-target_link_libraries(minipic PUBLIC Cabana::cabanacore dl hwloc)
-#target_link_libraries(minipic PUBLIC dl hwloc)
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl)
 
 
 ##### TESTS ######
