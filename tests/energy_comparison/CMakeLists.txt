@@ -1,6 +1,6 @@
 # TODO: this will trigger a full rebuild of all files..
 
-#LIST(APPEND TESTS 2stream-em)
+LIST(APPEND TESTS 2stream-em)
 
 # TODO: we shouldn't have to duplicate all this
 #INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)

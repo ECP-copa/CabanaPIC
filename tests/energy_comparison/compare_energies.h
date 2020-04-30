@@ -147,7 +147,7 @@ bool compare_energies(
     // TODO: I could easily have a policy here based on the type of the field_mask
     std::vector<double> errs;
 
-    const int DEFAULT_FILED_COUNT = 7;
+    //const int DEFAULT_FILED_COUNT = 7;
 
     unsigned short agg_total = 0;
     unsigned short v = field_mask;
