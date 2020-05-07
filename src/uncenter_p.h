@@ -92,8 +92,6 @@ void uncenter_particles(
             uy  += hay;
             uz  += haz;
 
-            std::cout << " hay " << hay << " ux " << ux << std::endl;
-
             // Store result
             velocity_x.access(s,i) = ux;
             velocity_y.access(s,i) = uy;
