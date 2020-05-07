@@ -91,6 +91,7 @@ int main( int argc, char* argv[] )
         real_t dt_eps0 = dt/eps0;
         real_t frac = 1.0f;
         real_t we = (real_t) Npe/(real_t) Ne;
+        printf("we %e \n", we);
 
         const size_t num_particles = deck.num_particles;
 
