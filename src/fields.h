@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include "Cabana_Parallel.hpp" // Simd parallel for
+#include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 #include "input/deck.h"
 
 // TODO: Namespace this stuff?
@@ -504,7 +505,7 @@ class EM_Field_Solver
 
         // TODO: is this the right place for this vs in the helper?
         void dump_fields(FILE * fp,
-                field_array_t& fields,
+                field_array_t& d_fields,
                 real_t xmin,
                 real_t ymin,
                 real_t zmin,
@@ -517,6 +518,12 @@ class EM_Field_Solver
                 size_t ng
                 )
         {
+            // Host
+            field_array_t::host_mirror_type fields("host_fields", d_fields.size());
+
+            // Copy device field to host
+            Cabana::deep_copy(fields, d_fields);
+
             auto ex = Cabana::slice<FIELD_EX>(fields);
 
             for( size_t i=1; i<nx+1; i++ )

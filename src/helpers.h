@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "Cabana_ExecutionPolicy.hpp" // SIMDpolicy
 #include "Cabana_Parallel.hpp" // Simd parallel for
+#include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 
 #include "input/deck.h"
 
@@ -27,8 +28,15 @@ int allow_for_ghosts(int pre_ghost)
 }
 
 // Function to print out the data for every particle.
-void dump_particles( FILE * fp, const particle_list_t particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
+void dump_particles( FILE * fp, const particle_list_t d_particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
 {
+
+    // Host
+    particle_list_t::host_mirror_type particles("host_particles", d_particles.size());
+
+    // Copy device particles to host
+    Cabana::deep_copy(particles, d_particles);
+
     auto position_x = Cabana::slice<PositionX>(particles);
     auto position_y = Cabana::slice<PositionY>(particles);
     auto position_z = Cabana::slice<PositionZ>(particles);
@@ -39,7 +47,6 @@ void dump_particles( FILE * fp, const particle_list_t particles, const real_t xm
 
     auto weight = Cabana::slice<Weight>(particles);
     auto cell = Cabana::slice<Cell_Index>(particles);
-
 
     for (size_t i = 0; i < particles.size(); i++)
     {
