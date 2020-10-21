@@ -73,6 +73,27 @@ Cabana::MemberTypes<
 using particle_list_t =
     Cabana::AoSoA<ParticleDataTypes,MemorySpace>;
 
+
+//// Movers
+enum MoverFields
+{
+    MoverX,
+    MoverY,
+    MoverZ,
+    MoverI
+};
+
+// Types for the Cabana Particle movers
+using ParticleMoverDataTypes = Cabana::MemberTypes<
+    real_t, // dispx
+    real_t, // dispy
+    real_t, // dispz
+    int     // cell id
+>;
+using particle_mover_t = Cabana::AoSoA<ParticleMoverDataTypes, MemorySpace>;
+
+using k_nm_t = Kokkos::View<int>;
+
 /////////////// START VPIC TYPE ////////////
 
 #include "grid.h"
@@ -187,8 +208,7 @@ using FieldDataTypes = Cabana::MemberTypes<
 
 using field_array_t = Cabana::AoSoA<FieldDataTypes,MemorySpace,cell_blocking>;
 
-// TODO: should this be in it's own file?
-class particle_mover_t {
+class local_particle_mover_t {
     public:
   real_t dispx, dispy, dispz; // Displacement of particle
   int32_t i;                 // Index of the particle to move

@@ -64,7 +64,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         T4& cell,
         T5& a0, // TODO: does this need to be const
         real_t q,
-        particle_mover_t& pm,
+        local_particle_mover_t& pm,
         const grid_t* g,
         const size_t s,
         const size_t i,

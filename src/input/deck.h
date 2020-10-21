@@ -304,7 +304,10 @@ class _Input_Deck {
         real_ len_y;
         real_ len_z;
         size_t num_cells; // This should *include* the ghost cells
+
+        // Signed quantities
         long num_particles = -1;
+        long max_nm = -1;
 
         bool perform_uncenter = false;
 
@@ -340,6 +343,10 @@ class _Input_Deck {
                 if (Ne < 0) {
                     Ne = num_particles;
                 }
+            }
+            if (max_nm < 0)
+            {
+                max_nm = static_cast<long>(num_particles * 0.15);
             }
             if (Npe < 0)
             {

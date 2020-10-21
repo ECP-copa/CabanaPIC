@@ -4,6 +4,10 @@ project(minipic LANGUAGES CXX VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 14)
 
+# Now required for multi node runs, we could make this option if needed, so its
+# basically a Cabana dependency
+find_package(MPI REQUIRED)
+
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")

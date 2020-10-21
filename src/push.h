@@ -19,23 +19,40 @@ void push(
         const size_t ny,
         const size_t nz,
         const size_t num_ghosts,
-        Boundary boundary
+        Boundary boundary,
+        k_nm_t& k_nm,
+        particle_list_t& particle_copy,
+        particle_mover_t& particle_movers
+
         )
 {
-
     //auto slice = a0.slice<0>();
     //decltype(slice)::atomic_access_slice _a = slice;
+
+    auto max_nm = particle_copy.size();
 
     auto position_x = Cabana::slice<PositionX>(particles);
     auto position_y = Cabana::slice<PositionY>(particles);
     auto position_z = Cabana::slice<PositionZ>(particles);
-
     auto velocity_x = Cabana::slice<VelocityX>(particles);
     auto velocity_y = Cabana::slice<VelocityY>(particles);
     auto velocity_z = Cabana::slice<VelocityZ>(particles);
+    auto weight     = Cabana::slice<Weight>(particles);
+    auto cell       = Cabana::slice<Cell_Index>(particles);
 
-    auto weight = Cabana::slice<Weight>(particles);
-    auto cell = Cabana::slice<Cell_Index>(particles);
+    auto particle_copy_position_x = Cabana::slice<PositionX>(particle_copy);
+    auto particle_copy_position_y = Cabana::slice<PositionY>(particle_copy);
+    auto particle_copy_position_z = Cabana::slice<PositionZ>(particle_copy);
+    auto particle_copy_velocity_x = Cabana::slice<VelocityX>(particle_copy);
+    auto particle_copy_velocity_y = Cabana::slice<VelocityY>(particle_copy);
+    auto particle_copy_velocity_z = Cabana::slice<VelocityZ>(particle_copy);
+    auto particle_copy_weight     = Cabana::slice<Weight>(particle_copy);
+    auto particle_copy_cell       = Cabana::slice<Cell_Index>(particle_copy);
+
+    auto particle_movers_x = Cabana::slice<MoverX>(particle_copy);
+    auto particle_movers_y = Cabana::slice<MoverY>(particle_copy);
+    auto particle_movers_z = Cabana::slice<MoverZ>(particle_copy);
+    auto particle_movers_i = Cabana::slice<MoverI>(particle_copy);
 
     //const real_t qdt_4mc        = -0.5*qdt_2mc; // For backward half rotate
     const real_t one            = 1.;
@@ -68,7 +85,6 @@ void push(
             auto accumulators_scatter_access = a0.access();
 
             //for ( int i = 0; i < particle_list_t::vector_length; ++i )
-            //{
             // Setup data accessors
             // This may be cleaner if we hoisted it?
             int ii = cell.access(s,i);
@@ -115,7 +131,7 @@ void push(
             // Perform push
 
             // TODO: deal with pm's
-            particle_mover_t local_pm = particle_mover_t();
+            local_particle_mover_t local_pm = local_particle_mover_t();
 
             real_t dx = position_x.access(s,i);   // Load position
             real_t dy = position_y.access(s,i);   // Load position
@@ -215,7 +231,7 @@ void push(
                 // accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
                 // accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;
 
-                #define CALC_J(X,Y,Z)                                        \
+#define CALC_J(X,Y,Z)                                        \
                 v4  = q*u##X;   /* v2 = q ux                            */   \
                 v1  = v4*d##Y;  /* v1 = q ux dy                         */   \
                 v0  = v4-v1;    /* v0 = q ux (1-dy)                     */   \
@@ -253,7 +269,7 @@ void push(
                 accumulators_scatter_access(ii, accumulator_var::jz, 2) += v2; // 0.0;
                 accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
 
-                #undef CALC_J
+#undef CALC_J
 
             }
             else
@@ -266,37 +282,38 @@ void push(
 
                 // Handle particles that cross cells
                 //move_p( position_x, position_y, position_z, cell, _a, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
-                move_p( position_x, position_y, position_z, cell, a0, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
+                bool is_leaving = move_p( position_x, position_y, position_z, cell, a0, q, local_pm,  g,  s, i, nx, ny, nz, num_ghosts, boundary );
 
-                // TODO: renable this
-                //if ( move_p( p0, local_pm, a0, g, qsp ) ) { // Unlikely
-                //if ( move_p( particles, local_pm, a0, g, qsp, s, i ) ) { // Unlikely
-                //if( nm<max_nm ) {
-                //pm[nm++] = local_pm[0];
-                //}
-                //else {
-                //ignore++;                 // Unlikely
-                //} // if
-                //} // if
+                if (is_leaving)
+                {
+                    if (k_nm() < max_nm)
+                    {
+                        const unsigned int nm = int(Kokkos::atomic_fetch_add( &k_nm(), 1 ));
+                        //if (nm >= max_nm) Kokkos::abort("overran max_nm");
 
-                /* // Copied from VPIC Kokkos for reference
-                   if( move_p_kokkos( k_particles, k_local_particle_movers,
-                   k_accumulators_sa, g, qsp ) ) { // Unlikely
-                   if( k_nm(0)<max_nm ) {
-                   nm = int(Kokkos::atomic_fetch_add( &k_nm(0), 1 ));
-                   if (nm >= max_nm) Kokkos::abort("overran max_nm");
-                   copy_local_to_pm(nm);
-                   }
-                   }
-                   */
+                        particle_movers_x(nm) = local_pm.dispx;
+                        particle_movers_y(nm) = local_pm.dispy;
+                        particle_movers_y(nm) = local_pm.dispz;
+                        particle_movers_i(nm) = local_pm.i;
+
+                        // Keep existing mover structure, but also copy the particle data so we have a reduced set to move to host
+                        particle_copy_position_x(nm)    = position_x.access(s, i);
+                        particle_copy_position_y(nm)    = position_y.access(s, i);
+                        particle_copy_position_z(nm)    = position_z.access(s, i);
+                        particle_copy_velocity_x(nm)   = velocity_x.access(s, i);
+                        particle_copy_velocity_y(nm)   = velocity_x.access(s, i);
+                        particle_copy_velocity_z(nm)   = velocity_x.access(s, i);
+                        particle_copy_weight(nm)        = weight.access(s, i);
+                        particle_copy_cell(nm)          = cell.access(s, i);
+                    }
+                }
             }
 
-            //} // end VLEN loop
         };
 
-        Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
-            vec_policy( 0, particles.size() );
-        Cabana::simd_parallel_for( vec_policy, _push, "push()" );
-        }
+    Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
+        vec_policy( 0, particles.size() );
+    Cabana::simd_parallel_for( vec_policy, _push, "push()" );
+}
 
 #endif // pic_push_h

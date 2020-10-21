@@ -48,13 +48,13 @@ int main( int argc, char* argv[] )
         deck.print_run_details();
 
         // Cache some values locally for printing
-        const int npc = deck.nppc;
+        const int nppc = deck.nppc;
         const int nx = deck.nx;
         const int ny = deck.ny;
         const int nz = deck.nz;
         const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
-        real_t dxp = 2.f / (npc);
+        real_t dxp = 2.f / (nppc);
 
         // Define some consts
         const real_t dx = deck.dx;
@@ -70,7 +70,6 @@ int main( int argc, char* argv[] )
         real_t Lz = deck.len_z;
         real_t v0 = deck.v0;
 
-        int nppc = deck.nppc;
         real_t eps0 = deck.eps;
 
         real_t Npe = deck.Npe;
@@ -94,14 +93,17 @@ int main( int argc, char* argv[] )
         printf("we %e \n", we);
 
         const size_t num_particles = deck.num_particles;
+        const size_t max_nm = deck.max_nm;
 
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
         // Create the particle list.
         particle_list_t particles( "particles", num_particles );
+        particle_list_t particles_copy( "particle copies", max_nm );
+        particle_mover_t particle_movers( "particle movers", max_nm);
 
         // Initialize particles.
-        deck.initialize_particles( particles, nx, ny, nz, num_ghosts, dxp, npc, we, v0 );
+        deck.initialize_particles( particles, nx, ny, nz, num_ghosts, dxp, nppc, we, v0 );
 
         grid_t* grid = new grid_t();
 
@@ -192,6 +194,9 @@ int main( int argc, char* argv[] )
             );
         }
 
+        // Define mover storage and nm
+        k_nm_t k_nm("k_nm");
+
         // Main loop
         for (int step = 1; step <= num_steps; step++)
         {
@@ -222,7 +227,10 @@ int main( int argc, char* argv[] )
                     ny,
                     nz,
                     num_ghosts,
-                    boundary
+                    boundary,
+                    k_nm,
+                    particles_copy,
+                    particle_movers
                 );
 
             Kokkos::Experimental::contribute(accumulators, scatter_add);
