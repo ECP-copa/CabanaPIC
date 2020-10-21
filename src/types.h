@@ -7,6 +7,8 @@
 #define real_t REAL_TYPE
 #endif
 
+#include <mpi.h>
+
 #include <Kokkos_ScatterView.hpp>
 #include <Cabana_Types.hpp>
 #include <Cabana_MemberTypes.hpp>
@@ -21,6 +23,9 @@
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
+
+// TODO: find a better place for this
+static MPI_Comm grid_comm;
 
 // TODO: do we even need to explicitly specify these? We only use the default
 // space..
@@ -68,6 +73,10 @@ Cabana::MemberTypes<
     real_t,                        // (6) weight
     int                           // (7) Cell index
 >;
+
+using cabana_counter_t =
+    Cabana::AoSoA< Cabana::MemberTypes<int>, MemorySpace >;
+using particle_ranklist_t = cabana_counter_t;
 
 // Set the type for the particle AoSoA.
 using particle_list_t =

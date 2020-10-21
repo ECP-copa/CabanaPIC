@@ -13,8 +13,8 @@
 #include "interpolator.h"
 
 #include "uncenter_p.h"
-
 #include "push.h"
+#include "boundary_p.h"
 
 //#include "visualization.h"
 
@@ -35,6 +35,18 @@ int main( int argc, char* argv[] )
     printf("#Running On Kokkos execution space %s\n",
             typeid (Kokkos::DefaultExecutionSpace).name ());
 
+    // Create Cartesian grid topology
+    int comm_size = -1;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size( MPI_COMM_WORLD, &comm_size );
+
+    // TODO: support multiple dimensional decomp
+    const int dims[3] = {comm_size, 1, 1}; // (nx, ny, nz)
+
+    // TODO: support non periodic grids
+    const int wrap[3] = {1, 1, 1}; // periodic in all dimensions
+    MPI_Cart_create( MPI_COMM_WORLD, 3, dims, wrap, false, &grid_comm );
 
 #ifndef ENERGY_DUMP_INTERVAL
 #define ENERGY_DUMP_INTERVAL 1
@@ -195,7 +207,9 @@ int main( int argc, char* argv[] )
         }
 
         // Define mover storage and nm
+        // TODO: need to zeor this each timestep
         k_nm_t k_nm("k_nm");
+        k_nm_t::HostMirror k_nm_h("k_nm");
 
         // Main loop
         for (int step = 1; step <= num_steps; step++)
@@ -238,8 +252,11 @@ int main( int argc, char* argv[] )
             // Only reset the data if these two are not the same arrays
             scatter_add.reset_except(accumulators);
 
-            // TODO: boundaries? MPI
-            //boundary_p(); // Implies Parallel?
+            Kokkos::deep_copy(k_nm_h, k_nm);
+
+            int nm = k_nm_h();
+
+            boundary_p(particles, particles_copy, max_nm); // Implies Parallel?
 
             // Map accumulator current back onto the fields
             unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
