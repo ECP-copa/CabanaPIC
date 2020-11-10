@@ -24,7 +24,7 @@ void boundary_p(
     auto _find_ranks =
         KOKKOS_LAMBDA( const int s, const int i )
         {
-            particle_exports.access(s, i) = -1;
+            particle_exports.access(s, i) = 0;
         };
 
     Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
