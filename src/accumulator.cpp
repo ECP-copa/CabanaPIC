@@ -139,13 +139,6 @@ void accumulate_rho_p_1D(
     auto cell   = Cabana::slice<Cell_Index>( particles );
     real_t cx = qsp / ( dy ); // 1D in y only
 
-    for(int i=0; i<ny; ++i){
-	const int f0 = VOXEL(1,   i+ng,   1,   nx, ny, nz, ng);
-	//printf("%d %f\n",i,rho_accumulator(f0));
-	std::cout<<rho_accumulator(f0)<<std::endl;
-    }
-
-
     auto _collect_rho = KOKKOS_LAMBDA( const int s, const int i )
     {
 	int ii  = cell.access( s, i );
