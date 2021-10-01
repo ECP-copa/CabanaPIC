@@ -33,4 +33,15 @@ void unload_accumulator_array(
         real_t dt
 );
 
+void accumulate_rho_p_1D( 
+			 const particle_list_t &particles,
+			 const rho_array_t & rho_accumulator,
+			 size_t nx,
+			 size_t ny,
+			 size_t nz,
+			 size_t ng,
+			 real_t dx,
+			 real_t dy,
+			 real_t dz, 
+			 real_t qsp );
 #endif // header guard

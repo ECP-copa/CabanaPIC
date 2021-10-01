@@ -121,3 +121,53 @@ void unload_accumulator_array(
 
 }
 
+
+void accumulate_rho_p_1D(
+			 const particle_list_t & particles,
+			 const rho_array_t & rho_accumulator,
+			 size_t nx,
+			 size_t ny,
+			 size_t nz,
+			 size_t ng,
+			 real_t dx,
+			 real_t dy,
+			 real_t dz,
+			 real_t qsp)
+{
+    auto position_x = Cabana::slice<PositionX>( particles );
+    auto weight = Cabana::slice<Weight>( particles );
+    auto cell   = Cabana::slice<Cell_Index>( particles );
+    real_t cx = qsp / ( dy ); // 1D in y only
+
+    for(int i=0; i<ny; ++i){
+	const int f0 = VOXEL(1,   i+ng,   1,   nx, ny, nz, ng);
+	//printf("%d %f\n",i,rho_accumulator(f0));
+	std::cout<<rho_accumulator(f0)<<std::endl;
+    }
+
+
+    auto _collect_rho = KOKKOS_LAMBDA( const int s, const int i )
+    {
+	int ii  = cell.access( s, i );
+	
+	real_t wp = weight.access( s, i );
+	rho_accumulator(ii) += wp*cx; //NGP, 1D
+	/*
+	real_t xp = position_x.access( s, i );
+	rho_accumulator(ii) += (0.75 - xp*xp*0.25)*wp;
+	rho_accumulator(ii+1) += (0.5*(0.5+xp*0.5)*(0.5+xp*0.5))*wp;
+	rho_accumulator(ii-1) += (0.5*(0.5-xp*0.5)*(0.5-xp*0.5))*wp;
+	*/
+    };
+    Cabana::SimdPolicy<particle_list_t::vector_length, Kokkos::DefaultHostExecutionSpace> vec_policy(0, particles.size() );
+    Cabana::simd_parallel_for( vec_policy, _collect_rho, "collect_rho()" );
+
+    /*
+    for(int i=0; i<ny; ++i){
+	const int f0 = VOXEL(1,   i+ng,   1,   nx, ny, nz, ng);
+	std::cout<<(0.5+i)*dx<<" "<<rho_accumulator(f0)<<" "<<f0<<std::endl;;
+    }
+
+    exit(1);
+    */
+}

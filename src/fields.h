@@ -407,7 +407,8 @@ class ES_Field_Solver
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		size_t ng
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
@@ -439,7 +440,8 @@ class ES_Field_Solver_1D
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		size_t ng
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
