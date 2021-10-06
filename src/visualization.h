@@ -9,11 +9,16 @@ class Visualizer {
     public:
         std::ofstream vis_file;
 
-        void write_header(size_t total_num_particles, size_t step) {
+		  bool writeParticles = false;
+		  bool writeE = true;
+		  bool writeJ = true;
+		  bool writeGrid = true;
+
+        void write_header(size_t total_num_particles, size_t step, std::string data_name) {
 
             std::stringstream sstm;
 
-            sstm << "vis/step" << step << ".vtk";
+            sstm << "vis/" << data_name << "_step" << step << ".vtk";
             std::string file_name = sstm.str();
 
             vis_file.open(file_name);
@@ -26,6 +31,78 @@ class Visualizer {
 
             vis_file << "POINTS " << total_num_particles << " float" << std::endl;
         }
+
+		  void write_grid(const int nx, const int ny, const int nz, const int ng, const real_t dx, const real_t dy, const real_t dz)
+		  {
+		      real_t x_val, y_val, z_val;
+				for ( int x = ng; x < nx+ng; ++x)
+				{
+					for ( int y = ng; y < ny+ng; ++y)
+					{
+						for ( int z = ng; z < nz+ng; ++z)
+						{
+							x_val = (x-ng)*dx; y_val = (y-ng)*dy; z_val = (z-ng)*dz;
+							vis_file << x_val << " " << y_val << " " << z_val << std::endl;
+						}
+					}
+				}
+		  }
+
+		  void write_efield(field_array_t& fields, const int nx, const int ny, const int nz, const int ng)
+		  {
+		  		auto ex = Cabana::slice<FIELD_EX>(fields);
+		  		auto ey = Cabana::slice<FIELD_EY>(fields);
+		  		auto ez = Cabana::slice<FIELD_EZ>(fields);
+				size_t write_count = 0;
+
+				int idx;
+
+				for ( int x = ng; x < nx+ng; ++x)
+				{
+					for ( int y = ng; y < ny+ng; ++y)
+					{
+						for ( int z = ng; z < nz+ng; ++z)
+						{
+							idx = VOXEL(x, y, z, nx, ny, nz, ng);
+							
+							real_t this_ex = ex(idx);
+							real_t this_ey = ey(idx);
+							real_t this_ez = ez(idx);
+
+							vis_file << this_ex << " " << this_ey << " " << this_ez << std::endl;
+							write_count++;
+						}
+					}
+				}
+		  }
+		  
+		  void write_current(field_array_t& fields, const int nx, const int ny, const int nz, const int ng)
+		  {
+		  		auto jx = Cabana::slice<FIELD_JFX>(fields);
+		  		auto jy = Cabana::slice<FIELD_JFY>(fields);
+		  		auto jz = Cabana::slice<FIELD_JFZ>(fields);
+				size_t write_count = 0;
+
+				int idx;
+
+				for ( int x = ng; x < nx+ng; ++x)
+				{
+					for ( int y = ng; y < ny+ng; ++y)
+					{
+						for ( int z = ng; z < nz+ng; ++z)
+						{
+							idx = VOXEL(x, y, z, nx, ny, nz, ng);
+							
+							real_t this_jx = jx(idx);
+							real_t this_jy = jy(idx);
+							real_t this_jz = jz(idx);
+
+							vis_file << this_jx << " " << this_jy << " " << this_jz << std::endl;
+							write_count++;
+						}
+					}
+				}
+		  }
 
         // TODO: all these loops are the same, we could replace it with vtemplate
         void write_particles_position(particle_list_t& particles)
@@ -104,9 +181,11 @@ class Visualizer {
             vis_file.close();
         }
 
-        void write_vis(particle_list_t particles, size_t step)
+        void write_vis(particle_list_t particles, field_array_t fields, size_t step, const int nx, const int ny, const int nz, const int ng,
+		  					  real_t dx, real_t dy, real_t dz)
         {
 
+				
             size_t total_num_particles = particles.size();
 
             // TODO: this needs to be updated once species are introduced
@@ -117,37 +196,57 @@ class Visualizer {
                total_num_particles += particle_count;
                }
             */
+				if ( writeParticles ) 
+				{
+						  write_header(total_num_particles, step, "particles");
 
-            write_header(total_num_particles, step);
+						  //for (unsigned int sn = 0; sn < species.size(); sn++)
+						  //{
+						  //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+						  write_particles_position(particles);
+						  //}
 
-            //for (unsigned int sn = 0; sn < species.size(); sn++)
-            //{
-            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
-            write_particles_position(particles);
-            //}
+						  write_cell_types(total_num_particles);
 
-            write_cell_types(total_num_particles);
+						  pre_scalars(total_num_particles);
+						  write_particles_property_header("weight", total_num_particles);
 
-            pre_scalars(total_num_particles);
-            write_particles_property_header("weight", total_num_particles);
+						  //for (unsigned int sn = 0; sn < species.size(); sn++)
+						  //{
+						  //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+						  write_particles_w(particles);
+						  //}
+						  //*/
+						  write_particles_property_header("cells", total_num_particles);
+						  write_particles_index(particles);
 
-            //for (unsigned int sn = 0; sn < species.size(); sn++)
-            //{
-            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
-            write_particles_w(particles);
-            //}
-            //*/
-            write_particles_property_header("cells", total_num_particles);
-            write_particles_index(particles);
+						  write_particles_property_header("species", total_num_particles);
 
-            write_particles_property_header("species", total_num_particles);
-
-            //for (unsigned int sn = 0; sn < species.size(); sn++)
-            //{
-            //auto particles_accesor = get_particle_accessor(m, species[sn].key);
-            write_particles_sp(particles, 1);
-            //}
-            finalize();
+						  //for (unsigned int sn = 0; sn < species.size(); sn++)
+						  //{
+						  //auto particles_accesor = get_particle_accessor(m, species[sn].key);
+						  write_particles_sp(particles, 1);
+						  //}
+						  finalize();
+					}
+					if ( writeE ) 
+					{
+						write_header(total_num_particles, step, "efield");
+						write_efield( fields, nx, ny, nz, ng );
+						finalize();
+					}
+					if ( writeJ )
+					{
+						write_header(total_num_particles, step, "current");
+						write_current( fields, nx, ny, nz, ng );
+						finalize();
+					}
+					if ( writeGrid )
+					{
+						write_header(total_num_particles, step, "grid");
+						write_grid(nx, ny, nz, ng, dx, dy, dz);
+						finalize();
+					}
 
         }
 

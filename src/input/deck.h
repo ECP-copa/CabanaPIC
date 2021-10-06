@@ -263,7 +263,7 @@ class _Input_Deck {
         // Params
         real_ n0 = 1.0; // Background plasma density
         size_t num_species = 1;
-        size_t nx = 16; // TODO: why is nx a size_t not an int?
+        size_t nx = 32; // TODO: why is nx a size_t not an int?
         size_t ny = 1;
         size_t nz = 1;
 
@@ -423,7 +423,7 @@ class Input_Deck : public _Input_Deck {
     public:
         // TODO: this may currently force any custom deck to implement an
         // intitialize_particles function, which is not desired. We want to
-        // fall back to the default implementation above if the user chosoes
+        // fall back to the default implementation above if the user chooses
         // not to define one
         Input_Deck();
 };
@@ -439,8 +439,8 @@ class Input_Deck : public _Input_Deck {
             ny = 32;
             nz = 1;
 
-            num_steps = 6000;
-            nppc = 100;
+            num_steps = 300;
+            nppc = 300;
 
             //v0 = 0.2;
             v0 = 0.0866025403784439;

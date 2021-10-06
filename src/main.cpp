@@ -16,13 +16,15 @@
 
 #include "push.h"
 
-//#include "visualization.h"
+#include "visualization.h"
 
 #include "input/deck.h"
 
 // Global variable to hold paramters
 //Parameters params;
 Input_Deck deck;
+
+Visualizer visualize;
 
 //---------------------------------------------------------------------------//
 // Main.
@@ -44,8 +46,8 @@ int main( int argc, char* argv[] )
     {
         FILE *fptr = fopen("partloc","w");
         FILE *fpfd = fopen("ex1d","w");
-        deck.derive_params();
-        deck.print_run_details();
+        deck.derive_params(); 			// compute derived parameters from user-specified parameters in input deck
+        deck.print_run_details();		// print out various run parameters
 
         // Cache some values locally for printing
         const int npc = deck.nppc;
@@ -106,8 +108,6 @@ int main( int argc, char* argv[] )
         grid_t* grid = new grid_t();
 
         // Print initial particle positions
-        //logger << "Initial:" << std::endl;
-        //print_particles( particles );
         fprintf(fptr,"#step=0\n0 ");
         dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
 
@@ -121,6 +121,7 @@ int main( int argc, char* argv[] )
         //KOKKOS_SCATTER_DUPLICATED,
         //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
+		  // Create array to hold fields
         field_array_t fields("fields", num_cells);
 
         // Zero out the interpolator
@@ -181,6 +182,7 @@ int main( int argc, char* argv[] )
         printf( "#we = %f\n" , we );
         printf( "*****\n" );
 
+		  // An initial backward half-step in velocity to initialize the standard Boris/leapfrog scheme
         if (deck.perform_uncenter)
         {
             load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
@@ -192,7 +194,7 @@ int main( int argc, char* argv[] )
             );
         }
 
-        // Main loop
+        // Main loop //
         for (int step = 1; step <= num_steps; step++)
         {
             //printf("Step %d \n", step);
@@ -255,6 +257,9 @@ int main( int argc, char* argv[] )
             field_solver.dump_fields(fpfd,fields, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
             fprintf(fptr,"#step=%d\n%e ",step,step*dt);
             dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
+
+				// Write out visualization files
+        		visualize.write_vis(particles, fields, step, nx, ny, nz, num_ghosts, dx, dy, dz);
 
         }
 
