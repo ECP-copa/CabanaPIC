@@ -149,7 +149,9 @@ namespace accumulator_var {
   };
 }
 
-
+// for charge deposition
+using rho_array_t =
+    Kokkos::View<real_t *, Kokkos::LayoutRight, MemorySpace, Kokkos::MemoryTraits<Kokkos::Atomic>>;
 
 enum FieldFields
 {

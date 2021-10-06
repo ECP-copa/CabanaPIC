@@ -115,13 +115,21 @@ int main( int argc, char* argv[] )
         interpolator_array_t interpolators("interpolator", num_cells);
 
         accumulator_array_t accumulators("accumulator", num_cells);
-
+	
         auto scatter_add = Kokkos::Experimental::create_scatter_view(accumulators);
         //<Kokkos::Experimental::ScatterSum,
         //KOKKOS_SCATTER_DUPLICATED,
         //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
+<<<<<<< HEAD
 		  // Create array to hold fields
+=======
+	rho_array_t rho_accumulator("rho_accumulator",num_cells);
+
+	//get the initial charge density
+	accumulate_rho_p_1D(particles,rho_accumulator,nx,ny,nz,num_ghosts,dx,dy,dz,qsp);
+	
+>>>>>>> 5194f394ab9e6dedb8bd1ccae21d854e3916d72a
         field_array_t fields("fields", num_cells);
 
         // Zero out the interpolator
@@ -254,9 +262,9 @@ int main( int argc, char* argv[] )
 
             // TODO: abstract this out
             fprintf(fpfd,"#step=%d\n",step);
-            field_solver.dump_fields(fpfd,fields, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
+            //field_solver.dump_fields(fpfd,fields, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
             fprintf(fptr,"#step=%d\n%e ",step,step*dt);
-            dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
+            //dump_particles( fptr, particles, 0, 0, 0, dx,dy,dz,nx,ny,nz,num_ghosts );
 
 				// Write out visualization files
         		visualize.write_vis(particles, fields, step, nx, ny, nz, num_ghosts, dx, dy, dz);
