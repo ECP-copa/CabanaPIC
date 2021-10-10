@@ -10,11 +10,11 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
+MESSAGE( STATUS "variable is: " ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories(${PROJECT_SOURCE_DIR})
 
 # TODO: Tag this once we have a new release
-find_package(Cabana)
+find_package(Cabana REQUIRED)
 
 #### User configuration Options ####
 option(ENABLE_GPU OFF)
@@ -96,9 +96,11 @@ INCLUDE_DIRECTORIES(./src)
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
-
-target_link_libraries(minipic PUBLIC Cabana::cabanacore dl)
-
+if (ENABLE_GPU)
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl cufft)
+else()
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl fftw3f)
+endif(ENABLE_GPU)
 
 ##### TESTS ######
 if (ENABLE_TESTS)
