@@ -394,8 +394,16 @@ class ES_Field_Solver
             serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
             serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
 	    
-	    size_t n_inner_cell = nx*ny*nz;
 
+	    size_t n_inner_cell = nx*ny*nz;
+	    real_t iLx = px/(nx*dt_eps0);
+	    real_t iLy = py/(ny*dt_eps0);
+	    real_t iLz = pz/(nz*dt_eps0);
+
+	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+
+	    /*
+	    //start fft
 #ifdef USE_GPU
 	    size_t SIGNAL_SIZE = ny;
 	    int mem_size = sizeof(cufftComplex) * SIGNAL_SIZE;
@@ -458,8 +466,8 @@ class ES_Field_Solver
 						       depth, //ostride
 						       odist, //odist
 						       FFTW_FORWARD,  
-						       FFTW_ESTIMATE /*flags*/);
-
+						       FFTW_ESTIMATE );
+	    
 	    fftwf_plan plan_ifft = fftwf_plan_many_dft (rank, //rank
 						       n, //dims -- this doesn't include zero-padding
 						       depth, //howmany
@@ -472,7 +480,7 @@ class ES_Field_Solver
 						       depth, //ostride
 						       odist, //odist
 						       FFTW_BACKWARD,  
-						       FFTW_ESTIMATE /*flags*/);
+						       FFTW_ESTIMATE );
 
 	    auto _find_jf_fft = KOKKOS_LAMBDA( const int i, const int j, const int k ){ 
 		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
@@ -483,15 +491,51 @@ class ES_Field_Solver
 		//std::cout<<i<<" "<<fft_coefficients[i]<<std::endl;
 	    };
 
-	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
 	    Kokkos::parallel_for("find_jf_fft", fft_exec_policy, _find_jf_fft );
 
-	    //	    fftwf_plan plan_fft = fftwf_plan_dft_3d(nx,ny,nz, reinterpret_cast<fftwf_complex *>(fft_coefficients), reinterpret_cast<fftwf_complex *>(fft_out), FFTW_FORWARD,  FFTW_ESTIMATE);
 						 
 	    fftwf_execute(plan_fft);
+	    std::complex<real_t> I(0.0,1.0);
+	    //Perform div,poisson solve, and gradient in Fourier space
+	    auto _DPG_Fourier = KOKKOS_LAMBDA(  const int i, const int j, const int k ){ 
+		int i0 = i-ng;
+		int j0 = j-ng;
+		int k0 = k-ng;
 
-	    //fftwf_plan plan_ifft = fftwf_plan_dft_3d(nx,ny,nz, reinterpret_cast<fftwf_complex *>(fft_out),reinterpret_cast<fftwf_complex *>(fft_coefficients), FFTW_BACKWARD,  FFTW_ESTIMATE);
-						  
+		real_t kx,ky,kz;
+		const int f0 = VOXEL(k0,   j0,   k0,   nx, ny, nz, 0);
+		//d(jfx)/dx
+		if(i0<(nx+1)/2+1) {
+		    kx = (real_t)i0*2.0*M_PI*iLx;
+		}else{
+		    kx = (real_t)(nx-i0)*2.0*M_PI*iLx;
+		}
+
+		//d(jfy)/dy
+		if(j0<(ny+1)/2+1) {
+		    ky = (real_t)j0*2.0*M_PI*iLy;
+		}else{
+		    ky = (real_t)(ny-j0)*2.0*M_PI*iLy;
+		}
+
+		//d(jfz)/dz
+		if(k0<(nz+1)/2+1) {
+		    kz = (real_t)k0*2.0*M_PI*iLz;
+		}else{
+		    kz = (real_t)(nz-k0)*2.0*M_PI*iLz;
+		}
+		
+		std::complex<real_t> kdotj = fft_out[3*f0+0]*kx+fft_out[3*f0+1]*ky+fft_out[3*f0+2]*kz;
+		real_t k2 = kx*kx+ky*ky+kz*kz;
+		if(i0==0&&j0==0&&k0==0) k2 = 1.;
+		std::complex<real_t> phif = kdotj/k2;
+		if(i0==0&&j0==0&&k0==0) phif = 0.;
+		fft_out[3*f0+0]=kx*phif;
+		fft_out[3*f0+1]=ky*phif;
+		fft_out[3*f0+2]=kz*phif;
+	    };
+
+	    Kokkos::parallel_for("DPG_Fourier", fft_exec_policy, _DPG_Fourier );
 
 	    fftwf_execute(plan_ifft);
 
@@ -510,16 +554,56 @@ class ES_Field_Solver
 
 	    delete[] fft_coefficients;
 	    delete[] fft_out;
-#endif	    
 
+#endif	    //end fft
+	    */
+	    //remove the average (1D problems only)
+	    real_t jx_avg = 0,jy_avg=0,jz_avg=0;
+	    if(nx==1||ny==1||nz==1){
+		if(nx>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfx(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jx_avg );
+		    jx_avg /=n_inner_cell;
+		}
+
+		if(ny>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfy(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jy_avg );
+		    jy_avg /=n_inner_cell;
+		}
+
+		if(nz>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfz(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jz_avg );
+		    jz_avg /=n_inner_cell;
+		}
+	    }
+	    
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
+	    const real_t cjx = (nx>1)?dt_eps0:0;
+	    const real_t cjy = (ny>1)?dt_eps0:0;
+	    const real_t cjz = (nz>1)?dt_eps0:0;
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
-                const real_t cj =dt_eps0;
-                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
-                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
-                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+                ex(i) = ex(i) + ( - cjx * (jfx(i)-jx_avg) ) ;
+                ey(i) = ey(i) + ( - cjy * (jfy(i)-jy_avg) ) ;
+                ez(i) = ez(i) + ( - cjz * (jfz(i)-jz_avg) ) ;
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
