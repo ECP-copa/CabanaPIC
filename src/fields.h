@@ -435,16 +435,15 @@ class ES_Field_Solver
 	    
 #else //on CPU
 
-	    auto fft_coefficients = new std::complex<real_t>[n_inner_cell];
-	    auto fft_out = new std::complex<real_t>[n_inner_cell];
+	    auto fft_coefficients = new std::complex<real_t>[n_inner_cell*3];
+	    auto fft_out = new std::complex<real_t>[n_inner_cell*3];
 
 	    //plan
 	    int rank = 3;
 	    int n[3] = {nx, ny, nz};
-	    int depth = 1;
-	    int idist = 0, odist = 0; /* unused because howmany = 1 */
-	    int istride = 1;
-	    int ostride = 1; /* array is contiguous in memory */
+	    int depth = 3;
+	    int idist = 1, odist = 1;
+	    int istride = 3,ostride = 3;
 	    int *inembed = n, *onembed = n;
 
 	    fftwf_plan plan_fft = fftwf_plan_many_dft (rank, //rank
@@ -464,11 +463,11 @@ class ES_Field_Solver
 	    fftwf_plan plan_ifft = fftwf_plan_many_dft (rank, //rank
 						       n, //dims -- this doesn't include zero-padding
 						       depth, //howmany
-						       reinterpret_cast<fftwf_complex *>(fft_coefficients), //in
+						       reinterpret_cast<fftwf_complex *>(fft_out), //in
 						       inembed, //inembed
 						       depth, //istride
 						       idist, //idist
-						       reinterpret_cast<fftwf_complex *>(fft_out), //out
+						       reinterpret_cast<fftwf_complex *>(fft_coefficients), //out
 						       onembed, //onembed
 						       depth, //ostride
 						       odist, //odist
@@ -478,9 +477,11 @@ class ES_Field_Solver
 	    auto _find_jf_fft = KOKKOS_LAMBDA( const int i, const int j, const int k ){ 
 		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
 		const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
-		fft_coefficients[f0] = jfy(f1);
+		fft_coefficients[3*f0+0] = jfx(f1);
+		fft_coefficients[3*f0+1] = jfy(f1);
+		fft_coefficients[3*f0+2] = jfz(f1);
 		//std::cout<<i<<" "<<fft_coefficients[i]<<std::endl;
-	    };   
+	    };
 
 	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
 	    Kokkos::parallel_for("find_jf_fft", fft_exec_policy, _find_jf_fft );
@@ -498,9 +499,11 @@ class ES_Field_Solver
 	    auto _find_jf_ifft = KOKKOS_LAMBDA( const int i, const int j, const int k ){ 
 	    	const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
 	    	const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
-	    	jfy(f1) = fft_coefficients[f0].real()/n_inner_cell;
+	    	jfx(f1) = fft_coefficients[3*f0+0].real()/n_inner_cell;
+	    	jfy(f1) = fft_coefficients[3*f0+1].real()/n_inner_cell;
+	    	jfz(f1) = fft_coefficients[3*f0+2].real()/n_inner_cell;
 	    	//std::cout<<i<<" "<<fft_coefficients[i]<<std::endl;
-	    };   
+	    };  
 
 	    Kokkos::parallel_for("find_jf_ifft", fft_exec_policy, _find_jf_ifft );
 
