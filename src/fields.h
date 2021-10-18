@@ -402,10 +402,17 @@ class ES_Field_Solver
 
 	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
 
-	    /*
+	    //for many ffts
+	    int rank = 3;
+	    int n[3] = {nx, ny, nz};
+	    int depth = 3;
+	    int idist = 1, odist = 1;
+	    int istride = 3,ostride = 3;
+	    int *inembed = n, *onembed = n;
+
 	    //start fft
 #ifdef USE_GPU
-	    size_t SIGNAL_SIZE = ny;
+	    size_t SIGNAL_SIZE = n_inner_cell*3;
 	    int mem_size = sizeof(cufftComplex) * SIGNAL_SIZE;
 	    // Allocate device memory for signal
 	    cufftComplex* fft_coefficients;
@@ -413,30 +420,96 @@ class ES_Field_Solver
 	    cudaMalloc((void**)&fft_coefficients, mem_size);
 	    cudaMalloc((void**)&fft_out, mem_size);	    
 
-	    auto _find_jf_fft_1dy = KOKKOS_LAMBDA( const int i ){ //for(int i=0; i<ny; ++i){
-		const int f0 = VOXEL(1,   i+ng,   1,   nx, ny, nz, ng);
-		fft_coefficients[i].x = jfx(f0);
-		fft_coefficients[i].y = 0;
+	    auto _find_jf_fft = KOKKOS_LAMBDA( const int i, const int j, const int k  ){ //for(int i=0; i<ny; ++i){
+		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
+		const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
+		fft_coefficients[3*f0+0].x = jfx(f1);
+		fft_coefficients[3*f0+0].y = 0;
+		fft_coefficients[3*f0+1].x = jfy(f1);
+		fft_coefficients[3*f0+1].y = 0;
+		fft_coefficients[3*f0+2].x = jfz(f1);
+		fft_coefficients[3*f0+2].y = 0;
+
 		//printf ("real part = %15.8e  imag part = %15.8e\n", fft_coefficients[i].x, fft_coefficients[i].y);
 	    };   
-            Kokkos::RangePolicy<ExecutionSpace> exec_policy_1dy( 0, ny );
-	    Kokkos::parallel_for( exec_policy_1dy, _find_jf_fft_1dy, "find_jf_fft_1dy" );
 
-	    // CUFFT plan
-	    cufftHandle plan;
-	    cufftPlan1d(&plan, SIGNAL_SIZE, CUFFT_C2C, 1);
+	    Kokkos::parallel_for("find_jf_fft", fft_exec_policy, _find_jf_fft );
+	    
+	    // CUFFT plans
+	    cufftHandle forward_plan, inverse_plan;
+	    cufftPlanMany(&forward_plan, rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, depth);
+
+	    cufftPlanMany(&inverse_plan, rank, n, onembed, ostride, odist, inembed, istride, idist, CUFFT_C2C, depth);
+
 	    // Transform signal 
-	    cufftExecC2C(plan, (cufftComplex *)fft_coefficients, (cufftComplex *)fft_out, CUFFT_FORWARD);
+	    cufftExecC2C(forward_plan, (cufftComplex *)fft_coefficients, (cufftComplex *)fft_out, CUFFT_FORWARD);
+	    
+	    //Perform div,poisson solve, and gradient in Fourier space
+	    auto _DPG_Fourier = KOKKOS_LAMBDA(  const int i, const int j, const int k ){ 
+		int i0 = i-ng;
+		int j0 = j-ng;
+		int k0 = k-ng;
+
+		real_t kx,ky,kz;
+		const int f0 = VOXEL(k0,   j0,   k0,   nx, ny, nz, 0);
+		//d(jfx)/dx
+		if(i0<(nx+1)/2+1) {
+		    kx = (real_t)i0*2.0*M_PI*iLx;
+		}else{
+		    kx = (real_t)(nx-i0)*2.0*M_PI*iLx;
+		}
+
+		//d(jfy)/dy
+		if(j0<(ny+1)/2+1) {
+		    ky = (real_t)j0*2.0*M_PI*iLy;
+		}else{
+		    ky = (real_t)(ny-j0)*2.0*M_PI*iLy;
+		}
+
+		//d(jfz)/dz
+		if(k0<(nz+1)/2+1) {
+		    kz = (real_t)k0*2.0*M_PI*iLz;
+		}else{
+		    kz = (real_t)(nz-k0)*2.0*M_PI*iLz;
+		}
+		
+		cufftComplex kdotj;
+		kdotj.x = fft_out[3*f0+0].x*kx+fft_out[3*f0+1].x*ky+fft_out[3*f0+2].x*kz;
+		kdotj.y = fft_out[3*f0+0].y*kx+fft_out[3*f0+1].y*ky+fft_out[3*f0+2].y*kz;;
+
+		real_t k2 = kx*kx+ky*ky+kz*kz;
+		if(i0==0&&j0==0&&k0==0) k2 = 1.;
+		cufftComplex phif;
+		phif.x = kdotj.x/k2;
+		phif.y = kdotj.y/k2;;
+
+		if(i0==0&&j0==0&&k0==0){
+		    phif.x = 0.;
+		    phif.y = 0.;
+		}
+
+		fft_out[3*f0+0].x=kx*phif.x;
+		fft_out[3*f0+0].y=kx*phif.y;
+		fft_out[3*f0+1].x=ky*phif.x;
+		fft_out[3*f0+1].y=ky*phif.y;
+		fft_out[3*f0+2].x=kz*phif.x;
+		fft_out[3*f0+2].y=kz*phif.y;
+	    };
+
+	    Kokkos::parallel_for("DPG_Fourier", fft_exec_policy, _DPG_Fourier );
 
 	    // Transform signal back
-	    cufftExecC2C(plan, (cufftComplex *)fft_out, (cufftComplex *)fft_coefficients, CUFFT_INVERSE);
+	    cufftExecC2C(inverse_plan, (cufftComplex *)fft_out, (cufftComplex *)fft_coefficients, CUFFT_INVERSE);
 
-	    auto _find_jf_1dy = KOKKOS_LAMBDA( const int i ){ //for(int i=0; i<ny; ++i){
-		const int f0 = VOXEL(1,   i+ng,   1,   nx, ny, nz, ng);
-		jfx(f0) = fft_coefficients[i].x/SIGNAL_SIZE;
-	    };   
+	    auto _find_jf_ifft = KOKKOS_LAMBDA( const int i, const int j, const int k  ){ //for(int i=0; i<ny; ++i){
+		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
+	    	const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
+	    	jfx(f1) = fft_coefficients[3*f0+0].x/n_inner_cell;
+	    	jfy(f1) = fft_coefficients[3*f0+1].x/n_inner_cell;
+	    	jfz(f1) = fft_coefficients[3*f0+2].x/n_inner_cell;
+	    };
 
-            Kokkos::parallel_for( exec_policy_1dy, _find_jf_1dy, "find_jf_1dy" );
+	    Kokkos::parallel_for("find_jf_ifft", fft_exec_policy, _find_jf_ifft );
 
 	    cudaFree(fft_coefficients);
 	    cudaFree(fft_out);
@@ -447,13 +520,6 @@ class ES_Field_Solver
 	    auto fft_out = new std::complex<real_t>[n_inner_cell*3];
 
 	    //plan
-	    int rank = 3;
-	    int n[3] = {nx, ny, nz};
-	    int depth = 3;
-	    int idist = 1, odist = 1;
-	    int istride = 3,ostride = 3;
-	    int *inembed = n, *onembed = n;
-
 	    fftwf_plan plan_fft = fftwf_plan_many_dft (rank, //rank
 						       n, //dims -- this doesn't include zero-padding
 						       depth, //howmany
@@ -493,7 +559,7 @@ class ES_Field_Solver
 
 	    Kokkos::parallel_for("find_jf_fft", fft_exec_policy, _find_jf_fft );
 
-						 
+	    // Transform signal 
 	    fftwf_execute(plan_fft);
 	    std::complex<real_t> I(0.0,1.0);
 	    //Perform div,poisson solve, and gradient in Fourier space
@@ -537,11 +603,12 @@ class ES_Field_Solver
 
 	    Kokkos::parallel_for("DPG_Fourier", fft_exec_policy, _DPG_Fourier );
 
+	    // Transform signal back
 	    fftwf_execute(plan_ifft);
 
 
 	    auto _find_jf_ifft = KOKKOS_LAMBDA( const int i, const int j, const int k ){ 
-	    	const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
+		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
 	    	const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
 	    	jfx(f1) = fft_coefficients[3*f0+0].real()/n_inner_cell;
 	    	jfy(f1) = fft_coefficients[3*f0+1].real()/n_inner_cell;
@@ -556,7 +623,7 @@ class ES_Field_Solver
 	    delete[] fft_out;
 
 #endif	    //end fft
-	    */
+	    
 	    //remove the average (1D problems only)
 	    real_t jx_avg = 0,jy_avg=0,jz_avg=0;
 	    if(nx==1||ny==1||nz==1){
