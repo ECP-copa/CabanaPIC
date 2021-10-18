@@ -152,7 +152,7 @@ void accumulate_rho_p_1D(
 	rho_accumulator(ii-1) += (0.5*(0.5-xp*0.5)*(0.5-xp*0.5))*wp;
 	*/
     };
-    Cabana::SimdPolicy<particle_list_t::vector_length, Kokkos::DefaultHostExecutionSpace> vec_policy(0, particles.size() );
+    Cabana::SimdPolicy<particle_list_t::vector_length, ExecutionSpace> vec_policy(0, particles.size() );
     Cabana::simd_parallel_for( vec_policy, _collect_rho, "collect_rho()" );
 
     /*
