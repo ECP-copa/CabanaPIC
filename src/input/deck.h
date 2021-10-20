@@ -144,8 +144,8 @@ class Particle_Initializer {
                     real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
 
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x.access(s,i) = sign *v0*gam*(1.0+na*sign);
-                    velocity_y.access(s,i) = 0;
+                    velocity_x.access(s,i) = 0;
+                    velocity_y.access(s,i) = sign *v0*gam*(1.0+na*sign);
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
@@ -436,7 +436,7 @@ class Input_Deck : public _Input_Deck {
             // User puts initialization code here
             // Example: EM 2 Stream in 1d?
             nx = 1;
-            ny = 32;
+            ny = 33;
             nz = 1;
 
             num_steps = 6000;

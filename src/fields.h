@@ -5,6 +5,7 @@
 #include "Cabana_Parallel.hpp" // Simd parallel for
 #include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 #include "input/deck.h"
+#include <cassert>
 
 // TODO: Namespace this stuff?
 
@@ -386,6 +387,49 @@ class ES_Field_Solver
             auto jfy = Cabana::slice<FIELD_JFY>(fields);
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
+	    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+
+	    //remove the average (1D problems only)
+	    assert(nx*ny==1||ny*nz==1||nz*nx==1);
+	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> reduce_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+	    size_t n_inner_cell = nx*ny*nz;
+	    real_t jx_avg = 0,jy_avg=0,jz_avg=0;
+	    if(nx==1||ny==1||nz==1){
+		if(nx>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfx(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", reduce_exec_policy, _find_javg, jx_avg );
+		    jx_avg /=n_inner_cell;
+		}
+
+		if(ny>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfy(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", reduce_exec_policy, _find_javg, jy_avg );
+		    jy_avg /=n_inner_cell;
+		}
+
+		if(nz>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfz(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", reduce_exec_policy, _find_javg, jz_avg );
+		    jz_avg /=n_inner_cell;
+		}
+	    }
+
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
@@ -407,7 +451,8 @@ class ES_Field_Solver
                 real_t pz,
                 size_t nx,
                 size_t ny,
-                size_t nz
+                size_t nz,
+		size_t ng
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
@@ -425,6 +470,23 @@ class ES_Field_Solver
             Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
             return e_tot_energy*0.5f;
         }
+
+            void dump_fields(FILE * fp,
+                field_array_t& d_fields,
+                real_t xmin,
+                real_t ymin,
+                real_t zmin,
+                real_t dx,
+                real_t dy,
+                real_t dz,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng
+                )
+        {
+	    //TODO: implement this
+	}
 };
 
 
