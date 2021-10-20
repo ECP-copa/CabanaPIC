@@ -7,6 +7,7 @@
 #define real_t REAL_TYPE
 #endif
 
+
 #include <Kokkos_ScatterView.hpp>
 #include <Cabana_Types.hpp>
 #include <Cabana_MemberTypes.hpp>
@@ -37,6 +38,8 @@ using ExecutionSpace = Kokkos::Cuda;
     using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
+
+typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
 
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
