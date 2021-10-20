@@ -23,6 +23,8 @@ An example build line will look something like this:
 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" ..
 ```
 
+The default filed solver is "EM"; to use the "ES" solver, add `-DSOLVER_TYPE="ES"`.
+
 For GPU builds, you additionally need to point the CXX compiler to the Kokkos
 Cuda wrapper, you can do this by doing something like:
 
