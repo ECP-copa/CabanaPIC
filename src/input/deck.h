@@ -144,8 +144,8 @@ class Particle_Initializer {
                     real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
 
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x.access(s,i) = sign *v0*gam*(1.0+na*sign);
-                    velocity_y.access(s,i) = 0;
+                    velocity_x.access(s,i) = 0;
+                    velocity_y.access(s,i) = sign *v0*gam*(1.0+na*sign);
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
@@ -440,7 +440,7 @@ class Input_Deck : public _Input_Deck {
             nz = 1;
 
             num_steps = 300;
-            nppc = 300;
+            nppc = 100;
 
             //v0 = 0.2;
             v0 = 0.0866025403784439;

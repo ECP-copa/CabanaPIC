@@ -111,6 +111,10 @@ class Visualizer {
             auto position_y = Cabana::slice<PositionY>(particles);
             auto position_z = Cabana::slice<PositionZ>(particles);
 
+            auto velocity_x = Cabana::slice<VelocityX>(particles);
+            auto velocity_y = Cabana::slice<VelocityY>(particles);
+            auto velocity_z = Cabana::slice<VelocityZ>(particles);
+
             size_t write_count = 0;
             for ( std::size_t idx = 0; idx != particles.size(); ++idx )
             {
@@ -118,7 +122,11 @@ class Visualizer {
                         real_t y = position_y(idx);
                         real_t z = position_z(idx);
 
-                        vis_file << x << " " << y << " " << z << std::endl;
+								real_t vx = velocity_x(idx);
+								real_t vy = velocity_y(idx);
+								real_t vz = velocity_z(idx);
+
+                        vis_file << x << " " << y << " " << z << " " << vx << " " << vy << " " << vz << std::endl;
                         write_count++;
             }
         }

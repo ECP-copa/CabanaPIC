@@ -19,6 +19,7 @@
 #include "visualization.h"
 
 #include "input/deck.h"
+//#include "../decks/2stream-short.cxx"
 
 // Global variable to hold paramters
 //Parameters params;
@@ -57,6 +58,9 @@ int main( int argc, char* argv[] )
         const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
         real_t dxp = 2.f / (npc);
+
+		  // implicitness
+		  bool implicit = true;
 
         // Define some consts
         const real_t dx = deck.dx;
@@ -102,7 +106,10 @@ int main( int argc, char* argv[] )
         // Create the particle list.
         particle_list_t particles( "particles", num_particles );
 
-        // Initialize particles.
+		  // TODO: Wrap this in an ifdef statement
+		  particle_list_t old_particles( "old_particles", num_particles );
+       
+		  // Initialize particles.
         deck.initialize_particles( particles, nx, ny, nz, num_ghosts, dxp, npc, we, v0 );
 
         grid_t* grid = new grid_t();
@@ -121,16 +128,15 @@ int main( int argc, char* argv[] )
         //KOKKOS_SCATTER_DUPLICATED,
         //KOKKOS_SCATTER_ATOMIC>(accumulators);
 
-<<<<<<< HEAD
 		  // Create array to hold fields
-=======
-	rho_array_t rho_accumulator("rho_accumulator",num_cells);
+		  rho_array_t rho_accumulator("rho_accumulator",num_cells);
 
-	//get the initial charge density
-	accumulate_rho_p_1D(particles,rho_accumulator,nx,ny,nz,num_ghosts,dx,dy,dz,qsp);
+		  //get the initial charge density
+		  accumulate_rho_p_1D(particles,rho_accumulator,nx,ny,nz,num_ghosts,dx,dy,dz,qsp);
 	
->>>>>>> 5194f394ab9e6dedb8bd1ccae21d854e3916d72a
         field_array_t fields("fields", num_cells);
+		  // TODO: wrap this in an ifdef
+		  field_array_t old_fields( "old_fields", num_cells);
 
         // Zero out the interpolator
         // Techincally this is optional?
@@ -202,6 +208,12 @@ int main( int argc, char* argv[] )
             );
         }
 
+		  int itcount;
+		  int maxits = 6;
+
+		  real_t dt_frac = 1.;
+		  bool converged, last_iteration;
+
         // Main loop //
         for (int step = 1; step <= num_steps; step++)
         {
@@ -216,48 +228,92 @@ int main( int argc, char* argv[] )
             // Sort by cell index
             //auto keys = particles.slice<Cell_Index>();
             //auto bin_data = Cabana::sortByKey( keys );
+				//
+				
+				// TODO: Need to wrap this in an ifdef statement
+				Cabana::deep_copy( old_particles, particles ); // record particle states at start of time-step for implicit run
+				Cabana::deep_copy( old_fields, fields ); // do the same for fields
+			   
+				converged = false;
+				last_iteration = false; // a flag to see if we're on the last iteration.  If we are, do a full time-step instead of a half.
+				itcount = 0; 
+				while ( !converged )
+				{
+						  if ( last_iteration )
+						  {
+						  		dt_frac = 1.; 
+						  }
+						  else { dt_frac = 0.5; }
+            
+						  Cabana::deep_copy( particles, old_particles ); // reset particle states to beginning of time-step
+						  // Particle push for half a time-step
+						  push(
+									 particles,
+									 interpolators,
+									 dt_frac*qdt_2mc,
+									 dt_frac*cdt_dx,
+									 dt_frac*cdt_dy,
+									 dt_frac*cdt_dz,
+									 qsp,
+									 scatter_add,
+									 grid,
+									 nx,
+									 ny,
+									 nz,
+									 num_ghosts,
+									 boundary,
+									 !last_iteration
+								);
 
-            // Move
-            push(
-                    particles,
-                    interpolators,
-                    qdt_2mc,
-                    cdt_dx,
-                    cdt_dy,
-                    cdt_dz,
-                    qsp,
-                    scatter_add,
-                    grid,
-                    nx,
-                    ny,
-                    nz,
-                    num_ghosts,
-                    boundary
-                );
+						  if ( !last_iteration )
+						  {
+						  		Cabana::deep_copy( fields, old_fields ); // Reset fields back to beginning of time-step
+						  }
 
-            Kokkos::Experimental::contribute(accumulators, scatter_add);
+						  Kokkos::Experimental::contribute(accumulators, scatter_add); 
+						  
+						  // Only reset the data if these two are not the same arrays
+						  scatter_add.reset_except(accumulators);
 
-            // Only reset the data if these two are not the same arrays
-            scatter_add.reset_except(accumulators);
+						  // TODO: boundaries? MPI
+						  //boundary_p(); // Implies Parallel?
 
-            // TODO: boundaries? MPI
-            //boundary_p(); // Implies Parallel?
+						  // Map accumulator current back onto the fields
+						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array?
 
-            // Map accumulator current back onto the fields
-            unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
+						  // Half advance the magnetic field from B_0 to B_{1/2}
+						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            // Half advance the magnetic field from B_0 to B_{1/2}
-            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+						  // Advance the electric field from E_0 to E_1
+						  if ( !last_iteration )
+						  {
+						  		field_solver.advance_e(fields, dt_frac*px, dt_frac*py, dt_frac*pz, nx, ny, nz, num_ghosts, dt_eps0);
+						  }
+						  else
+						  {
+								field_solver.extend_e(fields, old_fields); // get E_1 given E_{1/2} and E_0
+						  }
+						  // Half advance the magnetic field from B_{1/2} to B_1
+						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
-            // Advance the electric field from E_0 to E_1
-            field_solver.advance_e(fields, px, py, pz, nx, ny, nz, num_ghosts, dt_eps0);
+						  if ( !last_iteration ) // only need to reload interpolator array if we're going to do another iteration
+						  {
+									 // Convert fields to interpolators for next iteration
+									 load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
+									 clear_accumulator_array(fields, accumulators, nx, ny, nz);
+						  }
 
-            // Half advance the magnetic field from B_{1/2} to B_1
-            field_solver.advance_b(fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+						  itcount++;
+						  if ( last_iteration ) { converged = true; }
+						  if ( itcount >= maxits-1 ) { last_iteration = true; } // Currently, don't check for convergence, just do a fixed number of iterations
+
+						  std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
+				}
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
                 dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+					 dump_kinetic_energy( particles, step, step*dt );
             }
 
             // TODO: abstract this out

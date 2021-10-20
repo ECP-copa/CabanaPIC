@@ -341,6 +341,31 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
         {
             Solver_Type::advance_e( fields, px, py, pz, nx, ny, nz, ng, dt_eps0);
         }
+
+		  // Given E_n and E_{n+1/2}, puts E_{n+1} into the array of E_{n+1/2}
+		  void extend_e(
+		  			field_array_t& fields_nph, 
+					field_array_t& fields_n)
+		  {
+            auto ex = Cabana::slice<FIELD_EX>(fields_nph);
+            auto ey = Cabana::slice<FIELD_EY>(fields_nph);
+            auto ez = Cabana::slice<FIELD_EZ>(fields_nph);
+            
+            auto ex_old = Cabana::slice<FIELD_EX>(fields_n);
+            auto ey_old = Cabana::slice<FIELD_EY>(fields_n);
+            auto ez_old = Cabana::slice<FIELD_EZ>(fields_n);
+				
+				auto _extend_e = KOKKOS_LAMBDA( const int i )
+            {
+                ex(i) = ex(i) + ( ex(i) - ex_old(i) ) ;
+                ey(i) = ey(i) + ( ey(i) - ey_old(i) ) ;
+                ez(i) = ez(i) + ( ez(i) - ez_old(i) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields_nph.size() );
+            Kokkos::parallel_for( exec_policy, _extend_e, "extend_e()" );
+		  }
+
 };
 
 // FIXME: Field_solver is repeated => bad naming
@@ -424,7 +449,7 @@ class ES_Field_Solver
             real_t e_tot_energy=0;
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
             Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
-            return e_tot_energy*0.5f;
+            return e_tot_energy*0.5;
         }
 };
 
@@ -569,7 +594,7 @@ class EM_Field_Solver
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
             Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
             real_t dV = 1.0; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
-            return e_tot_energy*0.5f*dV;
+            return e_tot_energy*0.5*dV;
         }
 
         real_t b_energy(

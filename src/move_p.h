@@ -169,7 +169,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         v2 -= v5;             /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */  \
         v3 += v5;             /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */  \
 
-       accumulate_j(x,y,z);
+       /*accumulate_j(x,y,z);
        // printf("move_p deposit v0 %e to %d \n",
        //         v0, ii);
        _asa(ii, accumulator_var::jx, 0) += v0; // q*ux;
@@ -188,6 +188,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
        _asa(ii, accumulator_var::jz, 1) += v1; // 0.0;
        _asa(ii, accumulator_var::jz, 2) += v2; // 0.0;
        _asa(ii, accumulator_var::jz, 3) += v3; // 0.0;
+		 */
 
 #   undef accumulate_j
 
