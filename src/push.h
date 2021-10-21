@@ -175,7 +175,7 @@ void push(
             velocity_y.access(s,i) = uy;
             velocity_z.access(s,i) = uz;
 
-            v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
+            v0   = one; ///sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
             /**/                                      // Get norm displacement
             ux  *= cdt_dx;
             uy  *= cdt_dy;
@@ -207,11 +207,7 @@ void push(
                 v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */   \
                 v4  = one-d##Z; /* v4 = 1-dz                            */   \
                 v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */   \
-                v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */   \
-                v0 += v5;       /* v0 = q ux [ (1-dy)(1-dz) + uy*uz/3 ] */   \
-                v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */   \
-                v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */   \
-                v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */
+                v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */   
 					
 					if ( deposit_current ) 
 					{
