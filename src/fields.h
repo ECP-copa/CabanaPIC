@@ -395,8 +395,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
             //Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({1,1,1}, {nx+1,ny+1,nz+1});
             Kokkos::parallel_reduce("e_energy", exec_policy, _e_energy, e_tot_energy );
-            real_t dV = 1.0; //Parameters::instance().dx * Parameters::instance().dy * Parameters::instance().dz;
-            return e_tot_energy*0.5f*dV;
+            return e_tot_energy*0.5f;
         }
 };
 
@@ -837,7 +836,8 @@ static auto make_field_solver(field_array_t& fields)
 }
 
 template<typename field_solver_t>
-void dump_energies(
+real_t dump_energies(
+	const particle_list_t& particles,
         field_solver_t& field_solver,
         field_array_t& fields,
         int step,
@@ -848,10 +848,37 @@ void dump_energies(
         size_t nx,
         size_t ny,
         size_t nz,
-        size_t ng
+        size_t ng,
+	real_t dV,
+	real_t tot_en0=0
         )
 {
-    real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
+    auto vx = Cabana::slice<VelocityX>(particles);
+    auto vy = Cabana::slice<VelocityY>(particles);
+    auto vz = Cabana::slice<VelocityZ>(particles);
+
+    auto weight = Cabana::slice<Weight>( particles );
+
+    // compute total kinetic energy
+    auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+	{
+	    lsum += weight(i)*( vx(i) * vx(i)
+				+vy(i) * vy(i)
+				+vz(i) * vz(i) );
+	};
+
+    real_t k_tot_energy=0, tot_energy,den;
+    Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles.size() );
+    Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
+    k_tot_energy = 0.5*k_tot_energy;
+
+
+    real_t e_en = dV*field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
+    tot_energy = e_en+k_tot_energy; //for ES
+    if(step==0) den = 0;	
+    else den = tot_energy - tot_en0;
+	
+    
     // Print energies to screen *and* dump them to disk
     // TODO: is it ok to keep opening and closing the file like this?
     // one per time step is probably fine?
@@ -866,17 +893,18 @@ void dump_energies(
         energy_file.open("energies.txt", std::ios::app); // append
     }
 
-    energy_file << step << " " << time << " " << e_en;
+    energy_file << step << " " << time << " " << e_en<<" "<<k_tot_energy<<" "<<den;
 #ifndef ES_FIELD_SOLVER
     // Only write b info if it's available
     real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz, ng);
     energy_file << " " << b_en;
     printf("%d %f %e %e\n",step, time, e_en, b_en);
 #else
-    printf("%d %f %e\n",step, time, e_en);
+    printf("%d %f %e %e %e\n",step, time, e_en,k_tot_energy,den);
 #endif
     energy_file << std::endl;
     energy_file.close();
+    return tot_energy;
 }
 
 #endif // pic_EM_fields_h

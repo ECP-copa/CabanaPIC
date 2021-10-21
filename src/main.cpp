@@ -66,6 +66,7 @@ int main( int argc, char* argv[] )
         const real_t dx = deck.dx;
         const real_t dy = deck.dy;
         const real_t dz = deck.dz;
+	const real_t dV = dx*dy*dz;
 
         real_t dt = deck.dt;
         real_t c = deck.c;
@@ -213,9 +214,10 @@ int main( int argc, char* argv[] )
 
 		  real_t dt_frac = 1.;
 		  bool converged, last_iteration;
-
+		  int step = 0;
+		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
         // Main loop //
-        for (int step = 1; step <= num_steps; step++)
+        for ( step = 1; step <= num_steps; step++)
         {
             //printf("Step %d \n", step);
 
@@ -307,13 +309,13 @@ int main( int argc, char* argv[] )
 						  if ( last_iteration ) { converged = true; }
 						  if ( itcount >= maxits-1 ) { last_iteration = true; } // Currently, don't check for convergence, just do a fixed number of iterations
 
-						  std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
+						  //std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
 				}
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
-					 dump_kinetic_energy( particles, step, step*dt );
+                real_t tot_en = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV,tot_en0);
+		//dump_kinetic_energy( particles, step, step*dt );
             }
 
             // TODO: abstract this out
