@@ -10,9 +10,9 @@ class Visualizer {
         std::ofstream vis_file;
 
 		  bool writeParticles = false;
-		  bool writeE = true;
-		  bool writeJ = true;
-		  bool writeGrid = true;
+		  bool writeE = false;
+		  bool writeJ = false;
+		  bool writeGrid = false;
 
         void write_header(size_t total_num_particles, size_t step, std::string data_name) {
 

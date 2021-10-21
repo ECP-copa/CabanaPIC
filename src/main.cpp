@@ -209,7 +209,7 @@ int main( int argc, char* argv[] )
         }
 
 		  int itcount;
-		  int maxits = 6;
+		  int maxits = 3;
 
 		  real_t dt_frac = 1.;
 		  bool converged, last_iteration;
