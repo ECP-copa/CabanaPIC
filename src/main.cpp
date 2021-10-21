@@ -60,6 +60,7 @@ int main( int argc, char* argv[] )
         const real_t dx = deck.dx;
         const real_t dy = deck.dy;
         const real_t dz = deck.dz;
+	const real_t dV = dx*dy*dz;
 
         real_t dt = deck.dt;
         real_t c = deck.c;
@@ -247,7 +248,7 @@ int main( int argc, char* argv[] )
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+                dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
             }
 
             // TODO: abstract this out

@@ -792,10 +792,11 @@ void dump_energies(
         size_t nx,
         size_t ny,
         size_t nz,
-        size_t ng
+        size_t ng,
+	real_t dV
         )
 {
-    real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
+    real_t e_en = dV*field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
     // Print energies to screen *and* dump them to disk
     // TODO: is it ok to keep opening and closing the file like this?
     // one per time step is probably fine?
