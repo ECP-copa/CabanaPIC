@@ -193,8 +193,11 @@ int main( int argc, char* argv[] )
             );
         }
 
+		  int step=0;
+		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts, dV);
+
         // Main loop
-        for (int step = 1; step <= num_steps; step++)
+        for (step = 1; step <= num_steps; step++)
         {
             //printf("Step %d \n", step);
 
@@ -248,7 +251,7 @@ int main( int argc, char* argv[] )
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
+                dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts, dV, tot_en0);
             }
 
             // TODO: abstract this out
