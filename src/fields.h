@@ -490,9 +490,9 @@ class ES_Field_Solver
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
                 const real_t cj =dt_eps0;
-                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
-                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
-                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+                ex(i) = ex(i) + ( - cj * (jfx(i)-jx_avg) ) ;
+                ey(i) = ey(i) + ( - cj * (jfy(i)-jy_avg) ) ;
+                ez(i) = ez(i) + ( - cj * (jfz(i)-jz_avg) ) ;
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
