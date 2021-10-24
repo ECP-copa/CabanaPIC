@@ -4,6 +4,13 @@
 #include <types.h>
 #include "move_p.h"
 
+
+// This implements the particle push
+// v_{n+1} = v_n + (q/m) * dt * ( E(x_n) + (1/c) * v_{n+1/2) cross B(x_n) )
+// x_{n+1} = x_n + dt * v_n
+// This is the second-order, explicit Boris scheme IF you've performed the initial 
+// backward half-ste in the velocity, so that v_n -> v_{n-1/2}
+// E and B are evaluated using whatevery fields you had when you loaded the interpolator
 template <class _accumulator>
 void push(
         particle_list_t& particles,
@@ -19,7 +26,8 @@ void push(
         const size_t ny,
         const size_t nz,
         const size_t num_ghosts,
-        Boundary boundary
+        Boundary boundary, 
+		  bool deposit_current = true
         )
 {
 
@@ -41,6 +49,7 @@ void push(
     const real_t one            = 1.;
     const real_t one_third      = 1./3.;
     const real_t two_fifteenths = 2./15.;
+	 const real_t one_half		  = 1./2.;
 
     // We prefer making slices out side of the llambda
     auto _ex = Cabana::slice<EX>(f0);
@@ -141,11 +150,13 @@ void push(
             real_t uy = velocity_y.access(s,i);   // Load velocity
             real_t uz = velocity_z.access(s,i);   // Load velocity
 
+	    real_t u0x = ux,u0y=uy,u0z=uz;
+
             ux  += hax;                               // Half advance E
             uy  += hay;
             uz  += haz;
 
-            real_t v0   = qdt_2mc/sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
+            real_t v0   = qdt_2mc; // /sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
             /**/                                      // Boris - scalars
             real_t v1   = cbx*cbx + (cby*cby + cbz*cbz);
             real_t v2   = (v0*v0)*v1;
@@ -155,18 +166,25 @@ void push(
             v0   = ux + v3*( uy*cbz - uz*cby );       // Boris - uprime
             v1   = uy + v3*( uz*cbx - ux*cbz );
             v2   = uz + v3*( ux*cby - uy*cbx );
-            ux  += v4*( v1*cbz - v2*cby );            // Boris - rotation
+            ux  += v4*( v1*cbz - v2*cby );            // Boris - rotation 
             uy  += v4*( v2*cbx - v0*cbz );
             uz  += v4*( v0*cby - v1*cbx );
             ux  += hax;                               // Half advance E
             uy  += hay;
             uz  += haz;
-
-            velocity_x.access(s,i) = ux;
-            velocity_y.access(s,i) = uy;
-            velocity_z.access(s,i) = uz;
-
-            v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
+	    if ( !deposit_current ) {
+		velocity_x.access(s,i) = ux;
+		velocity_y.access(s,i) = uy;
+		velocity_z.access(s,i) = uz;
+		u0x = 0.5*(u0x+ux)*cdt_dx;
+		u0y = 0.5*(u0y+uy)*cdt_dy;
+		u0z = 0.5*(u0z+uz)*cdt_dz;
+	    }else{
+		u0x = ux*cdt_dx;
+		u0y = uy*cdt_dy;
+		u0z = uz*cdt_dz;		
+	    }
+            v0   = one; ///sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
             /**/                                      // Get norm displacement
             ux  *= cdt_dx;
             uy  *= cdt_dy;
@@ -181,10 +199,55 @@ void push(
             v4   = v1 + uy;
             real_t v5   = v2 + uz;
 
+				real_t new_x = v3; 
+				real_t new_y = v4; 
+				real_t new_z = v5;
+
             real_t q = weight.access(s,i)*qsp;   // Load charge
+                
+					 // moving calculation of j before the updating of position for semi-implicit purposes //
+					 #define CALC_J(X,Y,Z)                                        \
+                v4  = q*u0##X;   /* v2 = q ux                            */   \
+                v1  = v4*d##Y;  /* v1 = q ux dy                         */   \
+                v0  = v4-v1;    /* v0 = q ux (1-dy)                     */   \
+                v1 += v4;       /* v1 = q ux (1+dy)                     */   \
+                v4  = one+d##Z; /* v4 = 1+dz                            */   \
+                v2  = v0*v4;    /* v2 = q ux (1-dy)(1+dz)               */   \
+                v3  = v1*v4;    /* v3 = q ux (1+dy)(1+dz)               */   \
+                v4  = one-d##Z; /* v4 = 1-dz                            */   \
+                v0 *= v4;       /* v0 = q ux (1-dy)(1-dz)               */   \
+                v1 *= v4;       /* v1 = q ux (1+dy)(1-dz)               */   
+					
+	    //if ( deposit_current ) 
+					{
+                CALC_J( x,y,z );
+                //std::cout << "Contributing " << v0 << ", " << v1 << ", " << v2 << ", " << v3 << std::endl;
+                accumulators_scatter_access(ii, accumulator_var::jx, 0) += v0; // q*ux*(1-dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 1) += v1; // q*ux*(1+dy)*(1-dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 2) += v2; // q*ux*(1-dy)*(1+dz);
+                accumulators_scatter_access(ii, accumulator_var::jx, 3) += v3; // q*ux*(1+dy)*(1+dz);
+
+                // printf("push deposit v0 %e to %d where ux = %e uy = %e and uz = %e \n",
+                //         v0, ii, ux, uy, uz);
+
+                CALC_J( y,z,x );
+                accumulators_scatter_access(ii, accumulator_var::jy, 0) += v0; // q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jy, 1) += v1; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jy, 2) += v2; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jy, 3) += v3; // 0.0;
+
+                CALC_J( z,x,y );
+                accumulators_scatter_access(ii, accumulator_var::jz, 0) += v0; // q*ux;
+                accumulators_scatter_access(ii, accumulator_var::jz, 1) += v1; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jz, 2) += v2; // 0.0;
+                accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
+					}
+
+                #undef CALC_J
 
             // Check if inbnds
-            if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
+            //if(  v3<=one &&  v4<=one &&  v5<=one && -v3<=one && -v4<=one && -v5<=one )
+				if( new_x<=one && new_y<=one && new_z<=one && -new_x<=one && -new_y <=one && -new_z<=one )
             {
 
                 // Common case (inbnds).  Note: accumulator values are 4 times
@@ -193,14 +256,14 @@ void push(
 
 
                 // Store new position
-                position_x.access(s,i) = v3;
-                position_y.access(s,i) = v4;
-                position_z.access(s,i) = v5;
+                position_x.access(s,i) = new_x; //v3;
+                position_y.access(s,i) = new_y; //v4;
+                position_z.access(s,i) = new_z; //v5;
 
-                dx = v0;                                // Streak midpoint
-                dy = v1;
-                dz = v2;
-                v5 = q*ux*uy*uz*one_third;              // Compute correction
+                //dx = v0;                                // Streak midpoint
+                //dy = v1;
+                //dz = v2;
+                //v5 = q*ux*uy*uz*one_third;              // Compute correction
 
                 //real_t* a  = (real_t *)( a0[ii].a );              // Get accumulator
 
@@ -214,8 +277,9 @@ void push(
                 // accumulators_scatter_access(ii, accumulator_var::jx, 1) += 0.0;
                 // accumulators_scatter_access(ii, accumulator_var::jx, 2) += 0.0;
                 // accumulators_scatter_access(ii, accumulator_var::jx, 3) += 0.0;
-
-                #define CALC_J(X,Y,Z)                                        \
+					 
+					 
+                //#define CALC_J(X,Y,Z)                                        \
                 v4  = q*u##X;   /* v2 = q ux                            */   \
                 v1  = v4*d##Y;  /* v1 = q ux dy                         */   \
                 v0  = v4-v1;    /* v0 = q ux (1-dy)                     */   \
@@ -230,7 +294,7 @@ void push(
                 v1 -= v5;       /* v1 = q ux [ (1+dy)(1-dz) - uy*uz/3 ] */   \
                 v2 -= v5;       /* v2 = q ux [ (1-dy)(1+dz) - uy*uz/3 ] */   \
                 v3 += v5;       /* v3 = q ux [ (1+dy)(1+dz) + uy*uz/3 ] */
-
+					 /*
                 CALC_J( x,y,z );
                 //std::cout << "Contributing " << v0 << ", " << v1 << ", " << v2 << ", " << v3 << std::endl;
                 accumulators_scatter_access(ii, accumulator_var::jx, 0) += v0; // q*ux*(1-dy)*(1-dz);
@@ -254,7 +318,7 @@ void push(
                 accumulators_scatter_access(ii, accumulator_var::jz, 3) += v3; // 0.0;
 
                 #undef CALC_J
-
+					 */
             }
             else
             {                                    // Unlikely

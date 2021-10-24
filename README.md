@@ -39,7 +39,7 @@ Users can compile in custom input decks by specifying `INPUT_DECK` at build
 time, e.g:
 
 ```
-CXX=g++-9 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DINPUT_DECK=./decks/2steam-short.cxx ..
+CXX=g++-9 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DINPUT_DECK=./decks/2stream-short.cxx ..
 ```
 
 Some example decks live in `./decks`. Custom decks must follow the layout put

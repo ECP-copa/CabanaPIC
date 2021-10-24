@@ -1,6 +1,7 @@
 #ifndef pic_helper_h
 #define pic_helper_h
 
+#include<fstream>
 #include "logger.h"
 #include "Cabana_ExecutionPolicy.hpp" // SIMDpolicy
 #include "Cabana_Parallel.hpp" // Simd parallel for
@@ -114,6 +115,41 @@ void print_fields( const field_array_t& fields )
 
     std::cout << std::endl;
 
+}
+
+void dump_kinetic_energy( const particle_list_t& particles, int step, real_t time )
+{
+    auto vx = Cabana::slice<VelocityX>(particles);
+    auto vy = Cabana::slice<VelocityY>(particles);
+    auto vz = Cabana::slice<VelocityZ>(particles);
+
+	 auto weight = Cabana::slice<Weight>( particles );
+
+	// compute total kinetic energy
+	 auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+	 {
+		  lsum += weight(i)*( vx(i) * vx(i)
+				+vy(i) * vy(i)
+				+vz(i) * vz(i) );
+	 };
+
+	 real_t k_tot_energy=0;
+	 Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles.size() );
+	 Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
+	 k_tot_energy = 0.5*k_tot_energy;
+
+    std::ofstream k_energy_file;
+
+    if (step == 0)
+    {
+        // delete what is there
+        k_energy_file.open("kenergies.txt", std::ofstream::out | std::ofstream::trunc);
+    }
+    else {
+        k_energy_file.open("kenergies.txt", std::ios::app); // append
+    }
+
+    k_energy_file << step << " " << time << " " << k_tot_energy << std::endl;
 }
 
 #endif // pic_helper_h

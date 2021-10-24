@@ -141,11 +141,11 @@ class Particle_Initializer {
                     // Initialize velocity.(each cell length is 2)
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
 
-                    real_t na = 0.0001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
+                    real_t na = 0.001*sin(2.0*3.1415926*((x+1.0+pre_ghost*2)/(2*ny)));
 
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x.access(s,i) = sign *v0*gam*(1.0+na*sign);
-                    velocity_y.access(s,i) = 0;
+                    velocity_x.access(s,i) = 0;
+                    velocity_y.access(s,i) = sign *v0*gam*(1.0+na*sign);
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
@@ -263,7 +263,7 @@ class _Input_Deck {
         // Params
         real_ n0 = 1.0; // Background plasma density
         size_t num_species = 1;
-        size_t nx = 16; // TODO: why is nx a size_t not an int?
+        size_t nx = 32; // TODO: why is nx a size_t not an int?
         size_t ny = 1;
         size_t nz = 1;
 
@@ -423,7 +423,7 @@ class Input_Deck : public _Input_Deck {
     public:
         // TODO: this may currently force any custom deck to implement an
         // intitialize_particles function, which is not desired. We want to
-        // fall back to the default implementation above if the user chosoes
+        // fall back to the default implementation above if the user chooses
         // not to define one
         Input_Deck();
 };
@@ -436,7 +436,7 @@ class Input_Deck : public _Input_Deck {
             // User puts initialization code here
             // Example: EM 2 Stream in 1d?
             nx = 1;
-            ny = 32;
+            ny = 33;
             nz = 1;
 
             num_steps = 6000;

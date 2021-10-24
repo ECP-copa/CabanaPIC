@@ -71,7 +71,7 @@ void uncenter_particles(
 
             real_t v0 = qdt_4mc/(real_t)sqrt(one + (ux*ux + (uy*uy + uz*uz)));
 
-            // Borris push
+            // Boris push
             // Boris - scalars
             real_t v1 = cbx*cbx + (cby*cby + cbz*cbz);
             real_t v2 = (v0*v0)*v1;
