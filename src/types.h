@@ -7,11 +7,8 @@
 #define real_t REAL_TYPE
 #endif
 
-#include <Kokkos_ScatterView.hpp>
-#include <Cabana_Types.hpp>
-#include <Cabana_MemberTypes.hpp>
-#include <Cabana_AoSoA.hpp>
-#include <Cabana_Parallel.hpp>
+#include <Kokkos_Core.hpp>
+#include <Cabana_Core.hpp>
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
 
@@ -21,26 +18,9 @@
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
-
-// TODO: do we even need to explicitly specify these? We only use the default
-// space..
-#ifdef USE_GPU
-using MemorySpace = Kokkos::CudaSpace;
-using ExecutionSpace = Kokkos::Cuda;
-#else
-  #ifdef USE_SERIAL_CPU
-    //cpu
-    using MemorySpace = Kokkos::HostSpace;
-    using ExecutionSpace = Kokkos::Serial;
-  #else // CPU Parallel
-    using MemorySpace = Kokkos::HostSpace;
-    using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
-  #endif
-#endif
-
 // Defaults
-//using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
-//using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
+using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 ///// END ESSENTIALS ///
 

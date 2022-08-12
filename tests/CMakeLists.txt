@@ -5,5 +5,6 @@ add_subdirectory(energy_comparison)
 
 foreach (test ${TESTS})
     add_executable(${test} ./${test}.cpp)
+    target_link_libraries(${test} CabanaPIC)
     add_test(NAME ${test} COMMAND ./${test})
 endforeach(test)
