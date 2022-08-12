@@ -36,7 +36,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 particle_list_t& particles,
                 size_t nx,
                 size_t ny,
-                size_t nz,
+                size_t,
                 size_t ng,
                 real_ dxp,
                 size_t nppc,

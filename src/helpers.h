@@ -28,7 +28,7 @@ int allow_for_ghosts(int pre_ghost)
 }
 
 // Function to print out the data for every particle.
-void dump_particles( FILE * fp, const particle_list_t d_particles, const real_t xmin, const real_t ymin, const real_t zmin, const real_t dx, const real_t dy, const real_t dz,size_t nx,size_t ny,size_t nz, size_t ng)
+void dump_particles( FILE * fp, const particle_list_t d_particles, const real_t xmin, const real_t, const real_t, const real_t dx, const real_t, const real_t, size_t nx,size_t ny,size_t, size_t ng)
 {
 
     // Host
@@ -110,7 +110,7 @@ void print_fields( const field_array_t& fields )
         };
 
     Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-    Kokkos::parallel_for( exec_policy, _print_fields, "print()" );
+    Kokkos::parallel_for( "print()", exec_policy, _print_fields );
 
     std::cout << std::endl;
 

@@ -51,7 +51,7 @@ void serial_update_ghosts_B(
         //}
 
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> zy_policy({1,1}, {nz+1,ny+1});
-        Kokkos::parallel_for( zy_policy, _zy_boundary, "zy boundary()" );
+        Kokkos::parallel_for( "zy boundary()", zy_policy, _zy_boundary );
 
         //for (int x = 0; x < nx+2; x++) {
             //for (int z = 1; z < nz+1; z++) {
@@ -73,7 +73,7 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> xz_policy({0,1}, {nx+2,nz+1});
-        Kokkos::parallel_for( xz_policy, _xz_boundary, "xz boundary()" );
+        Kokkos::parallel_for( "xz boundary()", xz_policy, _xz_boundary );
 
         //for (int y = 0; y < ny+2; y++) {
             //for (int x = 0; x < nx+2; x++) {
@@ -95,7 +95,7 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> yx_policy({0,0}, {ny+2,nx+2});
-        Kokkos::parallel_for( yx_policy, _yx_boundary, "yx boundary()" );
+        Kokkos::parallel_for( "yx boundary()", yx_policy, _yx_boundary );
     }
 }
 
@@ -140,7 +140,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> x_policy(1, nx+1);
-        Kokkos::parallel_for( x_policy, _x_boundary, "_x_boundary()" );
+        Kokkos::parallel_for( "_x_boundary()", x_policy, _x_boundary );
 
         //for ( y = 1; y <= ny; y++ ){
         auto _y_boundary = KOKKOS_LAMBDA( const int y )
@@ -160,7 +160,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> y_policy(1, ny+1);
-        Kokkos::parallel_for( y_policy, _y_boundary, "_y_boundary()" );
+        Kokkos::parallel_for( "_y_boundary()", y_policy, _y_boundary );
 
         //for ( z = 1; z <= nz; z++ ){
         auto _z_boundary = KOKKOS_LAMBDA( const int z )
@@ -180,7 +180,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> z_policy(1, nz+1);
-        Kokkos::parallel_for( z_policy, _z_boundary, "_z_boundary()" );
+        Kokkos::parallel_for( "_z_boundary()", z_policy, _z_boundary );
 
         // // Copy x from RHS -> LHS
         // int x = 1;
@@ -311,7 +311,7 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
                     jfz(i) = 0.0;
                 };
 
-            Kokkos::parallel_for( fields.size(), _init_fields, "init_fields()" );
+            Kokkos::parallel_for( "init_fields()", fields.size(), _init_fields );
         }
 
         void advance_b(
@@ -349,14 +349,14 @@ class ES_Field_Solver
     public:
 
         void advance_b(
-                field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz,
-                size_t ng
+                field_array_t&,
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t,
+                size_t
                 )
         {
             // No-op, becasue ES
@@ -364,13 +364,13 @@ class ES_Field_Solver
 
         void advance_e(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz,
-                size_t ng,
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t,
+                size_t,
                 real_t dt_eps0
                 )
         {
@@ -397,17 +397,17 @@ class ES_Field_Solver
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
+            Kokkos::parallel_for( "es_advance_e()", exec_policy, _advance_e );
         }
 
         real_t e_energy(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
@@ -434,12 +434,12 @@ class ES_Field_Solver_1D
 
         real_t e_energy(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
-                size_t nx,
-                size_t ny,
-                size_t nz
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
@@ -460,9 +460,9 @@ class ES_Field_Solver_1D
 
         void advance_e(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
+                real_t,
+                real_t,
+                real_t,
                 size_t nx,
                 size_t ny,
                 size_t nz,
@@ -490,7 +490,7 @@ class ES_Field_Solver_1D
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e_1d()" );
+            Kokkos::parallel_for( "es_advance_e_1d()", exec_policy, _advance_e );
         }
 };
 
@@ -507,14 +507,14 @@ class EM_Field_Solver
         void dump_fields(FILE * fp,
                 field_array_t& d_fields,
                 real_t xmin,
-                real_t ymin,
-                real_t zmin,
+                real_t,
+                real_t,
                 real_t dx,
-                real_t dy,
-                real_t dz,
+                real_t,
+                real_t,
                 size_t nx,
                 size_t ny,
-                size_t nz,
+                size_t,
                 size_t ng
                 )
         {
@@ -540,9 +540,9 @@ class EM_Field_Solver
 
         real_t e_energy(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
+                real_t,
+                real_t,
+                real_t,
                 size_t nx,
                 size_t ny,
                 size_t nz,
@@ -572,9 +572,9 @@ class EM_Field_Solver
 
         real_t b_energy(
                 field_array_t& fields,
-                real_t px,
-                real_t py,
-                real_t pz,
+                real_t,
+                real_t,
+                real_t,
                 size_t nx,
                 size_t ny,
                 size_t nz,
@@ -646,7 +646,7 @@ class EM_Field_Solver
             };
 
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> zyx_policy({1, 1, 1}, {nx+2, ny+2, nz+2});
-            Kokkos::parallel_for( zyx_policy, _advance_e, "advance_e()" );
+            Kokkos::parallel_for( "advance_e()", zyx_policy, _advance_e );
         }
 
 
@@ -699,7 +699,7 @@ class EM_Field_Solver
             };
 
             Kokkos::MDRangePolicy<Kokkos::Rank<3>> zyx_policy({1, 1, 1}, {nx+1, ny+1, nz+1});
-            Kokkos::parallel_for( zyx_policy, _advance_b, "advance_b()" );
+            Kokkos::parallel_for( "advance_b()", zyx_policy, _advance_b );
             serial_update_ghosts_B(cbx, cby, cbz, nx, ny, nz, ng);
         }
 };
