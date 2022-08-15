@@ -1,0 +1,63 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron:  '0 4 * * MON'
+
+jobs:
+  CI:
+    strategy:
+      matrix:
+        backend: ["SERIAL", "OPENMP"]
+    runs-on: ubuntu-20.04
+    container: ghcr.io/ecp-copa/ci-containers/ubuntu:latest
+    steps:
+      - name: Checkout kokkos
+        uses: actions/checkout@v2.2.0
+        with:
+          repository: kokkos/kokkos
+          ref: 3.4.01
+          path: kokkos
+      - name: Build kokkos
+        working-directory: kokkos
+        run: |
+          cmake -B build -DCMAKE_INSTALL_PREFIX=$HOME/kokkos -DKokkos_CXX_STANDARD=14 -DKokkos_ENABLE_${{ matrix.backend }}=ON
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout Cabana
+        uses: actions/checkout@v2.2.0
+        with:
+          repository: ECP-copa/Cabana
+          ref: master
+          path: Cabana
+      - name: Build Cabana
+        working-directory: Cabana
+        run: |
+          cmake -B build -DCMAKE_INSTALL_PREFIX=$HOME/Cabana -DCMAKE_PREFIX_PATH="$HOME/kokkos" -DCabana_REQUIRE_${{ matrix.backend }}=ON
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Checkout CabanaPIC
+        uses: actions/checkout@v2.2.0
+      - name: Build CabanaPIC
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/CabanaPIC \
+            -DMPIEXEC_MAX_NUMPROCS=2 -DMPIEXEC_PREFLAGS="--oversubscribe" \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -Wall -Wextra -pedantic" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage" \
+            -DCMAKE_PREFIX_PATH="$HOME/Cabana" \
+            -DENABLE_TESTS=ON \
+            -DREAL_TYPE=double
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Test CabanaPIC
+        run: |
+          CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target test
+      - name: Upload Report to codecov.io
+        uses: codecov/codecov-action@v1
