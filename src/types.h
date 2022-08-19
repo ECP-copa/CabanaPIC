@@ -19,9 +19,13 @@
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
 // Defaults
+#ifdef REQUIRE_HOST
+using MemorySpace = Kokkos::HostSpace;
+using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+#else
 using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 using ExecutionSpace = Kokkos::DefaultExecutionSpace;
-
+#endif
 ///// END ESSENTIALS ///
 
 enum UserParticleFields

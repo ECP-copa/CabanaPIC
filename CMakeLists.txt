@@ -11,6 +11,7 @@ include(GNUInstallDirs)
 find_package(Cabana)
 
 #### User configuration Options ####
+option(REQUIRE_HOST ON "Build with the default host execution space.")
 option(ENABLE_TESTS OFF)
 option(ENABLE_COVERAGE_BUILD OFF)
 #### End User configuration Options ####
