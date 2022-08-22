@@ -25,6 +25,16 @@ the default enabled host backend).
 The default field solver is "EM"; to use the "ES" solver, add `-DSOLVER_TYPE="ES"`.
 
 
+Note that if Kokkos <=3.4 is used, building with GCC and CUDA support requires
+specifying the compiler wrapper:
+
+```
+cmake -DCMAKE_PREFIX_PATH="$HOME/Cabana/build/install" -DCMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper ..
+```
+
+Remember that Kokkos, Cabana, and CabanaPIC should all be built with the same
+compiler.
+
 ## Running
 
 Users can compile in custom input decks by specifying `INPUT_DECK` at build
