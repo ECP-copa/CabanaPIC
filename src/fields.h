@@ -6,6 +6,7 @@
 #include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 #include "input/deck.h"
 #include <cassert>
+//#include <vector>
 
 // TODO: Namespace this stuff?
 
@@ -398,6 +399,363 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
             return e_tot_energy*0.5f;
         }
 };
+
+
+class Binomial_Filters
+{
+	public:
+		// This is the overall function that applies the (simple, 2D) SG filtering... composed of the functions in the class below
+		void SGfilter(
+			field_array_t& fields, 
+			size_t nx, 
+			size_t ny, 
+			size_t nz, 
+			size_t ng, 
+			size_t minres
+			)
+		{
+			std::vector<field_array_t> grids = constructSGCTcomponentGrids(fields, nx, ny, nz, ng, minres); // Constructs the component grids in combination technique
+			field_array_t fields_out = SGinterpolate(grids, nx, ny, nz, ng);	// Interpolates component grids onto original grid resolution
+
+			// The rest of the function just copies the current density of fields_out into the original fields argument
+
+			auto jfx_orig = Cabana::slice<FIELD_JFX>(fields);
+			auto jfy_orig = Cabana::slice<FIELD_JFY>(fields);
+			auto jfz_orig = Cabana::slice<FIELD_JFZ>(fields);
+
+			auto jfx_sg = Cabana::slice<FIELD_JFX>(fields_out);
+			auto jfy_sg = Cabana::slice<FIELD_JFY>(fields_out);
+			auto jfz_sg = Cabana::slice<FIELD_JFZ>(fields_out);
+
+			auto _copy_to_orig = KOKKOS_LAMBDA( const int i ) 
+				{
+					jfx_orig(i) = jfx_sg(i);
+					jfy_orig(i) = jfy_sg(i);
+					jfz_orig(i) = jfz_sg(i);
+				};
+			Kokkos::parallel_for( fields.size(), _copy_to_orig, "copy_to_orig()" );
+		}
+	
+		void filter_on_axis(
+					field_array_t& fields_out, 
+					field_array_t& fields_in, 
+					size_t nx, 
+					size_t ny, 
+					size_t nz, 
+					size_t ng,
+					size_t axis
+					)
+		{
+				assert(fields_out.size()==fields_in.size());
+            auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
+            auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
+            auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
+            
+				auto jfx_out = Cabana::slice<FIELD_JFX>(fields_out);
+            auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
+            auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
+	    		
+				serial_update_ghosts(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+            serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+		    
+			 	auto _filter = KOKKOS_LAMBDA( const int x, const int y, const int z)
+				{
+			      const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+					int ip1, im1;
+					if (axis == 0) 
+					{
+						ip1 = VOXEL(x+1, y, z, nx, ny, nz, ng);
+						im1 = VOXEL(x-1, y, z, nx, ny, nz, ng);
+					}
+					else if (axis == 1)
+					{
+						ip1 = VOXEL(x, y+1, z, nx, ny, nz, ng);
+						im1 = VOXEL(x, y-1, z, nx, ny, nz, ng);
+					}
+					else
+					{
+						ip1 = VOXEL(x, y, z+1, nx, ny, nz, ng);
+						im1 = VOXEL(x, y, z-1, nx, ny, nz, ng);
+					}
+
+					jfx_out(i) = 0.25*jfx_in(im1) + 0.5*jfx_in(i) + 0.25*jfx_in(ip1);
+					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i) + 0.25*jfy_in(ip1);
+					jfz_out(i) = 0.25*jfz_in(im1) + 0.5*jfz_in(i) + 0.25*jfz_in(ip1);
+				};
+	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+            //Kokkos::MDRangePolicy<ExecutionSpace> exec_policy( 0, fields_in.size() );
+            Kokkos::parallel_for( exec_policy, _filter, "binomial_filter()" );
+		}
+
+/*****************************************************************************************************************/
+		field_array_t filter_and_restrict(
+					field_array_t& fields_in, 
+					size_t nx_in, 
+					size_t ny_in,
+					size_t nz_in, 
+					size_t ng,
+					size_t axis
+					)
+		{
+            auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
+            auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
+            auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
+
+				size_t nx_out = nx_in;
+				size_t ny_out = ny_in;
+				size_t nz_out = nz_in;
+				if ( axis == 0 ) { nx_out /= 2; }
+				else if (axis==1){ ny_out /= 2; }
+				else 				  { nz_out /= 2; }
+				size_t num_cells_out = (nx_out + 2*ng)*(ny_out+2*ng)*(nz_out+2*ng);
+				field_array_t fields_out("fields_filtered", num_cells_out);
+            
+				auto jfx_out = Cabana::slice<FIELD_JFX>(fields_out);
+            auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
+            auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
+	    		
+				serial_update_ghosts(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
+            serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
+
+				const int coarse_fac_x = (int) nx_in/nx_out;
+				const int coarse_fac_y = (int) nx_in/nx_out;
+				const int coarse_fac_z = (int) nx_in/nx_out;
+				assert(coarse_fac_x==1 || coarse_fac_x==2);
+				assert(coarse_fac_y==1 || coarse_fac_y==2);
+				assert(coarse_fac_z==1 || coarse_fac_z==2);
+				assert(coarse_fac_x*coarse_fac_y*coarse_fac_z==2); // Exactly one direction should be coarsened by a factor of two... 
+																					// just a sanity check on the coarsening we did above, and that the number of elements in the coarsened direction was even 
+
+		    
+			 	auto _filter = KOKKOS_LAMBDA( const int x, const int y, const int z)
+				{
+			      const int i = VOXEL(x,   y,   z,   nx_out, ny_out, nz_out, ng);  // index in the OUTPUT array (coarser resolution)
+					const int x2 = coarse_fac_x*x;
+					const int y2 = coarse_fac_y*y;
+					const int z2 = coarse_fac_z*z;
+					const int i2 = VOXEL(x2, y2, z2, nx_in, ny_in, nz_in, ng); // index in the INPUT array (finer resolution)
+					int ip1, im1;
+					if (axis == 0) 
+					{
+						ip1 = VOXEL(x2+1, y2, z2, nx_in, ny_in, nz_in, ng);
+						im1 = VOXEL(x2-1, y2, z2, nx_in, ny_in, nz_in, ng);
+					}
+					else if (axis == 1)
+					{
+						ip1 = VOXEL(x2, y2+1, z2, nx_in, ny_in, nz_in, ng);
+						im1 = VOXEL(x2, y2-1, z2, nx_in, ny_in, nz_in, ng);
+					}
+					else
+					{
+						ip1 = VOXEL(x2, y2, z2+1, nx_in, ny_in, nz_in, ng);
+						im1 = VOXEL(x2, y2, z2-1, nx_in, ny_in, nz_in, ng);
+					}
+
+					jfx_out(i) = 0.25*jfx_in(im1) + 0.5*jfx_in(i2) + 0.25*jfx_in(ip1);
+					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i2) + 0.25*jfy_in(ip1);
+					jfz_out(i) = 0.25*jfz_in(im1) + 0.5*jfz_in(i2) + 0.25*jfz_in(ip1);
+				};
+	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
+            Kokkos::parallel_for( exec_policy, _filter, "binomial_filter_with_restriction()" );
+
+				return fields_out;
+		}
+
+/*****************************************************************************************************************/
+		std::vector<field_array_t> constructSGCTcomponentGrids(
+				field_array_t fields,
+				size_t nx, 
+				size_t ny, 
+				size_t nz, 
+				size_t ng, 
+				size_t minres
+				)
+		{
+			std::vector<field_array_t> grids;
+			//I'm going to implement a 2D-only version first as a proof-of-principle
+			size_t nx_tmp = nx;
+			size_t ny_tmp = ny;
+			int num_x_coarsenings, num_y_coarsenings;
+			num_x_coarsenings=0; num_y_coarsenings = 0;
+			while (nx_tmp > minres) { nx_tmp /= 2; num_x_coarsenings += 1; }
+			while (ny_tmp > minres) { ny_tmp /= 2; num_y_coarsenings += 1; }
+			int num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);
+
+			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
+			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
+			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny, nz, ng, 0);
+
+			grids.push_back(x_coarsened);
+			grids.push_back(y_coarsened);
+			grids.push_back(xy_coarsened);
+
+			return grids;
+		}
+
+/*****************************************************************************************************************/
+		field_array_t interpolate_on_axis(
+				field_array_t fields_in, 
+				size_t nx_in, 
+				size_t ny_in, 
+				size_t nz_in, 
+				size_t ng, 
+				int axis)
+
+		{
+         auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
+         auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
+         auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
+
+			size_t nx_out = nx_in;
+			size_t ny_out = ny_in;
+			size_t nz_out = nz_in;
+			size_t refine_fac_x = 1;
+			size_t refine_fac_y = 1;
+			size_t refine_fac_z = 1;
+			if (axis==0) 	   { nx_out *= 2; refine_fac_x = 2; }
+			else if (axis==1) { ny_out *= 2; refine_fac_y = 2; }
+			else 					{ nz_out *= 2; refine_fac_z = 2; }
+			
+			size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
+			field_array_t fields_out("fields_interpolated", num_cells_out);
+
+			auto jfx_out = Cabana::slice<FIELD_JFX>(fields_out);
+         auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
+         auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
+				
+			auto _interpolate = KOKKOS_LAMBDA( const int x, const int y, const int z)
+				{
+					const int i = VOXEL(x,   y,   z,   nx_out, ny_out, nz_out, ng);  // index in the OUTPUT array (finer resolution)
+					int x2, y2, z2;
+					bool interpolate = false;
+					if (axis==0) {
+						if (x % 2 == 0) { x2 = x/2; }
+						else { x2 = (x-1)/2; interpolate = true; }
+					}
+					else { x2 = x; }
+					if (axis==1) {
+						if (y % 2 == 0) { y2 = y/2; }
+						else { y2 = (y-1)/2; interpolate = true; }
+					}
+					else { y2 = y; }
+					if (axis==2) {
+						if (z % 2 == 0) { z2 = z/2; }
+						else { z2 = (z-1)/2; interpolate = true; }
+					}
+					else { z2 = z; }
+
+					const int i2 = VOXEL(x2, y2, z2, nx_in, ny_in, nz_in, ng); // index in the INPUT array (coarser resolution)
+					int ip1;
+					if (axis == 0) 
+					{
+						ip1 = VOXEL(x2+1, y2, z2, nx_in, ny_in, nz_in, ng);
+					}
+					else if (axis == 1)
+					{
+						ip1 = VOXEL(x2, y2+1, z2, nx_in, ny_in, nz_in, ng);
+					}
+					else
+					{
+						ip1 = VOXEL(x2, y2, z2+1, nx_in, ny_in, nz_in, ng);
+					}
+
+					if (interpolate) {
+						jfx_out(i) = 0.5*jfx_in(ip1) + 0.5*jfx_in(i2); 
+						jfy_out(i) = 0.5*jfy_in(ip1) + 0.5*jfy_in(i2);
+						jfz_out(i) = 0.5*jfz_in(ip1) + 0.5*jfz_in(i2);
+					}
+					else {
+						jfx_out(i) = jfx_in(i2);
+						jfy_out(i) = jfy_in(i2);
+						jfz_out(i) = jfz_in(i2);
+					}
+					
+				};
+				Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
+				Kokkos::parallel_for( exec_policy, _interpolate, "interpolate()" );
+
+				return fields_out;
+
+		}
+
+/*****************************************************************************************************************/
+
+		void add_fields_inplace(
+				field_array_t fields, 
+				field_array_t fields_to_be_added, 
+				real_t fac)
+		{
+			
+			assert(fields.size() == fields_to_be_added.size()); // ensures same total number of grid points... user is responsible for making sure
+																				 // these flattened arrays represent grids of the same shape (e.g. this assert won't keep 
+																				 // you from adding together a 32x64x16 grid and a 16x32x64 grid and getting nonsense)
+
+      	auto jfx = Cabana::slice<FIELD_JFX>(fields);
+         auto jfy = Cabana::slice<FIELD_JFY>(fields);
+         auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+      	
+			auto jfx_add = Cabana::slice<FIELD_JFX>(fields_to_be_added);
+         auto jfy_add = Cabana::slice<FIELD_JFY>(fields_to_be_added);
+         auto jfz_add = Cabana::slice<FIELD_JFZ>(fields_to_be_added);
+
+			auto _add = KOKKOS_LAMBDA( const int i ) 
+				{
+					jfx(i) += fac*jfx_add(i);
+					jfy(i) += fac*jfy_add(i);
+					jfz(i) += fac*jfz_add(i);
+				};
+			Kokkos::parallel_for( fields.size(), _add, "add_fields()" ); 
+
+		}
+
+/*****************************************************************************************************************/
+
+		field_array_t SGinterpolate(
+				std::vector<field_array_t> grids, 
+				size_t nx_out, 
+				size_t ny_out, 
+				size_t nz_out, 
+				size_t ng)
+		{
+			//assert(grids[0].size()==(nx_out/2 + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng))
+			//assert(grids[1].size()==(nx_out + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
+			//assert(grids[2].size()==(nx_out/2 + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
+
+			size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
+			field_array_t fields_out("fields_interpolated", num_cells_out);
+
+			field_array_t field1 = interpolate_on_axis(grids[0], nx_out/2, ny_out, nz_out, ng, 0);
+			field_array_t field2 = interpolate_on_axis(grids[1], nx_out, ny_out/2, nz_out, ng, 1);
+			field_array_t field3 = interpolate_on_axis(grids[2], nx_out/2, ny_out/2, nz_out, ng, 0);
+			field_array_t field4 = interpolate_on_axis(field3,   nx_out, ny_out/2, nz_out, ng, 1);
+
+			assert(fields_out.size()==field1.size());
+			assert(fields_out.size()==field2.size());
+			assert(fields_out.size()==field4.size());
+
+      	auto jfx = Cabana::slice<FIELD_JFX>(fields_out);
+         auto jfy = Cabana::slice<FIELD_JFY>(fields_out);
+         auto jfz = Cabana::slice<FIELD_JFZ>(fields_out);
+
+			auto _init = KOKKOS_LAMBDA( const int i )
+				{
+					jfx(i) = 0.0;
+					jfy(i) = 0.0;
+					jfz(i) = 0.0;
+				};
+
+			Kokkos::parallel_for( fields_out.size(), _init, "init_output_fields()" );
+
+			add_fields_inplace(fields_out, field1, 1.);
+			add_fields_inplace(fields_out, field2, 1.);
+			add_fields_inplace(fields_out, field4, -1.);
+			
+			return fields_out;
+		}
+											 
+
+};
+
 
 // FIXME: Field_solver is repeated => bad naming
 class ES_Field_Solver

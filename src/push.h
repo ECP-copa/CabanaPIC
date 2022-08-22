@@ -130,7 +130,7 @@ void push(
             real_t dy = position_y.access(s,i);   // Load position
             real_t dz = position_z.access(s,i);   // Load position
 
-            real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
+            real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +  // interpolate E and multiply by q*dt/(2*m*c)
                     dz*( dexdz + dy*d2exdydz ) );
             real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
                     dx*( deydx + dz*d2eydzdx ) );

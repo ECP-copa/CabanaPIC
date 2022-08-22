@@ -107,7 +107,7 @@ int main( int argc, char* argv[] )
         // Create the particle list.
         particle_list_t particles( "particles", num_particles );
 
-		  // TODO: Wrap this in an ifdef statement
+		  // TODO: Wrap this in an ifdef statement... only needed for implicit version
 		  particle_list_t old_particles( "old_particles", num_particles );
        
 		  // Initialize particles.
@@ -136,7 +136,7 @@ int main( int argc, char* argv[] )
 		  accumulate_rho_p_1D(particles,rho_accumulator,nx,ny,nz,num_ghosts,dx,dy,dz,qsp);
 	
         field_array_t fields("fields", num_cells);
-		  // TODO: wrap this in an ifdef
+		  // TODO: wrap this in an ifdef... only needed for implicit version
 		  field_array_t old_fields( "old_fields", num_cells);
 
         // Zero out the interpolator
@@ -210,7 +210,10 @@ int main( int argc, char* argv[] )
         }
 
 		  int itcount;
-		  int maxits = 3;
+		  int maxits = 1;
+
+		  Binomial_Filters SGfilt;
+		  int minres = 8;
 
 		  real_t dt_frac = 1.;
 		  bool converged, last_iteration;
@@ -282,6 +285,9 @@ int main( int argc, char* argv[] )
 
 						  // Map accumulator current back onto the fields
 						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array?
+
+						  //  <------------------- I think this is where the SG filtering will happen
+						  SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
 
 						  // Half advance the magnetic field from B_0 to B_{1/2}
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
