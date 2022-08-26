@@ -37,6 +37,9 @@ using ExecutionSpace = Kokkos::Cuda;
     using ExecutionSpace = Kokkos::DefaultHostExecutionSpace; //Kokkos::OpenMP;
   #endif
 #endif
+using KokkosDevice = Kokkos::Device<ExecutionSpace, MemorySpace>;
+
+typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
 
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;

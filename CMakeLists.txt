@@ -97,8 +97,11 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(minipic ${SOURCES} ${INPUT_DECK})
 
-target_link_libraries(minipic PUBLIC Cabana::cabanacore dl)
-
+if (ENABLE_GPU)
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl cufft)
+else()
+target_link_libraries(minipic PUBLIC Cabana::cabanacore dl fftw3f)
+endif(ENABLE_GPU)
 
 ##### TESTS ######
 if (ENABLE_TESTS)

@@ -162,6 +162,7 @@ int main( int argc, char* argv[] )
             dy,
             dz
         );
+		  std::cout << "Completed field initialization" << std::endl;
 
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
@@ -220,6 +221,7 @@ int main( int argc, char* argv[] )
 		  int step = 0;
 		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
         // Main loop //
+		  std::cout << "Starting main loop" << std::endl;
         for ( step = 1; step <= num_steps; step++)
         {
             //printf("Step %d \n", step);
@@ -287,7 +289,7 @@ int main( int argc, char* argv[] )
 						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array?
 
 						  //  <------------------- I think this is where the SG filtering will happen
-						  SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+						  //SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
 
 						  // Half advance the magnetic field from B_0 to B_{1/2}
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
@@ -315,7 +317,7 @@ int main( int argc, char* argv[] )
 						  if ( last_iteration ) { converged = true; }
 						  if ( itcount >= maxits-1 ) { last_iteration = true; } // Currently, don't check for convergence, just do a fixed number of iterations
 
-						  //std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
+						  std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
 				}
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
