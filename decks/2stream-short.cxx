@@ -32,7 +32,7 @@ Input_Deck::Input_Deck()
     nz = 1;
 
     num_steps = 3000;
-    nppc = 100;
+    nppc = 10;
 
     v0 = 0.2;
 

@@ -59,8 +59,12 @@ int main( int argc, char* argv[] )
         const size_t num_cells = deck.num_cells;
         real_t dxp = 2.f / (npc);
 
-		  // implicitness
-		  bool implicit = true;
+		  // TODO: Move these parameters into input deck
+		  // implicitness,  SG, verbosity
+		  bool implicit = false;
+		  int maxits = 5;
+		  bool SG = false;
+		  bool verbose = false;
 
         // Define some consts
         const real_t dx = deck.dx;
@@ -211,13 +215,13 @@ int main( int argc, char* argv[] )
         }
 
 		  int itcount;
-		  int maxits = 1;
 
 		  Binomial_Filters SGfilt;
 		  int minres = 8;
 
 		  real_t dt_frac = 1.;
-		  bool converged, last_iteration;
+		  bool converged, last_iteration, deposit_current;  // Deposit current tells you whether to do current deposition during a particle push.  For implicit, you only want to do this if it's not the last iteration.  
+		  																	 // For explicit, you always want to do it.
 		  int step = 0;
 		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
         // Main loop //
@@ -238,22 +242,30 @@ int main( int argc, char* argv[] )
 				//
 				
 				// TODO: Need to wrap this in an ifdef statement
-				Cabana::deep_copy( old_particles, particles ); // record particle states at start of time-step for implicit run
-				Cabana::deep_copy( old_fields, fields ); // do the same for fields
+				if ( implicit ) {
+					Cabana::deep_copy( old_particles, particles ); // record particle states at start of time-step for implicit run
+					Cabana::deep_copy( old_fields, fields ); // do the same for fields
+				}
 			   
 				converged = false;
-				last_iteration = false; // a flag to see if we're on the last iteration.  If we are, do a full time-step instead of a half.
+				last_iteration = !implicit; // a flag to see if we're on the last iteration.  If we are, do a full time-step instead of a half.  If we're not implicit, first iteration is the last
 				itcount = 0; 
 				while ( !converged )
 				{
-						  if ( last_iteration )
+					if ( verbose ) { std::cout << "Started iteration number " << itcount << std::endl; }
+					if ( last_iteration )
 						  {
 						  		dt_frac = 1.; 
 						  }
 						  else { dt_frac = 0.5; }
-            
-						  Cabana::deep_copy( particles, old_particles ); // reset particle states to beginning of time-step
-						  // Particle push for half a time-step
+           			  
+						  deposit_current = !last_iteration || !implicit;
+
+			  			  if ( implicit ) {
+						  		Cabana::deep_copy( particles, old_particles ); // reset particle states to beginning of time-step
+						  }
+						  if ( verbose ) { std::cout << "Starting particle push" << std::endl; }
+						  // Particle push for half a time-step (if implicit) or full step (if explicit)
 						  push(
 									 particles,
 									 interpolators,
@@ -269,10 +281,12 @@ int main( int argc, char* argv[] )
 									 nz,
 									 num_ghosts,
 									 boundary,
-									 !last_iteration
+									 deposit_current
 								);
 
-						  if ( !last_iteration )
+						  if ( verbose ) { std::cout << "Pushed particles" << std::endl; }
+
+						  if ( !last_iteration && implicit )
 						  {
 						  		Cabana::deep_copy( fields, old_fields ); // Reset fields back to beginning of time-step
 						  }
@@ -289,22 +303,26 @@ int main( int argc, char* argv[] )
 						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array?
 
 						  //  <------------------- I think this is where the SG filtering will happen
-						  //SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+						  if ( SG ) {
+						  		SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+						  }
 
 						  // Half advance the magnetic field from B_0 to B_{1/2}
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
 						  // Advance the electric field from E_0 to E_1
-						  if ( !last_iteration )
+						  if ( !last_iteration || !implicit)
 						  {
 						  		field_solver.advance_e(fields, dt_frac*px, dt_frac*py, dt_frac*pz, nx, ny, nz, num_ghosts, dt_eps0);
 						  }
 						  else
 						  {
+								if ( verbose ) { std::cout << "Extending E" << std::endl; }
 								field_solver.extend_e(fields, old_fields); // get E_1 given E_{1/2} and E_0
 						  }
 						  // Half advance the magnetic field from B_{1/2} to B_1
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+						  if ( verbose ) { std::cout << "Advanced fields" << std::endl; }
 
 						  if ( !last_iteration ) // only need to reload interpolator array if we're going to do another iteration
 						  {
@@ -317,8 +335,10 @@ int main( int argc, char* argv[] )
 						  if ( last_iteration ) { converged = true; }
 						  if ( itcount >= maxits-1 ) { last_iteration = true; } // Currently, don't check for convergence, just do a fixed number of iterations
 
-						  std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl;
+						  if ( verbose ) { std::cout << "Iteration number " << itcount << " -  Step number " << step <<  std::endl; }
 				}
+
+				if ( verbose ) { std::cout << "Converged step number " << step << std::endl; }
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
