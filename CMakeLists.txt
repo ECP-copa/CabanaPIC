@@ -1,25 +1,17 @@
 cmake_minimum_required(VERSION 3.9)
-project(minipic LANGUAGES CXX VERSION 0.0.1)
+project(CabanaPIC LANGUAGES CXX VERSION 0.0.1)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
-
 include_directories(${PROJECT_SOURCE_DIR})
+include(GNUInstallDirs)
 
 # TODO: Tag this once we have a new release
 find_package(Cabana)
 
 #### User configuration Options ####
-option(ENABLE_GPU OFF)
-option(ENABLE_SERIAL OFF)
-
+option(REQUIRE_HOST ON "Build with the default host execution space.")
 option(ENABLE_TESTS OFF)
 option(ENABLE_COVERAGE_BUILD OFF)
 #### End User configuration Options ####
@@ -35,7 +27,7 @@ if (${SOLVER_TYPE} STREQUAL "EM")
 elseif (${SOLVER_TYPE} STREQUAL "ES")
     add_definitions(-DES_FIELD_SOLVER=YES)
 else()
-    message(FATAL_ERROR "SOLVER_TYPE is not support (EM/ES only)")
+    message(FATAL_ERROR "SOLVER_TYPE is not supported (EM/ES only)")
 endif()
 ##### END SET SOLVES TYPE #####
 
@@ -72,33 +64,13 @@ if (NOT ${INPUT_DECK} STREQUAL "")
 endif()
 ####### End User Deck ######
 
-if (ENABLE_SERIAL)
-    add_definitions(-DUSE_SERIAL_CPU=ON)
-endif(ENABLE_SERIAL)
-
-if (ENABLE_GPU)
-    add_definitions(-DUSE_GPU=ON)
-    find_package(CUDA)
-    if (CUDA_FOUND)
-        message("Found CUDA")
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --expt-extended-lambda -g")
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored") # supress express cuda warnings
-    else()
-        message( FATAL_ERROR "Requested CUDA but cant find it!")
-    endif(CUDA_FOUND)
-endif(ENABLE_GPU)
-
 if(ENABLE_COVERAGE_BUILD)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
 endif(ENABLE_COVERAGE_BUILD)
 
-INCLUDE_DIRECTORIES(./src)
-file(GLOB SOURCES "src/*.cpp")
-
-add_executable(minipic ${SOURCES} ${INPUT_DECK})
-
-target_link_libraries(minipic PUBLIC Cabana::cabanacore dl)
-
+add_subdirectory(src)
+set(CabanaPIC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/example)
+add_subdirectory(example)
 
 ##### TESTS ######
 if (ENABLE_TESTS)
