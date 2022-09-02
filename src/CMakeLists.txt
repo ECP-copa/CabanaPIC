@@ -1,0 +1,15 @@
+file(GLOB HEADERS "*.h")
+file(GLOB SOURCES "*.cpp")
+
+install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+add_library(CabanaPIC ${SOURCES})
+
+target_include_directories(CabanaPIC PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+target_link_libraries(CabanaPIC PUBLIC Cabana::cabanacore )
+
+install(TARGETS CabanaPIC DESTINATION lib)
