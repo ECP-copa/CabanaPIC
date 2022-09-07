@@ -583,18 +583,23 @@ class Binomial_Filters
 
 /*****************************************************************************************************************/
 		field_array_t filter_and_restrict(
-					field_array_t& fields_in, 
+					const field_array_t& fields_in, 
 					size_t nx_in, 
 					size_t ny_in,
 					size_t nz_in, 
 					size_t ng,
-					size_t axis
+					int axis
 					)
 		{
             auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
             auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
             auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
 
+			/*if (axis==1) {
+				for ( int i=0; i<=fields_in.size(); i++ ) {
+					std::cout << jfx_in(i) << "	" << jfy_in(i) << "	" << jfz_in(i) << std::endl;
+				}
+			}*/
 				size_t nx_out = nx_in;
 				size_t ny_out = ny_in;
 				size_t nz_out = nz_in;
@@ -607,19 +612,21 @@ class Binomial_Filters
 				auto jfx_out = Cabana::slice<FIELD_JFX>(fields_out);
             auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
             auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
-	    		
-				serial_update_ghosts(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
-            serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
 
 				const int coarse_fac_x = (int) nx_in/nx_out;
 				const int coarse_fac_y = (int) ny_in/ny_out;
 				const int coarse_fac_z = (int) nz_in/nz_out;
+				const int inc_x = coarse_fac_x - 1;
+				const int inc_y = coarse_fac_y - 1;
+				const int inc_z = coarse_fac_z - 1;
 				//std::cout << coarse_fac_x << coarse_fac_y << coarse_fac_z << std::endl;
 				assert(coarse_fac_x==1 || coarse_fac_x==2);
 				assert(coarse_fac_y==1 || coarse_fac_y==2);
 				assert(coarse_fac_z==1 || coarse_fac_z==2);
 				assert(coarse_fac_x*coarse_fac_y*coarse_fac_z==2); // Exactly one direction should be coarsened by a factor of two... 
-																					// just a sanity check on the coarsening we did above, and that the number of elements in the coarsened direction was even 
+																					// just a sanity check on the coarsening we did above, and that the number of elements in the coarsened direction was even
+																					//
+				//if (axis==1) { std::cout << coarse_fac_x << "	" << coarse_fac_y << "	" << coarse_fac_z << std::endl; }
 
 		    
 			 	auto _filter = KOKKOS_LAMBDA( const int x, const int y, const int z)
@@ -629,22 +636,8 @@ class Binomial_Filters
 					const int y2 = coarse_fac_y*y;
 					const int z2 = coarse_fac_z*z;
 					const int i2 = VOXEL(x2, y2, z2, nx_in, ny_in, nz_in, ng); // index in the INPUT array (finer resolution)
-					int ip1, im1;
-					if (axis == 0) 
-					{
-						ip1 = VOXEL(x2+0, y2, z2, nx_in, ny_in, nz_in, ng);
-						im1 = VOXEL(x2-0, y2, z2, nx_in, ny_in, nz_in, ng);
-					}
-					else if (axis == 1)
-					{
-						ip1 = VOXEL(x2, y2+0, z2, nx_in, ny_in, nz_in, ng);
-						im1 = VOXEL(x2, y2-0, z2, nx_in, ny_in, nz_in, ng);
-					}
-					else
-					{
-						ip1 = VOXEL(x2, y2, z2+0, nx_in, ny_in, nz_in, ng);
-						im1 = VOXEL(x2, y2, z2-0, nx_in, ny_in, nz_in, ng);
-					}
+					const int ip1 = VOXEL(x2+inc_x,y2+inc_y,z2+inc_z, nx_in, ny_in, nz_in, ng);
+					const int im1 = VOXEL(x2-inc_x,y2-inc_y,z2-inc_z, nx_in, ny_in, nz_in, ng);
 
 					jfx_out(i) = 0.25*jfx_in(im1) + 0.5*jfx_in(i2) + 0.25*jfx_in(ip1);
 					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i2) + 0.25*jfy_in(ip1);
@@ -652,13 +645,18 @@ class Binomial_Filters
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
             Kokkos::parallel_for( exec_policy, _filter, "binomial_filter_with_restriction()" );
+			/*if (axis==1) {
+				for ( int i=0; i<=fields_out.size(); i++ ) {
+					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
+				}
+			}*/
 
 				return fields_out;
 		}
 
 /*****************************************************************************************************************/
 		std::vector<field_array_t> constructSGCTcomponentGrids(
-				field_array_t fields,
+				field_array_t& fields,
 				size_t nx, 
 				size_t ny, 
 				size_t nz, 
@@ -666,27 +664,49 @@ class Binomial_Filters
 				size_t minres
 				)
 		{
+			auto jfx_in = Cabana::slice<FIELD_JFX>(fields);
+			auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
+			auto jfz_in = Cabana::slice<FIELD_JFZ>(fields);
+
+         serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+
 			std::vector<field_array_t> grids;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
-			/*size_t nx_tmp = nx;
+			size_t nx_tmp = nx;
 			size_t ny_tmp = ny;
 			int num_x_coarsenings, num_y_coarsenings;
 			num_x_coarsenings=0; num_y_coarsenings = 0;
-			while (nx_tmp > minres) { nx_tmp /= 2; num_x_coarsenings += 1; }
-			while (ny_tmp > minres) { ny_tmp /= 2; num_y_coarsenings += 1; }
-			int num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);*/
+			while (nx_tmp > minres && nx_tmp % 2 == 0) { nx_tmp /= 2; num_x_coarsenings += 1; }
+			while (ny_tmp > minres && ny_tmp % 2 == 0) { ny_tmp /= 2; num_y_coarsenings += 1; }
+			int num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);
+			std::cout << "Number of coarsenings = " << num_coarsenings << std::endl;
+
+			//The grids on the "plus" diagonal
+			/*std::vector<field_array_t> grids_tmp;
+			grids_tmp.push_back(fields);
+			nx_tmp = nx;
+			for (int i=1; i<=num_coarsenings; i++) {
+				field_array_t coarsened = filter_and_restrict(grids_tmp[i-1], nx_tmp, ny, nz, ng, 0);
+				nx_tmp /= 2;
+				grids_tmp.push_back(coarsened);
+			}*/
 
 			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
 			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
 			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny, nz, ng, 0);
 
 			//std::cout << "Coarsened grids" << std::endl;
+				auto jfx_out = Cabana::slice<FIELD_JFX>(y_coarsened);
+            auto jfy_out = Cabana::slice<FIELD_JFY>(y_coarsened);
+            auto jfz_out = Cabana::slice<FIELD_JFZ>(y_coarsened);
+
+				/*for ( int i=0; i<=y_coarsened.size(); i++ ) {
+					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
+				}*/
 
 			grids.push_back(x_coarsened);
 			grids.push_back(y_coarsened);
 			grids.push_back(xy_coarsened);
-
-			//std::cout << "Built vector" << std::endl;
 
 			return grids;
 		}
@@ -704,6 +724,15 @@ class Binomial_Filters
          auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
          auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
          auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
+
+			/*if (axis==1) {
+				for ( int i=0; i<=fields_in.size(); i++ ) {
+					std::cout << jfx_in(i) << "	" << jfy_in(i) << "	" << jfz_in(i) << std::endl;
+				}
+			}*/
+
+			// fill ghost cells
+         serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
 
 			size_t nx_out = nx_in;
 			size_t ny_out = ny_in;
@@ -773,6 +802,11 @@ class Binomial_Filters
 				Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
 				Kokkos::parallel_for( exec_policy, _interpolate, "interpolate()" );
 
+			/*if (axis==1) {
+				for ( int i=0; i<=fields_out.size(); i++ ) {
+					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
+				}
+			}*/
 				return fields_out;
 
 		}

@@ -63,7 +63,7 @@ int main( int argc, char* argv[] )
 		  // implicitness,  SG, verbosity
 		  bool implicit = false;
 		  int maxits = 5;
-		  bool SG = false;
+		  bool SG = true;
 		  bool verbose = false;
 
         // Define some consts
@@ -283,40 +283,30 @@ int main( int argc, char* argv[] )
 									 boundary,
 									 deposit_current
 								);
-
 						  if ( verbose ) { std::cout << "Pushed particles" << std::endl; }
-
 						  if ( !last_iteration && implicit )
 						  {
 						  		Cabana::deep_copy( fields, old_fields ); // Reset fields back to beginning of time-step
 						  }
-
 						  Kokkos::Experimental::contribute(accumulators, scatter_add); 
-						  
 						  // Only reset the data if these two are not the same arrays
 						  scatter_add.reset_except(accumulators);
-
 						  // TODO: boundaries? MPI
 						  //boundary_p(); // Implies Parallel?
-
 						  // Map accumulator current back onto the fields
-						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array?
-
-						  //  <------------------- I think this is where the SG filtering will happen
+						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array
+						  // SG filtering will happens here
 						  if ( SG ) {
 						  		SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
 						  }
-
 						  // Half advance the magnetic field from B_0 to B_{1/2}
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
 						  // Advance the electric field from E_0 to E_1
-						  if ( !last_iteration || !implicit)
-						  {
+						  if ( !last_iteration || !implicit) {
 						  		field_solver.advance_e(fields, dt_frac*px, dt_frac*py, dt_frac*pz, nx, ny, nz, num_ghosts, dt_eps0);
 						  }
-						  else
-						  {
+						  else {
 								if ( verbose ) { std::cout << "Extending E" << std::endl; }
 								field_solver.extend_e(fields, old_fields); // get E_1 given E_{1/2} and E_0
 						  }
@@ -324,8 +314,7 @@ int main( int argc, char* argv[] )
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 						  if ( verbose ) { std::cout << "Advanced fields" << std::endl; }
 
-						  if ( !last_iteration ) // only need to reload interpolator array if we're going to do another iteration
-						  {
+						  if ( !last_iteration ) { // only need to reload interpolator array if we're going to do another iteration
 									 // Convert fields to interpolators for next iteration
 									 load_interpolator_array(fields, interpolators, nx, ny, nz, num_ghosts);
 									 clear_accumulator_array(fields, accumulators, nx, ny, nz);
