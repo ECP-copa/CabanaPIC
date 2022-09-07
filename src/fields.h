@@ -6,6 +6,12 @@
 #include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 #include "input/deck.h"
 
+//#
+//#ifndef REQUIRE_HOST
+//#ifdef Cabana_REQUIRE_CUDA
+//#define USE_GPU
+//#endif
+
 #ifdef USE_GPU
 #include <cufft.h>
 #else

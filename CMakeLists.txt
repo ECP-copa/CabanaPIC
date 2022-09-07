@@ -11,10 +11,16 @@ include(GNUInstallDirs)
 find_package(Cabana REQUIRED)
 
 #### User configuration Options ####
-option(REQUIRE_HOST ON "Build with the default host execution space.")
+#option(REQUIRE_HOST ON "Build with the default host execution space.")
+option(ENABLE_GPU OFF)
 option(ENABLE_TESTS OFF)
 option(ENABLE_COVERAGE_BUILD OFF)
 #### End User configuration Options ####
+
+#define USE_GPU
+if (ENABLE_GPU)  
+  add_definitions(-DUSE_GPU=ON)
+endif(ENABLE_GPU)
 
 ##### SET SOLVES TYPE #####
 # Flag for switching between electromagnetic and electrostatic solver
@@ -79,3 +85,4 @@ if (ENABLE_TESTS)
   include_directories(${TEST_DIR})
   add_subdirectory(tests)
 endif(ENABLE_TESTS)
+

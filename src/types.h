@@ -19,19 +19,12 @@
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
 // Defaults
-#ifdef REQUIRE_HOST
-using MemorySpace = Kokkos::HostSpace;
-using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
-#else
 using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 using ExecutionSpace = Kokkos::DefaultExecutionSpace;
-#endif
 
+using KokkosDevice = Kokkos::Device<ExecutionSpace, MemorySpace>;
 typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
 
-// Defaults
-//using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
-//using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 ///// END ESSENTIALS ///
 
