@@ -1,7 +1,4 @@
-# Overview 
-
-This document is to be used to collect a wish list of features before
-development starts
+#CabanaPIC
 
 ## Installation
 
@@ -12,26 +9,31 @@ This code has two major dependencies:
 
 Instructions on how to obtain and install both can be found [here](https://github.com/ECP-copa/Cabana/wiki/Build-Instructions)
 
-Once these are installed, you can configurable and build this project using
-cmake. To do so, the user should manually tell CMake where to find Cabana, and
-Cabana should bring Kokkos in for us. If that does not happen, the user should
-specify the path to Kokkos on the CMAKE_PREFIX_PATH.
-
-An example build line will look something like this:
+Once these are installed, you can configure and build this project using CMake.
+The only necessary configuration argument is the path to Cabana (which will
+also bring in Kokkos). An example build line will look something like this:
 
 ```
-cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" ..
+cmake -DCMAKE_PREFIX_PATH="$HOME/Cabana/build/install" ..
 ```
 
-For GPU builds, you additionally need to point the CXX compiler to the Kokkos
-Cuda wrapper, you can do this by doing something like:
+CabanaPIC uses the default enabled Kokkos backend (see more information
+[here](https://github.com/kokkos/kokkos/wiki/Initialization#51-initialization-by-command-line-arguments)).
+It is possible to require a CPU build by adding `-DREQUIRE_HOST=ON` (which uses
+the default enabled host backend).
 
+The default field solver is "EM"; to use the "ES" solver, add `-DSOLVER_TYPE="ES"`.
+
+
+Note that if Kokkos <=3.4 is used, building with GCC and CUDA support requires
+specifying the compiler wrapper:
 
 ```
-cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DCMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper -DENABLE_GPU=ON ..
+cmake -DCMAKE_PREFIX_PATH="$HOME/Cabana/build/install" -DCMAKE_CXX_COMPILER=$KOKKOS_SRC_DIR/bin/nvcc_wrapper ..
 ```
 
-Remember: Kokkos and Cabana need to be build with GPU support
+Remember that Kokkos, Cabana, and CabanaPIC should all be built with the same
+compiler.
 
 ## Running
 
@@ -39,7 +41,7 @@ Users can compile in custom input decks by specifying `INPUT_DECK` at build
 time, e.g:
 
 ```
-CXX=g++-9 cmake -DCMAKE_PREFIX_PATH="$HOME/tmp/Cabana/build/install" -DINPUT_DECK=./decks/2stream-short.cxx ..
+cmake -DCMAKE_PREFIX_PATH="$HOME/Cabana/build/install" -DINPUT_DECK=./decks/2stream-short.cxx ..
 ```
 
 Some example decks live in `./decks`. Custom decks must follow the layout put
@@ -48,8 +50,8 @@ forth in `./src/input/decks.h`
 ## Feature Wishlist
 
 1. Configurable to run in different precisions (real_t to configure float/double)
-2. The particle data store layout should be Configurable (AoS/SoA/AoSoA)
-3. The particle shape function used should be configurable 
+2. The particle data store layout should be configurable (AoS/SoA/AoSoA)
+3. The particle shape function used should be configurable
 
 ## Copyright
 
