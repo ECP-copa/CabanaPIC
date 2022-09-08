@@ -72,9 +72,8 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 )
         {
 	    size_t Np = particles.size();
-	    size_t Nps = sqrt(Np);
-	    dxp = Lx/(nx*Nps);
-	    real_t dxpm = dxp/Nps;
+	    size_t Nps = Np/2; //sqrt(Np);
+	    //dxp = Lx/(nx*Nps);
 	    real_t dyp = Ly/(ny*Nps);
 	    real_t dx = Lx/nx;
 	    real_t dy = Ly/ny;
@@ -105,24 +104,24 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 {
                     // Initialize position.
                     int sign =  -1;
-                    size_t pi2 = i;
-                    size_t pi = ((pi2) / 2);
-                    if (pi2%2 == 0) {
+                    size_t pi = i;
+                    //size_t pi = ((pi2) / 2);
+                    if ( pi<Nps ) {
                         sign = 1;
                     }
-                    int pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
-		    int piy = pic/Nps;
-		    int pix = pic-piy*Nps;
+                    // int pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
+		    // int piy = pic/Nps;
+		    // int pix = pic-piy*Nps;
 		    GeneratorType rand_gen = rand_pool.get_state();
-		    real_t xx = rand_gen.drand(dx);
-		    real_t yy = rand_gen.drand(dy);
+		    real_t xx = rand_gen.drand(1.0);
+		    real_t yy = rand_gen.drand(1.0);
 
-                    real_t x = xx; //pix*dxp+xx-1.0;
-		    real_t y = yy; //piy*dyp+yy-1.0;
-                    int pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    real_t x = 2.0*xx-1; //pix*dxp+xx-1.0;
+		    real_t y = 2.0*yy-1; //piy*dyp+yy-1.0;
+                    int no_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
                     int ix,iy,iz;
-                    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
+                    RANK_TO_INDEX(no_ghost, ix, iy, iz, nx, ny);
                     ix += ng;
                     iy += ng;
                     iz += ng;
@@ -143,8 +142,8 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     real_t nay = 0.001*sin(2.0*3.1415926*((y+1.0+iy*2)/(2*ny)));
 
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x(i) = sign *v0*gam*(1.0+nax*sign);
-                    velocity_y(i) = -sign*v0; //-sign *v0*gam*(1.0+nay*sign);
+                    velocity_x(i) = sign *v0; //*gam*(1.0+nax*sign);
+                    velocity_y(i) = -sign *v0; //-sign *v0*gam*(1.0+nay*sign);
                     velocity_z(i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
