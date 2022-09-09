@@ -73,7 +73,8 @@ class Custom_Particle_Initializer : public Particle_Initializer {
         {
 	    size_t Np = particles.size();
 	    size_t Nps = Np/2; //sqrt(Np);
-	    size_t Nxp = (int) sqrt(nppc);
+	    size_t nppcs = nppc/2;
+	    size_t Nxp = (int) sqrt(nppcs);
 	    size_t Nyp = Nxp;
 	    real_t dx = Lx/nx;
 	    real_t dy = Ly/ny;
@@ -107,7 +108,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     // Initialize position.
                     int sign =  -1;
                     size_t pi = i;
-                    //size_t pi2 = ((pi) / 2);
+                    size_t pi2 = ((pi) / 2);
                     if ( pi<Nps ) {
                         sign = 1;
                     }
@@ -115,7 +116,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 		    // int piy = pic/Nps;
 		    // int pix = pic-piy*Nps;
 		    GeneratorType rand_gen = rand_pool.get_state();
-		    int pic = pi%nppc; //(int) (nppc*rand_gen.drand(1.0));
+		    int pic = pi%nppcs; //(int) (nppc*rand_gen.drand(1.0));
 		    int iny = pic/Nxp;
 		    int inx = pic - iny*Nxp;
 		    real_t yy = (iny*dyp+0.5*dyp)/dy; //rand_gen.drand(1.0);
@@ -123,7 +124,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 
                     real_t x = 2.0*xx-1; //pix*dxp+xx-1.0;
 		    real_t y = 2.0*yy-1; //piy*dyp+yy-1.0;
-                    int no_ghost = (pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    int no_ghost = pi/nppcs; //pre_gohost ranges [0,nx*ny*nz).
 
                     int ix,iy,iz;
                     RANK_TO_INDEX(no_ghost, ix, iy, iz, nx, ny);
@@ -425,7 +426,7 @@ Input_Deck::Input_Deck() {
 	 nz = 1;
 
 	 num_steps = 3000;
-	 nppc = 100;
+	 nppc = 200;
 
 	 //v0 = 0.2;
 	 v0 = 0.0866025403784439;
