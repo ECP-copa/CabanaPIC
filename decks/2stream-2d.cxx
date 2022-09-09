@@ -123,10 +123,11 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 
                     real_t x = 2.0*xx-1; //pix*dxp+xx-1.0;
 		    real_t y = 2.0*yy-1; //piy*dyp+yy-1.0;
-                    int no_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    int no_ghost = (pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
                     int ix,iy,iz;
                     RANK_TO_INDEX(no_ghost, ix, iy, iz, nx, ny);
+		    //if(i==89600) std::cout<<"no_ghost, ix,y,z="<<no_ghost<<","<<ix<<","<<iy<<","<<iz<<", nx,y,z="<<nx<<","<<ny<<","<<nz<<std::endl; 	
                     ix += ng;
                     iy += ng;
                     iz += ng;
