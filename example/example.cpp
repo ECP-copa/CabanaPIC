@@ -63,7 +63,7 @@ int main( int argc, char* argv[] )
 		  // implicitness,  SG, verbosity
 		  bool implicit = false;
 		  int maxits = 5;
-		  bool SG = true;
+		  bool SG = false;
 		  bool verbose = false;
 
         // Define some consts

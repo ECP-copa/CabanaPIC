@@ -73,10 +73,13 @@ class Custom_Particle_Initializer : public Particle_Initializer {
         {
 	    size_t Np = particles.size();
 	    size_t Nps = Np/2; //sqrt(Np);
-	    //dxp = Lx/(nx*Nps);
-	    real_t dyp = Ly/(ny*Nps);
+	    size_t nppcs = nppc/2;
+	    size_t Nxp = (int) sqrt(nppcs);
+	    size_t Nyp = Nxp;
 	    real_t dx = Lx/nx;
 	    real_t dy = Ly/ny;
+	    dxp = dx/Nxp;
+	    real_t dyp = dy/Nyp;
             // TODO: this doesnt currently do anything with nppc/num_cells
             std::cout << "Custom particle init" << std::endl;
 
@@ -96,7 +99,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 	    using GeneratorType = GeneratorPool::generator_type;
 	    GeneratorPool rand_pool(5374857); 
 
-            printf("dxp = %e \n", dxp);
+            //printf("dxp = %e \n", dxp);
             printf("part list len = %ld \n", particles.size());
 
             auto _init =
@@ -105,23 +108,27 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     // Initialize position.
                     int sign =  -1;
                     size_t pi = i;
-                    //size_t pi = ((pi2) / 2);
+                    size_t pi2 = ((pi) / 2);
                     if ( pi<Nps ) {
                         sign = 1;
                     }
-                    // int pic = (2*pi)%nppc; //Every 2 particles have the same "pic".
+
 		    // int piy = pic/Nps;
 		    // int pix = pic-piy*Nps;
 		    GeneratorType rand_gen = rand_pool.get_state();
-		    real_t xx = rand_gen.drand(1.0);
-		    real_t yy = rand_gen.drand(1.0);
+		    int pic = pi%nppcs; //(int) (nppc*rand_gen.drand(1.0));
+		    int iny = pic/Nxp;
+		    int inx = pic - iny*Nxp;
+		    real_t yy = (iny*dyp+0.5*dyp)/dy; //rand_gen.drand(1.0);
+		    real_t xx = (inx*dxp+0.5*dxp)/dx; //rand_gen.drand(1.0);
 
                     real_t x = 2.0*xx-1; //pix*dxp+xx-1.0;
 		    real_t y = 2.0*yy-1; //piy*dyp+yy-1.0;
-                    int no_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
+                    int no_ghost = pi/nppcs; //pre_gohost ranges [0,nx*ny*nz).
 
                     int ix,iy,iz;
                     RANK_TO_INDEX(no_ghost, ix, iy, iz, nx, ny);
+		    //if(i==89600) std::cout<<"no_ghost, ix,y,z="<<no_ghost<<","<<ix<<","<<iy<<","<<iz<<", nx,y,z="<<nx<<","<<ny<<","<<nz<<std::endl; 	
                     ix += ng;
                     iy += ng;
                     iz += ng;
@@ -419,7 +426,7 @@ Input_Deck::Input_Deck() {
 	 nz = 1;
 
 	 num_steps = 3000;
-	 nppc = 160;
+	 nppc = 200;
 
 	 //v0 = 0.2;
 	 v0 = 0.0866025403784439;

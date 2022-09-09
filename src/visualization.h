@@ -10,9 +10,10 @@ class Visualizer {
         std::ofstream vis_file;
 
 		  bool writeParticles = false;
-		  bool writeE = false;
-		  bool writeJ = false;
-		  bool writeGrid = false;
+		  bool writeE = true;
+		  bool writeJ = true;
+		  bool writeGrid = true;
+		  int write_every = 10;
 
         void write_header(size_t total_num_particles, size_t step, std::string data_name) {
 
@@ -204,7 +205,7 @@ class Visualizer {
                total_num_particles += particle_count;
                }
             */
-				if ( writeParticles ) 
+				if ( writeParticles && step % write_every == 0) 
 				{
 						  write_header(total_num_particles, step, "particles");
 
@@ -237,19 +238,19 @@ class Visualizer {
 						  //}
 						  finalize();
 					}
-					if ( writeE ) 
+					if ( writeE && step % write_every == 0) 
 					{
 						write_header(total_num_particles, step, "efield");
 						write_efield( fields, nx, ny, nz, ng );
 						finalize();
 					}
-					if ( writeJ )
+					if ( writeJ && step % write_every == 0)
 					{
 						write_header(total_num_particles, step, "current");
 						write_current( fields, nx, ny, nz, ng );
 						finalize();
 					}
-					if ( writeGrid )
+					if ( writeGrid && step == 1) // grid never changes, so only need to write it at first step
 					{
 						write_header(total_num_particles, step, "grid");
 						write_grid(nx, ny, nz, ng, dx, dy, dz);

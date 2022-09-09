@@ -673,6 +673,7 @@ class Binomial_Filters
          //serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
 
 			std::vector<field_array_t> grids;
+			std::vector<field_array_t> grids2;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
 			size_t nx_tmp = nx;
 			size_t ny_tmp = ny;
@@ -697,11 +698,22 @@ class Binomial_Filters
 			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
 			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 0);
 
+			field_array_t xx_coarsened = filter_and_restrict(x_coarsened, nx/2, ny, nz, ng, 0);
+			field_array_t yy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 1);
+			field_array_t xxy_coarsened = filter_and_restrict(xx_coarsened, nx/4, ny, nz, ng, 1);
+			field_array_t yyx_coarsened = filter_and_restrict(yy_coarsened, nx, ny/4, nz, ng, 0);
+
 			//std::cout << "Coarsened grids" << std::endl;
 
 			grids.push_back(x_coarsened);
 			grids.push_back(y_coarsened);
 			grids.push_back(xy_coarsened);
+
+			grids2.push_back(xx_coarsened);
+			grids2.push_back(xy_coarsened);
+			grids2.push_back(yy_coarsened);
+			grids2.push_back(xxy_coarsened);
+			grids2.push_back(yyx_coarsened);
 
 			return grids;
 		}
@@ -859,14 +871,27 @@ class Binomial_Filters
 					std::cout << jfx_test(i) << "	" << jfy_test(i) << "	" << jfz_test(i) << std::endl;
 				}*/
 
+			// This is the version for one coarsening
 			field_array_t field1 = interpolate_on_axis(grids[0], nx_out/2, ny_out, nz_out, ng, 0);
 			field_array_t field2 = interpolate_on_axis(grids[1], nx_out, ny_out/2, nz_out, ng, 1);
 			field_array_t field3 = interpolate_on_axis(grids[2], nx_out/2, ny_out/2, nz_out, ng, 0);
 			field_array_t field4 = interpolate_on_axis(field3,   nx_out, ny_out/2, nz_out, ng, 1);
 
-			assert(fields_out.size()==field1.size());
-			assert(fields_out.size()==field2.size());
-			assert(fields_out.size()==field4.size());
+			//assert(fields_out.size()==field1.size());
+			//assert(fields_out.size()==field2.size());
+			//assert(fields_out.size()==field4.size());
+
+			/*field_array_t field1 = interpolate_on_axis(grids[0], nx_out/4, ny_out, nz_out, ng, 0);
+			field_array_t field2 = interpolate_on_axis(field1, nx_out/2, ny_out, nz_out, ng, 0); // <-- add this one
+			field_array_t field3 = interpolate_on_axis(grids[1], nx_out/2, ny_out/2, nz_out, ng, 0); 
+			field_array_t field4 = interpolate_on_axis(field3, nx_out, ny_out/2, nz_out, ng, 1); // <-- add this one
+			field_array_t field5 = interpolate_on_axis(grids[2], nx_out, ny_out/4, nz_out, ng, 1);
+			field_array_t field6 = interpolate_on_axis(field5, nx_out, ny_out/2, nz_out, ng, 1); // <-- add this one
+			field_array_t field7 = interpolate_on_axis(grids[3], nx_out/4, ny_out/2, nz_out, ng, 1);
+			field_array_t field8 = interpolate_on_axis(field7, nx_out/4, ny_out, nz_out, ng, 0); 
+			field_array_t field9 = interpolate_on_axis(field8, nx_out/2, ny_out, nz_out, ng, 0); // <-- subtract this one
+			*/
+
 
       	auto jfx = Cabana::slice<FIELD_JFX>(fields_out);
          auto jfy = Cabana::slice<FIELD_JFY>(fields_out);
