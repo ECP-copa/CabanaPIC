@@ -8,6 +8,7 @@
 #endif
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
 #include <Cabana_Core.hpp>
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
@@ -24,6 +25,9 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 
 using KokkosDevice = Kokkos::Device<ExecutionSpace, MemorySpace>;
 typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
+
+// Kokkos rng tyep
+using KokkosRngPool = Kokkos::Random_XorShift64_Pool<KokkosDevice>;
 
 
 ///// END ESSENTIALS ///
@@ -53,9 +57,15 @@ Cabana::MemberTypes<
     int                           // (7) Cell index
 >;
 
+#ifdef USE_CUDA
+#define VECLENGTH 32
+#else
+#define VECLENGTH 8
+#endif
+
 // Set the type for the particle AoSoA.
 using particle_list_t =
-    Cabana::AoSoA<ParticleDataTypes,MemorySpace>;
+    Cabana::AoSoA<ParticleDataTypes,MemorySpace,VECLENGTH>;
 
 /////////////// START VPIC TYPE ////////////
 

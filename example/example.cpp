@@ -19,7 +19,7 @@
 #include "visualization.h"
 
 #include "input/deck.h"
-//#include "../decks/2stream-short.cxx"
+#include "particleSort.h"
 
 // Global variable to hold paramters
 //Parameters params;
@@ -164,7 +164,7 @@ int main( int argc, char* argv[] )
 
         // Grab some global values for use later
         const Boundary boundary = deck.BOUNDARY_TYPE;
-
+	std::cout<<"Boundary type = "<<boundary<<std::endl;
         //logger << "nx " << params.nx << std::endl;
         //logger << "num_particles " << num_particles << std::endl;
         //logger << "num_cells " << num_cells << std::endl;
@@ -215,6 +215,7 @@ int main( int argc, char* argv[] )
 		  bool converged, last_iteration;
 		  int step = 0;
 		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
+		  std::vector<size_t> npc_scan(num_cells+1, 0); //particle scan from sort
         // Main loop //
         for ( step = 1; step <= num_steps; step++)
         {
@@ -229,6 +230,15 @@ int main( int argc, char* argv[] )
             // Sort by cell index
             //auto keys = particles.slice<Cell_Index>();
             //auto bin_data = Cabana::sortByKey( keys );
+	    // auto Np = particles.size();
+	    // particle_sort( particles,
+	    // 		   nx,
+	    // 		   ny,
+	    // 		   nz,
+	    // 		   num_ghosts,
+	    // 		   npc_scan,
+	    // 		   Np,
+	    // 		   0);
 				//
 				
 				// TODO: Need to wrap this in an ifdef statement

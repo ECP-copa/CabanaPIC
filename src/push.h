@@ -30,7 +30,6 @@ void push(
 		  bool deposit_current = true
         )
 {
-
     //auto slice = a0.slice<0>();
     //decltype(slice)::atomic_access_slice _a = slice;
 
