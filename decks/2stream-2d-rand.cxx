@@ -71,6 +71,10 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 real_ Lz
                 )
         {
+	    real_t std_fac = 0.;
+	    real_t vstddevx = std_fac*v0;
+	    real_t vstddevy = std_fac*v0;
+	    real_t vstddevz = std_fac*v0;
 	    real_t xmin = 0;
 	    real_t ymin = 0;
 	    size_t Np = particles.size();
@@ -161,9 +165,13 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     real_t nax = 0.001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
                     real_t nay = 0.001*sin(2.0*3.1415926*((y+1.0+iy*2)/(2*ny)));
 
+		    real_t vx       = rand_gen.normal( 0.0, 1.0 );
+		    real_t vy       = rand_gen.normal( 0.0, 1.0 );
+		    real_t vz       = rand_gen.normal( 0.0, 1.0 );
+		    
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x(i) = sign *v0 *gam*(1.0+nax*sign);
-                    velocity_y(i) = -sign *v0; //-sign *v0*gam*(1.0+nay*sign);
+                    velocity_x(i) = sign *v0 *gam*(1.0+nax*sign) + vstddevx * vx;;
+                    velocity_y(i) = -sign *v0 + vstddevy * vy;; //-sign *v0*gam*(1.0+nay*sign);
                     velocity_z(i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
 
