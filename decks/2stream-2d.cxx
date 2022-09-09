@@ -108,9 +108,10 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     // Initialize position.
                     int sign =  -1;
                     size_t pi = i;
-                    size_t pi2 = ((pi) / 2);
-                    if ( pi<Nps ) {
+		    //                    size_t pi2 = ((pi) / 2);
+                    if ( pi>=Nps ) {
                         sign = 1;
+			pi-=Nps;
                     }
 
 		    // int piy = pic/Nps;
@@ -128,11 +129,11 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 
                     int ix,iy,iz;
                     RANK_TO_INDEX(no_ghost, ix, iy, iz, nx, ny);
-		    //if(i==89600) std::cout<<"no_ghost, ix,y,z="<<no_ghost<<","<<ix<<","<<iy<<","<<iz<<", nx,y,z="<<nx<<","<<ny<<","<<nz<<std::endl; 	
+
                     ix += ng;
                     iy += ng;
                     iz += ng;
-
+		    if(iz!=1) std::cout<<"i, pi="<<i<<","<<pi<<"no_ghost, ix,y,z="<<no_ghost<<","<<ix<<","<<iy<<","<<iz<<", nx,y,z="<<nx<<","<<ny<<","<<nz<<std::endl; 	
                     position_x(i) = x;
                     position_y(i) = y;
                     position_z(i) = 0.0;
@@ -149,7 +150,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     real_t nay = 0.001*sin(2.0*3.1415926*((y+1.0+iy*2)/(2*ny)));
 
                     //velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
-                    velocity_x(i) = sign *v0; //*gam*(1.0+nax*sign);
+                    velocity_x(i) = sign *v0 *gam*(1.0+nax*sign);
                     velocity_y(i) = -sign *v0; //-sign *v0*gam*(1.0+nay*sign);
                     velocity_z(i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
                     //velocity_z.access(s,i) = 1e-7*sign;
