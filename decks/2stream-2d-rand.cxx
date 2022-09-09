@@ -148,7 +148,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
 		    size_t iz = 1;
 		    real_t z = 0;
 		    
-		    cell( i ) = VOXEL( ix, iy, iz, nx, ny, nz, ng ); // needs to be more general
+		    cell( i ) = VOXEL( ix, iy, iz, nx, ny, nz, ng ); 
 		    
                     position_x(i) = x;
                     position_y(i) = y;

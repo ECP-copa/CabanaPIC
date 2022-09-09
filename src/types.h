@@ -190,6 +190,12 @@ class particle_mover_t {
   int32_t i;                 // Index of the particle to move
 };
 
+// 1st dim--cell
+// 2nd dim--0:density,1-3: momenta, 4-6: energy
+using moment_array_t = Kokkos::View<real_t *[7],
+                                    Kokkos::LayoutRight, // which layout is better for reduction?
+                                    Kokkos::HostSpace>;  // for diagnostics
+
 /////////////// END VPIC TYPE ////////////
 //
 // TODO: this may be a bad name?

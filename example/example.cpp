@@ -20,6 +20,7 @@
 
 #include "input/deck.h"
 #include "particleSort.h"
+#include "particleDiagnostic.h"
 
 // Global variable to hold paramters
 //Parameters params;
@@ -104,6 +105,9 @@ int main( int argc, char* argv[] )
 
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
 
+	//Create moment array
+	moment_array_t moments( "moments", num_cells );
+	
         // Create the particle list.
         particle_list_t particles( "particles", num_particles );
 
@@ -230,15 +234,6 @@ int main( int argc, char* argv[] )
             // Sort by cell index
             //auto keys = particles.slice<Cell_Index>();
             //auto bin_data = Cabana::sortByKey( keys );
-	    // auto Np = particles.size();
-	    // particle_sort( particles,
-	    // 		   nx,
-	    // 		   ny,
-	    // 		   nz,
-	    // 		   num_ghosts,
-	    // 		   npc_scan,
-	    // 		   Np,
-	    // 		   0);
 				//
 				
 				// TODO: Need to wrap this in an ifdef statement
@@ -325,6 +320,20 @@ int main( int argc, char* argv[] )
             {
                 real_t tot_en = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV,tot_en0);
 		//dump_kinetic_energy( particles, step, step*dt );
+		auto debug_print_level = 0;
+		auto Np = particles.size();
+		particle_sort( particles,
+			       nx,
+			       ny,
+			       nz,
+			       num_ghosts,
+			       npc_scan,
+			       Np,
+			       0);
+		
+		particle_moment(
+				particles, me, nx, ny, nz, num_ghosts, npc_scan, moments, debug_print_level );
+
             }
 
             // TODO: abstract this out

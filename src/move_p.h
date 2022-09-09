@@ -245,7 +245,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         if (face == 5) { iz++; }
 
         int is_leaving_domain = detect_leaving_domain(face, nx, ny, nz, ix, iy, iz, num_ghosts);
-	if(s*VECLENGTH+i==102400) std::cout << s << ", " << i << " leaving on " << face << ", "<<is_leaving_domain<< ", boundary="<<boundary<<", ix,y,z="<<ix<<","<<iy<<","<<iz<<std::endl; 	
+	//	if(s*VECLENGTH+i==102400) std::cout << s << ", " << i << " leaving on " << face << ", "<<is_leaving_domain<< ", boundary="<<boundary<<", ix,y,z="<<ix<<","<<iy<<","<<iz<<std::endl; 	
         if (is_leaving_domain >= 0) {
             /*     //std::cout << */
             /*         //" x " << position_x.access(s,i) << */
@@ -352,7 +352,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         //int updated_ii = ix+(nx+2)*(ny+2) + (nx+2);
         size_t updated_ii = VOXEL(ix, iy, iz, nx, ny, nz, num_ghosts);
         cell.access(s, i) = updated_ii;
-	if(s*VECLENGTH+i==102400) std::cout<<"ix,y,z="<<ix<<","<<iy<<","<<iz<<"\n";
+	//	if(s*VECLENGTH+i==102400) std::cout<<"ix,y,z="<<ix<<","<<iy<<","<<iz<<"\n";
 
         /* int updated_ii = VOXEL(ix, iy, iz, */
         /*         nx, */
