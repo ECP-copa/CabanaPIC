@@ -498,7 +498,7 @@ class Binomial_Filters
 	public:
 		// This is the overall function that applies the (simple, 2D) SG filtering... composed of the functions in the class below
 		void SGfilter(
-			field_array_t& fields, 
+			field_array_t& fields, // this argument is assumed to already have all its ghost cells filled properly 
 			size_t nx, 
 			size_t ny, 
 			size_t nz, 
@@ -528,6 +528,8 @@ class Binomial_Filters
 					jfz_orig(i) = jfz_sg(i);
 				};
 			Kokkos::parallel_for( fields.size(), _copy_to_orig, "copy_to_orig()" );
+
+			serial_update_ghosts_B(jfx_orig, jfy_orig, jfz_orig, nx, ny, nz, ng); // refill ghost cells
 		}
 	
 		void filter_on_axis(
@@ -549,8 +551,8 @@ class Binomial_Filters
             auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
             auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
 	    		
-				serial_update_ghosts(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
-            serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+				//serial_update_ghosts(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+            //serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
 		    
 			 	auto _filter = KOKKOS_LAMBDA( const int x, const int y, const int z)
 				{
@@ -668,7 +670,7 @@ class Binomial_Filters
 			auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
 			auto jfz_in = Cabana::slice<FIELD_JFZ>(fields);
 
-         serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
+         //serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
 
 			std::vector<field_array_t> grids;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
@@ -693,16 +695,9 @@ class Binomial_Filters
 
 			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
 			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
-			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny, nz, ng, 0);
+			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 0);
 
 			//std::cout << "Coarsened grids" << std::endl;
-				auto jfx_out = Cabana::slice<FIELD_JFX>(y_coarsened);
-            auto jfy_out = Cabana::slice<FIELD_JFY>(y_coarsened);
-            auto jfz_out = Cabana::slice<FIELD_JFZ>(y_coarsened);
-
-				/*for ( int i=0; i<=y_coarsened.size(); i++ ) {
-					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
-				}*/
 
 			grids.push_back(x_coarsened);
 			grids.push_back(y_coarsened);
@@ -856,6 +851,13 @@ class Binomial_Filters
 
 			size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
 			field_array_t fields_out("fields_interpolated", num_cells_out);
+
+      	/*auto jfx_test = Cabana::slice<FIELD_JFX>(grids[2]);
+         auto jfy_test = Cabana::slice<FIELD_JFY>(grids[2]);
+         auto jfz_test = Cabana::slice<FIELD_JFZ>(grids[2]);
+				for ( int i=0; i<=grids[2].size(); i++ ) {
+					std::cout << jfx_test(i) << "	" << jfy_test(i) << "	" << jfz_test(i) << std::endl;
+				}*/
 
 			field_array_t field1 = interpolate_on_axis(grids[0], nx_out/2, ny_out, nz_out, ng, 0);
 			field_array_t field2 = interpolate_on_axis(grids[1], nx_out, ny_out/2, nz_out, ng, 1);
@@ -1368,7 +1370,7 @@ class ES_Field_Solver_1D
             auto jfy = Cabana::slice<FIELD_JFY>(fields);
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
-            serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            //serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
 
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
@@ -1515,8 +1517,8 @@ class EM_Field_Solver
             auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 
-            serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+            //serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            //serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int x, const int y, const int z)

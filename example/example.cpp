@@ -293,9 +293,21 @@ int main( int argc, char* argv[] )
 						  scatter_add.reset_except(accumulators);
 						  // TODO: boundaries? MPI
 						  //boundary_p(); // Implies Parallel?
+
 						  // Map accumulator current back onto the fields
 						  unload_accumulator_array(fields, accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);  // this is where the current gets put into the fields array
-						  // SG filtering will happens here
+
+						  // Fill ghosts cells
+
+						  auto jfx = Cabana::slice<FIELD_JFX>(fields);
+						  auto jfy = Cabana::slice<FIELD_JFY>(fields);
+						  auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+
+						  serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Add current deposited to last ghost cell into first valid cell
+						  serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Apply periodic BCs
+
+
+						  // SG filtering 
 						  if ( SG ) {
 						  		SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
 						  }
