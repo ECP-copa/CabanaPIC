@@ -890,6 +890,9 @@ class Binomial_Filters
 			field_array_t field7 = interpolate_on_axis(grids[3], nx_out/4, ny_out/2, nz_out, ng, 1);
 			field_array_t field8 = interpolate_on_axis(field7, nx_out/4, ny_out, nz_out, ng, 0); 
 			field_array_t field9 = interpolate_on_axis(field8, nx_out/2, ny_out, nz_out, ng, 0); // <-- subtract this one
+			field_array_t field10 = interpolate_on_axis(grids[4], nx_out/2, ny_out/4, nz_out, ng, 1);
+			field_array_t field11 = interpolate_on_axis(field10, nx_out/2, ny_out/2, nz_out, ng, 1);
+			field_array_t field12 = interpolate_on_axis(field11, nx_out/2, ny_out, nz_out, ng, 0); // <-- subtract this one
 			*/
 
 
@@ -906,10 +909,18 @@ class Binomial_Filters
 
 			Kokkos::parallel_for( fields_out.size(), _init, "init_output_fields()" );
 
+			// This is the one coarsening version
 			add_fields_inplace(fields_out, field1, 1.);
 			add_fields_inplace(fields_out, field2, 1.);
 			add_fields_inplace(fields_out, field4, -1.);
-			
+
+			// This is the two coarsening version
+			/*add_fields_inplace(fields_out, field2, 1.);
+			add_fields_inplace(fields_out, field4, 1.);
+			add_fields_inplace(fields_out, field6, 1.);
+			add_fields_inplace(fields_out, field9, -1.);
+			add_fields_inplace(fields_out, field12, -1.);*/
+
 			return fields_out;
 		}
 											 

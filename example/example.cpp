@@ -63,7 +63,7 @@ int main( int argc, char* argv[] )
 		  // implicitness,  SG, verbosity
 		  bool implicit = false;
 		  int maxits = 5;
-		  bool SG = false;
+		  bool SG = true;
 		  bool verbose = false;
 
         // Define some consts
@@ -309,7 +309,9 @@ int main( int argc, char* argv[] )
 
 						  // SG filtering 
 						  if ( SG ) {
-						  		SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+						  		for (int filts=0; filts<10; filts++) {
+						  			SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+								}
 						  }
 						  // Half advance the magnetic field from B_0 to B_{1/2}
 						  field_solver.advance_b(fields, dt_frac*real_t(0.5)*px, dt_frac*real_t(0.5)*py, dt_frac*real_t(0.5)*pz, nx, ny, nz, num_ghosts);
