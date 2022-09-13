@@ -216,7 +216,7 @@ int main( int argc, char* argv[] )
 
 		  int itcount;
 
-		  Binomial_Filters SGfilt;
+		  Binomial_Filters SGfilt(nx,ny,nz,num_ghosts);
 		  int minres = 8;
 
 		  real_t dt_frac = 1.;
