@@ -499,11 +499,24 @@ private:
     
     std::vector<field_array_t> d_grids;
     std::vector<field_array_t> d_grids2;
+    std::vector<field_array_t> d_grids_gen;
     field_array_t d_fields_out;
+	 int num_coarsenings;
+	 bool verbose = true;
     
 	public:
     //constructor
-    Binomial_Filters(int nx_out, int ny_out, int nz_out, int ng):d_fields_out("fields_interpolated", (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng)){}
+    Binomial_Filters(int nx_out, int ny_out, int nz_out, int ng, int minres):d_fields_out("fields_interpolated", (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng))
+	 {
+			size_t nx_tmp = nx_out;
+			size_t ny_tmp = ny_out;
+			int num_x_coarsenings, num_y_coarsenings;
+			num_x_coarsenings=0; num_y_coarsenings = 0;
+			while (nx_tmp > minres && nx_tmp % 2 == 0) { nx_tmp /= 2; num_x_coarsenings += 1; }
+			while (ny_tmp > minres && ny_tmp % 2 == 0) { ny_tmp /= 2; num_y_coarsenings += 1; }
+			num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);
+			if ( verbose ) { std::cout << "Number of coarsenings = " << num_coarsenings << std::endl; }
+	 }
 		// This is the overall function that applies the (simple, 2D) SG filtering... composed of the functions in the class below
 		void SGfilter(
 			field_array_t& fields, // this argument is assumed to already have all its ghost cells filled properly 
@@ -654,38 +667,12 @@ private:
 					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i2) + 0.25*jfy_in(ip1);
 					jfz_out(i) = 0.25*jfz_in(im1) + 0.5*jfz_in(i2) + 0.25*jfz_in(ip1);
 
-			                // jfx_out(i) = 0.*jfx_in(im1) + 1*jfx_in(i2) + 0.*jfx_in(ip1);
-					// jfy_out(i) = 0.*jfy_in(im1) + 1*jfy_in(i2) + 0.*jfy_in(ip1);
-					// jfz_out(i) = 0.*jfz_in(im1) + 1*jfz_in(i2) + 0.*jfz_in(ip1);
-			      
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
             Kokkos::parallel_for( exec_policy, _filter, "binomial_filter_with_restriction()" );
-	    /*
-	    if(axis==1) {
-	    for ( int i=ng; i<nx_in+ng; i++ ){
-	    	for ( int j=ng; j<ny_in+ng; j++ ){
-	    	    int k = 1;
-	    	    int ii = VOXEL(i,j,k, nx_in, ny_in, nz_in, ng);
-	    	    std::cout << i<<" "<<j<<" "<<jfx_in(ii) << "	" << jfy_in(ii) << "	" << jfz_in(ii) << std::endl;
-	    	    }
-	    	std::cout<<"\n";		    
-	    }
-	    std::cout<<"\n\n";
+		 
+		 		serial_update_ghosts_B(jfx_out, jfy_out, jfz_out, nx_out, ny_out, nz_out, ng); // Fill ghost cells in output grid
 
-	    }
-	    //if(axis==0){
-	    for ( int i=ng; i<nx_out+ng; i++ ){
-	    	for ( int j=ng; j<ny_out+ng; j++ ){
-	    	    int k = 1;
-	    	    int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
-	    	    std::cout << i<<" "<<j<<" "<<jfx_out(ii) << "	" << jfy_out(ii) << "	" << jfz_out(ii) << std::endl;
-	    	    }
-	    	std::cout<<"\n";		    
-	    }
-	    std::cout<<"\n\n";
-	    //}
-	    */
 				return fields_out;
 		}
 
@@ -702,6 +689,7 @@ private:
 		    //clean up the grids
 		    d_grids.clear();
 		    d_grids2.clear();
+			 d_grids_gen.clear();
 		    
 			auto jfx_in = Cabana::slice<FIELD_JFX>(fields);
 			auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
@@ -712,14 +700,6 @@ private:
 			// std::vector<field_array_t> grids;
 			// std::vector<field_array_t> grids2;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
-			size_t nx_tmp = nx;
-			size_t ny_tmp = ny;
-			int num_x_coarsenings, num_y_coarsenings;
-			num_x_coarsenings=0; num_y_coarsenings = 0;
-			while (nx_tmp > minres && nx_tmp % 2 == 0) { nx_tmp /= 2; num_x_coarsenings += 1; }
-			while (ny_tmp > minres && ny_tmp % 2 == 0) { ny_tmp /= 2; num_y_coarsenings += 1; }
-			int num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);
-			std::cout << "Number of coarsenings = " << num_coarsenings << std::endl;
 
 			//The grids on the "plus" diagonal
 			/*std::vector<field_array_t> grids_tmp;
@@ -733,10 +713,6 @@ private:
 
 			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
 			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
-			auto jfx_yc = Cabana::slice<FIELD_JFX>(y_coarsened);
-			auto jfy_yc = Cabana::slice<FIELD_JFY>(y_coarsened);
-			auto jfz_yc = Cabana::slice<FIELD_JFZ>(y_coarsened);
-			serial_update_ghosts_B(jfx_yc, jfy_yc, jfz_yc, nx, ny/2, nz, ng);			
 			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 0);
 
 			// field_array_t xx_coarsened = filter_and_restrict(x_coarsened, nx/2, ny, nz, ng, 0);

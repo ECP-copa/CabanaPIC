@@ -216,8 +216,8 @@ int main( int argc, char* argv[] )
 
 		  int itcount;
 
-		  Binomial_Filters SGfilt(nx,ny,nz,num_ghosts);
 		  int minres = 8;
+		  Binomial_Filters SGfilt(nx,ny,nz,num_ghosts,minres);
 
 		  real_t dt_frac = 1.;
 		  bool converged, last_iteration, deposit_current;  // Deposit current tells you whether to do current deposition during a particle push.  For implicit, you only want to do this if it's not the last iteration.  
@@ -309,7 +309,7 @@ int main( int argc, char* argv[] )
 
 						  // SG filtering 
 						  if ( SG ) {
-						  		for (int filts=0; filts<5; filts++) {
+						  		for (int filts=0; filts<15; filts++) {
 						  			SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
 								}
 						  }
