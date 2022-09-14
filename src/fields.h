@@ -495,7 +495,15 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
 
 class Binomial_Filters
 {
+private:
+    
+    std::vector<field_array_t> d_grids;
+    std::vector<field_array_t> d_grids2;
+    field_array_t d_fields_out;
+    
 	public:
+    //constructor
+    Binomial_Filters(int nx_out, int ny_out, int nz_out, int ng):d_fields_out("fields_interpolated", (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng)){}
 		// This is the overall function that applies the (simple, 2D) SG filtering... composed of the functions in the class below
 		void SGfilter(
 			field_array_t& fields, // this argument is assumed to already have all its ghost cells filled properly 
@@ -506,9 +514,9 @@ class Binomial_Filters
 			size_t minres
 			)
 		{
-			std::vector<field_array_t> grids = constructSGCTcomponentGrids(fields, nx, ny, nz, ng, minres); // Constructs the component grids in combination technique
+			constructSGCTcomponentGrids(fields, nx, ny, nz, ng, minres); // Constructs the component grids in combination technique
 			//std::cout << "Component grids constructed" << std::endl;
-			field_array_t fields_out = SGinterpolate(grids, nx, ny, nz, ng);	// Interpolates component grids onto original grid resolution
+			SGinterpolate( nx, ny, nz, ng);	// Interpolates component grids onto original grid resolution
 			//std::cout << "Output grid reinterpolated" << std::endl;
 
 			// The rest of the function just copies the current density of fields_out into the original fields argument
@@ -517,9 +525,9 @@ class Binomial_Filters
 			auto jfy_orig = Cabana::slice<FIELD_JFY>(fields);
 			auto jfz_orig = Cabana::slice<FIELD_JFZ>(fields);
 
-			auto jfx_sg = Cabana::slice<FIELD_JFX>(fields_out);
-			auto jfy_sg = Cabana::slice<FIELD_JFY>(fields_out);
-			auto jfz_sg = Cabana::slice<FIELD_JFZ>(fields_out);
+			auto jfx_sg = Cabana::slice<FIELD_JFX>(d_fields_out);
+			auto jfy_sg = Cabana::slice<FIELD_JFY>(d_fields_out);
+			auto jfz_sg = Cabana::slice<FIELD_JFZ>(d_fields_out);
 
 			auto _copy_to_orig = KOKKOS_LAMBDA( const int i ) 
 				{
@@ -577,6 +585,7 @@ class Binomial_Filters
 					jfx_out(i) = 0.25*jfx_in(im1) + 0.5*jfx_in(i) + 0.25*jfx_in(ip1);
 					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i) + 0.25*jfy_in(ip1);
 					jfz_out(i) = 0.25*jfz_in(im1) + 0.5*jfz_in(i) + 0.25*jfz_in(ip1);
+			      
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
             //Kokkos::MDRangePolicy<ExecutionSpace> exec_policy( 0, fields_in.size() );
@@ -612,8 +621,8 @@ class Binomial_Filters
 				field_array_t fields_out("fields_filtered", num_cells_out);
             
 				auto jfx_out = Cabana::slice<FIELD_JFX>(fields_out);
-            auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
-            auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
+				auto jfy_out = Cabana::slice<FIELD_JFY>(fields_out);
+				auto jfz_out = Cabana::slice<FIELD_JFZ>(fields_out);
 
 				const int coarse_fac_x = (int) nx_in/nx_out;
 				const int coarse_fac_y = (int) ny_in/ny_out;
@@ -644,20 +653,44 @@ class Binomial_Filters
 					jfx_out(i) = 0.25*jfx_in(im1) + 0.5*jfx_in(i2) + 0.25*jfx_in(ip1);
 					jfy_out(i) = 0.25*jfy_in(im1) + 0.5*jfy_in(i2) + 0.25*jfy_in(ip1);
 					jfz_out(i) = 0.25*jfz_in(im1) + 0.5*jfz_in(i2) + 0.25*jfz_in(ip1);
+
+			                // jfx_out(i) = 0.*jfx_in(im1) + 1*jfx_in(i2) + 0.*jfx_in(ip1);
+					// jfy_out(i) = 0.*jfy_in(im1) + 1*jfy_in(i2) + 0.*jfy_in(ip1);
+					// jfz_out(i) = 0.*jfz_in(im1) + 1*jfz_in(i2) + 0.*jfz_in(ip1);
+			      
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
             Kokkos::parallel_for( exec_policy, _filter, "binomial_filter_with_restriction()" );
-			/*if (axis==1) {
-				for ( int i=0; i<=fields_out.size(); i++ ) {
-					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
-				}
-			}*/
+	    /*
+	    if(axis==1) {
+	    for ( int i=ng; i<nx_in+ng; i++ ){
+	    	for ( int j=ng; j<ny_in+ng; j++ ){
+	    	    int k = 1;
+	    	    int ii = VOXEL(i,j,k, nx_in, ny_in, nz_in, ng);
+	    	    std::cout << i<<" "<<j<<" "<<jfx_in(ii) << "	" << jfy_in(ii) << "	" << jfz_in(ii) << std::endl;
+	    	    }
+	    	std::cout<<"\n";		    
+	    }
+	    std::cout<<"\n\n";
 
+	    }
+	    //if(axis==0){
+	    for ( int i=ng; i<nx_out+ng; i++ ){
+	    	for ( int j=ng; j<ny_out+ng; j++ ){
+	    	    int k = 1;
+	    	    int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
+	    	    std::cout << i<<" "<<j<<" "<<jfx_out(ii) << "	" << jfy_out(ii) << "	" << jfz_out(ii) << std::endl;
+	    	    }
+	    	std::cout<<"\n";		    
+	    }
+	    std::cout<<"\n\n";
+	    //}
+	    */
 				return fields_out;
 		}
 
 /*****************************************************************************************************************/
-		std::vector<field_array_t> constructSGCTcomponentGrids(
+		void constructSGCTcomponentGrids(
 				field_array_t& fields,
 				size_t nx, 
 				size_t ny, 
@@ -666,14 +699,18 @@ class Binomial_Filters
 				size_t minres
 				)
 		{
+		    //clean up the grids
+		    d_grids.clear();
+		    d_grids2.clear();
+		    
 			auto jfx_in = Cabana::slice<FIELD_JFX>(fields);
 			auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
 			auto jfz_in = Cabana::slice<FIELD_JFZ>(fields);
 
          //serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
 
-			std::vector<field_array_t> grids;
-			std::vector<field_array_t> grids2;
+			// std::vector<field_array_t> grids;
+			// std::vector<field_array_t> grids2;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
 			size_t nx_tmp = nx;
 			size_t ny_tmp = ny;
@@ -696,26 +733,30 @@ class Binomial_Filters
 
 			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
 			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
+			auto jfx_yc = Cabana::slice<FIELD_JFX>(y_coarsened);
+			auto jfy_yc = Cabana::slice<FIELD_JFY>(y_coarsened);
+			auto jfz_yc = Cabana::slice<FIELD_JFZ>(y_coarsened);
+			serial_update_ghosts_B(jfx_yc, jfy_yc, jfz_yc, nx, ny/2, nz, ng);			
 			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 0);
 
-			field_array_t xx_coarsened = filter_and_restrict(x_coarsened, nx/2, ny, nz, ng, 0);
-			field_array_t yy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 1);
-			field_array_t xxy_coarsened = filter_and_restrict(xx_coarsened, nx/4, ny, nz, ng, 1);
-			field_array_t yyx_coarsened = filter_and_restrict(yy_coarsened, nx, ny/4, nz, ng, 0);
+			// field_array_t xx_coarsened = filter_and_restrict(x_coarsened, nx/2, ny, nz, ng, 0);
+			// field_array_t yy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 1);
+			// field_array_t xxy_coarsened = filter_and_restrict(xx_coarsened, nx/4, ny, nz, ng, 1);
+			// field_array_t yyx_coarsened = filter_and_restrict(yy_coarsened, nx, ny/4, nz, ng, 0);
 
 			//std::cout << "Coarsened grids" << std::endl;
 
-			grids.push_back(x_coarsened);
-			grids.push_back(y_coarsened);
-			grids.push_back(xy_coarsened);
+			d_grids.push_back(x_coarsened);
+			d_grids.push_back(y_coarsened);
+			d_grids.push_back(xy_coarsened);
 
-			grids2.push_back(xx_coarsened);
-			grids2.push_back(xy_coarsened);
-			grids2.push_back(yy_coarsened);
-			grids2.push_back(xxy_coarsened);
-			grids2.push_back(yyx_coarsened);
+			// d_grids2.push_back(xx_coarsened);
+			// d_grids2.push_back(xy_coarsened);
+			// d_grids2.push_back(yy_coarsened);
+			// d_grids2.push_back(xxy_coarsened);
+			// d_grids2.push_back(yyx_coarsened);
 
-			return grids;
+			//return grids;
 		}
 
 /*****************************************************************************************************************/
@@ -831,12 +872,12 @@ class Binomial_Filters
 																				 // you from adding together a 32x64x16 grid and a 16x32x64 grid and getting nonsense)
 
       	auto jfx = Cabana::slice<FIELD_JFX>(fields);
-         auto jfy = Cabana::slice<FIELD_JFY>(fields);
-         auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+	auto jfy = Cabana::slice<FIELD_JFY>(fields);
+	auto jfz = Cabana::slice<FIELD_JFZ>(fields);
       	
-			auto jfx_add = Cabana::slice<FIELD_JFX>(fields_to_be_added);
-         auto jfy_add = Cabana::slice<FIELD_JFY>(fields_to_be_added);
-         auto jfz_add = Cabana::slice<FIELD_JFZ>(fields_to_be_added);
+	auto jfx_add = Cabana::slice<FIELD_JFX>(fields_to_be_added);
+	auto jfy_add = Cabana::slice<FIELD_JFY>(fields_to_be_added);
+	auto jfz_add = Cabana::slice<FIELD_JFZ>(fields_to_be_added);
 
 			auto _add = KOKKOS_LAMBDA( const int i ) 
 				{
@@ -844,14 +885,27 @@ class Binomial_Filters
 					jfy(i) += fac*jfy_add(i);
 					jfz(i) += fac*jfz_add(i);
 				};
-			Kokkos::parallel_for( fields.size(), _add, "add_fields()" ); 
+			Kokkos::parallel_for( fields.size(), _add, "add_fields()" );
+
+	    // 		int ng = 1;
+	    // 		int nx_out = 16;
+	    // 		int ny_out = 16;
+	    // 		int nz_out = 1;
+	    // for ( int i=ng; i<nx_out+ng; i++ ){
+	    // 	for ( int j=ng; j<ny_out+ng; j++ ){
+	    // 	    int k = 1;
+	    // 	    int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
+	    // 	    std::cout << i<<" "<<j<<" "<<jfx(ii) << "	" << jfy(ii) << "	" << jfz(ii) << std::endl;
+	    // 	    }
+	    // 	std::cout<<"\n";		    
+	    // }
+	    // std::cout<<"\n\n";
 
 		}
 
 /*****************************************************************************************************************/
 
-		field_array_t SGinterpolate(
-				std::vector<field_array_t> grids, 
+		void SGinterpolate(
 				size_t nx_out, 
 				size_t ny_out, 
 				size_t nz_out, 
@@ -861,22 +915,32 @@ class Binomial_Filters
 			//assert(grids[1].size()==(nx_out + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
 			//assert(grids[2].size()==(nx_out/2 + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
 
-			size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
-			field_array_t fields_out("fields_interpolated", num_cells_out);
+			// size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
+			// field_array_t fields_out("fields_interpolated", num_cells_out);
 
-      	/*auto jfx_test = Cabana::slice<FIELD_JFX>(grids[2]);
-         auto jfy_test = Cabana::slice<FIELD_JFY>(grids[2]);
-         auto jfz_test = Cabana::slice<FIELD_JFZ>(grids[2]);
-				for ( int i=0; i<=grids[2].size(); i++ ) {
-					std::cout << jfx_test(i) << "	" << jfy_test(i) << "	" << jfz_test(i) << std::endl;
-				}*/
 
 			// This is the version for one coarsening
-			field_array_t field1 = interpolate_on_axis(grids[0], nx_out/2, ny_out, nz_out, ng, 0);
-			field_array_t field2 = interpolate_on_axis(grids[1], nx_out, ny_out/2, nz_out, ng, 1);
-			field_array_t field3 = interpolate_on_axis(grids[2], nx_out/2, ny_out/2, nz_out, ng, 0);
+			field_array_t field1 = interpolate_on_axis(d_grids[0], nx_out/2, ny_out, nz_out, ng, 0);
+			field_array_t field2 = interpolate_on_axis(d_grids[1], nx_out, ny_out/2, nz_out, ng, 1);
+			field_array_t field3 = interpolate_on_axis(d_grids[2], nx_out/2, ny_out/2, nz_out, ng, 0);
 			field_array_t field4 = interpolate_on_axis(field3,   nx_out, ny_out/2, nz_out, ng, 1);
+			/*
+			auto jfx_0 = Cabana::slice<FIELD_JFX>(grids[2]);
+			auto jfy_0 = Cabana::slice<FIELD_JFY>(grids[2]);
+			auto jfz_0 = Cabana::slice<FIELD_JFZ>(grids[2]);
+			for ( int i=ng; i<nx_out/2+ng; i++ ){
+			    for ( int j=ng; j<ny_out/2+ng; j++ ){
+				int k = 1;
+				int ii = VOXEL(i,j,k, nx_out/2, ny_out/2, nz_out, ng);
+				std::cout << i<<" "<<j<<" "<<jfx_0(ii) << "	" << jfy_0(ii) << "	" << jfz_0(ii) << std::endl;
+			    }
+			    std::cout<<"\n";		    
+			}
+			std::cout<<"\n\n";
+			*/
 
+
+			
 			//assert(fields_out.size()==field1.size());
 			//assert(fields_out.size()==field2.size());
 			//assert(fields_out.size()==field4.size());
@@ -896,9 +960,9 @@ class Binomial_Filters
 			*/
 
 
-      	auto jfx = Cabana::slice<FIELD_JFX>(fields_out);
-         auto jfy = Cabana::slice<FIELD_JFY>(fields_out);
-         auto jfz = Cabana::slice<FIELD_JFZ>(fields_out);
+      	auto jfx = Cabana::slice<FIELD_JFX>(d_fields_out);
+         auto jfy = Cabana::slice<FIELD_JFY>(d_fields_out);
+         auto jfz = Cabana::slice<FIELD_JFZ>(d_fields_out);
 
 			auto _init = KOKKOS_LAMBDA( const int i )
 				{
@@ -907,13 +971,27 @@ class Binomial_Filters
 					jfz(i) = 0.0;
 				};
 
-			Kokkos::parallel_for( fields_out.size(), _init, "init_output_fields()" );
+			Kokkos::parallel_for( d_fields_out.size(), _init, "init_output_fields()" );
 
 			// This is the one coarsening version
-			add_fields_inplace(fields_out, field1, 1.);
-			add_fields_inplace(fields_out, field2, 1.);
-			add_fields_inplace(fields_out, field4, -1.);
+			add_fields_inplace(d_fields_out, field1, 1.);
+			add_fields_inplace(d_fields_out, field2, 1.);
+			add_fields_inplace(d_fields_out, field4, -1.);
 
+			/*
+			auto jfx_test = Cabana::slice<FIELD_JFX>(field4);
+			auto jfy_test = Cabana::slice<FIELD_JFY>(field4);
+			auto jfz_test = Cabana::slice<FIELD_JFZ>(field4);
+			for ( int i=ng; i<nx_out+ng; i++ ){
+			    for ( int j=ng; j<ny_out+ng; j++ ){
+				int k = 1;
+				int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
+				std::cout << i<<" "<<j<<" "<<jfx_test(ii) << "	" << jfy_test(ii) << "	" << jfz_test(ii) << std::endl;
+			    }
+			    std::cout<<"\n";		    
+			}
+			std::cout<<"\n\n";
+			*/
 			// This is the two coarsening version
 			/*add_fields_inplace(fields_out, field2, 1.);
 			add_fields_inplace(fields_out, field4, 1.);
@@ -921,7 +999,7 @@ class Binomial_Filters
 			add_fields_inplace(fields_out, field9, -1.);
 			add_fields_inplace(fields_out, field12, -1.);*/
 
-			return fields_out;
+			//return fields_out;
 		}
 											 
 
