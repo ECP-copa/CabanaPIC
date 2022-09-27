@@ -421,12 +421,12 @@ Input_Deck::Input_Deck() {
 	 // User puts initialization code here
     field_initer = new Custom_Field_Initializer();
     particle_initer = new Custom_Particle_Initializer();
-	 nx = 32;
-	 ny = 32;
+	 nx = 64;
+	 ny = 64;
 	 nz = 1;
 
-	 num_steps = 3000;
-	 nppc = 200;
+	 num_steps = 6000;
+	 nppc = 1600;
 
 	 //v0 = 0.2;
 	 v0 = 0.0866025403784439;

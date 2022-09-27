@@ -13,7 +13,7 @@ class Visualizer {
 		  bool writeE = true;
 		  bool writeJ = true;
 		  bool writeGrid = true;
-		  int write_every = 15;
+		  int write_every = 1;
 
         void write_header(size_t total_num_particles, size_t step, std::string data_name) {
 

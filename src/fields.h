@@ -499,7 +499,10 @@ private:
     
     std::vector<field_array_t> d_grids;
     std::vector<field_array_t> d_grids2;
-    std::vector<field_array_t> d_grids_gen;
+    std::vector<field_array_t> d_grids_gen_p, d_grids_gen_m;
+
+	 std::vector<int> xres_p, yres_p, xres_m, yres_m;
+
     field_array_t d_fields_out;
 	 int num_coarsenings;
 	 bool verbose = true;
@@ -517,22 +520,51 @@ private:
 			num_coarsenings = std::min(num_x_coarsenings, num_y_coarsenings);
 			if ( verbose ) { std::cout << "Number of coarsenings = " << num_coarsenings << std::endl; }
 	 }
+
+	 void printGridResolutions() {
+			std::cout << "Plus-diagonal resolutions are:" << std::endl;
+			std::cout << "x: ";
+			for ( int i=0; i<xres_p.size(); i++ ) {
+				std::cout << xres_p[i] << " ";
+			}
+			std::cout << std::endl;
+			std::cout << "y: ";
+			for ( int i=0; i<yres_p.size(); i++ ) {
+				std::cout << yres_p[i] << " ";
+			}
+			std::cout << std::endl;
+
+			std::cout << "Minus diagonal resolutions are:" << std::endl;
+			std::cout << "x: ";
+			for ( int i=0; i<xres_m.size(); i++ ) {
+				std::cout << xres_m[i] << " ";
+			}
+			std::cout << std::endl;
+			std::cout << "y: ";
+			for ( int i=0; i<yres_m.size(); i++ ) {
+				std::cout << yres_m[i] << " ";
+			}
+			std::cout << std::endl;
+
+			
+	 }
+		
 		// This is the overall function that applies the (simple, 2D) SG filtering... composed of the functions in the class below
 		void SGfilter(
 			field_array_t& fields, // this argument is assumed to already have all its ghost cells filled properly 
 			size_t nx, 
 			size_t ny, 
 			size_t nz, 
-			size_t ng, 
-			size_t minres
+			size_t ng
 			)
 		{
-			constructSGCTcomponentGrids(fields, nx, ny, nz, ng, minres); // Constructs the component grids in combination technique
-			//std::cout << "Component grids constructed" << std::endl;
+			if ( verbose ) { std::cout << "Starting SGCT" << std::endl; }
+			constructSGCTcomponentGrids(fields, nx, ny, nz, ng); // Constructs the component grids in combination technique
+			if ( verbose ) { std::cout << "Component grids constructed" << std::endl; }
 			SGinterpolate( nx, ny, nz, ng);	// Interpolates component grids onto original grid resolution
-			//std::cout << "Output grid reinterpolated" << std::endl;
+			if ( verbose ) { std::cout << "Output grid reinterpolated" << std::endl; }
 
-			// The rest of the function just copies the current density of fields_out into the original fields argument
+			// The rest of the function just copies the current density of d_fields_out into the original fields argument
 
 			auto jfx_orig = Cabana::slice<FIELD_JFX>(fields);
 			auto jfy_orig = Cabana::slice<FIELD_JFY>(fields);
@@ -549,8 +581,19 @@ private:
 					jfz_orig(i) = jfz_sg(i);
 				};
 			Kokkos::parallel_for( fields.size(), _copy_to_orig, "copy_to_orig()" );
-
+			
+			std::cout << "aa" << std::endl;
 			serial_update_ghosts_B(jfx_orig, jfy_orig, jfz_orig, nx, ny, nz, ng); // refill ghost cells
+		    //clean up the grids
+		    //d_grids.clear();
+		    //d_grids2.clear();
+			 d_grids_gen_p.clear();
+			 std::cout << "a" << std::endl;
+			 d_grids_gen_m.clear();
+			 std::cout << "b" << std::endl;
+			 xres_p.clear(); yres_p.clear();
+			 xres_m.clear(); yres_m.clear();
+			 std::cout << "c" << std::endl;
 		}
 	
 		void filter_on_axis(
@@ -682,57 +725,52 @@ private:
 				size_t nx, 
 				size_t ny, 
 				size_t nz, 
-				size_t ng, 
-				size_t minres
+				size_t ng
 				)
 		{
-		    //clean up the grids
-		    d_grids.clear();
-		    d_grids2.clear();
-			 d_grids_gen.clear();
+
+			 if ( verbose ) { std::cout << "Cleared vectors" << std::endl; }
 		    
-			auto jfx_in = Cabana::slice<FIELD_JFX>(fields);
-			auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
-			auto jfz_in = Cabana::slice<FIELD_JFZ>(fields);
+			//auto jfx_in = Cabana::slice<FIELD_JFX>(fields);
+			//auto jfy_in = Cabana::slice<FIELD_JFY>(fields);
+			//auto jfz_in = Cabana::slice<FIELD_JFZ>(fields);
 
          //serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx, ny, nz, ng);
 
-			// std::vector<field_array_t> grids;
-			// std::vector<field_array_t> grids2;
 			//I'm going to implement a 2D-only version first as a proof-of-principle
-
+			if ( verbose ) { std::cout << "Starting construction of SGCT grids" << std::endl; }
 			//The grids on the "plus" diagonal
-			/*std::vector<field_array_t> grids_tmp;
-			grids_tmp.push_back(fields);
-			nx_tmp = nx;
+			d_grids_gen_p.push_back(fields);
+			xres_p.push_back(nx); yres_p.push_back(ny);
+			size_t nx_tmp = nx;
+			size_t ny_tmp = ny;
 			for (int i=1; i<=num_coarsenings; i++) {
-				field_array_t coarsened = filter_and_restrict(grids_tmp[i-1], nx_tmp, ny, nz, ng, 0);
+				//field_array_t coarsened = 
+				d_grids_gen_p.push_back(filter_and_restrict(d_grids_gen_p[i-1], nx_tmp, ny, nz, ng, 0));
 				nx_tmp /= 2;
-				grids_tmp.push_back(coarsened);
-			}*/
+				xres_p.push_back(nx_tmp); yres_p.push_back(ny_tmp);
+			}
+			if ( verbose ) { std::cout << "Finished x-coarsening for plus grids" << std::endl; }
+			// The above loop gets the right dimensions in vector indices 1 to num_coarsenings, this next one does that for index 0
+			for (int i=0; i<=num_coarsenings; i++) {
+				for (int j=1; j<=num_coarsenings-i; j++) {
+					d_grids_gen_p[i] = filter_and_restrict(d_grids_gen_p[i], xres_p[i], ny_tmp, nz, ng, 1);
+					ny_tmp /= 2;
+					yres_p[i] = ny_tmp;
+				}
+				ny_tmp = ny;
+			}
+			if ( verbose ) { std::cout << "Constructed plus grids" << std::endl; }
 
-			field_array_t x_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 0);
-			field_array_t y_coarsened = filter_and_restrict(fields, nx, ny, nz, ng, 1);
-			field_array_t xy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 0);
+			// Now make the grids on the "minus" diagonal
+			for ( int i=0; i<num_coarsenings; i++ ) {
+				//field_array_t coarsened = 
+				d_grids_gen_m.push_back(filter_and_restrict(d_grids_gen_p[i], xres_p[i], yres_p[i], nz, ng, 0));//oarsened); 
+				xres_m.push_back(xres_p[i]/2); yres_m.push_back(yres_p[i]);
+			}
 
-			// field_array_t xx_coarsened = filter_and_restrict(x_coarsened, nx/2, ny, nz, ng, 0);
-			// field_array_t yy_coarsened = filter_and_restrict(y_coarsened, nx, ny/2, nz, ng, 1);
-			// field_array_t xxy_coarsened = filter_and_restrict(xx_coarsened, nx/4, ny, nz, ng, 1);
-			// field_array_t yyx_coarsened = filter_and_restrict(yy_coarsened, nx, ny/4, nz, ng, 0);
+			if ( verbose ) { std::cout << "Constructed minus grids" << std::endl; printGridResolutions(); }
 
-			//std::cout << "Coarsened grids" << std::endl;
-
-			d_grids.push_back(x_coarsened);
-			d_grids.push_back(y_coarsened);
-			d_grids.push_back(xy_coarsened);
-
-			// d_grids2.push_back(xx_coarsened);
-			// d_grids2.push_back(xy_coarsened);
-			// d_grids2.push_back(yy_coarsened);
-			// d_grids2.push_back(xxy_coarsened);
-			// d_grids2.push_back(yyx_coarsened);
-
-			//return grids;
 		}
 
 /*****************************************************************************************************************/
@@ -748,12 +786,6 @@ private:
          auto jfx_in = Cabana::slice<FIELD_JFX>(fields_in);
          auto jfy_in = Cabana::slice<FIELD_JFY>(fields_in);
          auto jfz_in = Cabana::slice<FIELD_JFZ>(fields_in);
-
-			/*if (axis==1) {
-				for ( int i=0; i<=fields_in.size(); i++ ) {
-					std::cout << jfx_in(i) << "	" << jfy_in(i) << "	" << jfz_in(i) << std::endl;
-				}
-			}*/
 
 			// fill ghost cells
          serial_update_ghosts_B(jfx_in, jfy_in, jfz_in, nx_in, ny_in, nz_in, ng);
@@ -826,11 +858,7 @@ private:
 				Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
 				Kokkos::parallel_for( exec_policy, _interpolate, "interpolate()" );
 
-			/*if (axis==1) {
-				for ( int i=0; i<=fields_out.size(); i++ ) {
-					std::cout << jfx_out(i) << "	" << jfy_out(i) << "	" << jfz_out(i) << std::endl;
-				}
-			}*/
+            serial_update_ghosts_B(jfx_out, jfy_out, jfz_out, nx_out, ny_out, nz_out, ng); // Make sure output has ghost cells
 				return fields_out;
 
 		}
@@ -848,12 +876,12 @@ private:
 																				 // you from adding together a 32x64x16 grid and a 16x32x64 grid and getting nonsense)
 
       	auto jfx = Cabana::slice<FIELD_JFX>(fields);
-	auto jfy = Cabana::slice<FIELD_JFY>(fields);
-	auto jfz = Cabana::slice<FIELD_JFZ>(fields);
-      	
-	auto jfx_add = Cabana::slice<FIELD_JFX>(fields_to_be_added);
-	auto jfy_add = Cabana::slice<FIELD_JFY>(fields_to_be_added);
-	auto jfz_add = Cabana::slice<FIELD_JFZ>(fields_to_be_added);
+			auto jfy = Cabana::slice<FIELD_JFY>(fields);
+			auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+					  
+			auto jfx_add = Cabana::slice<FIELD_JFX>(fields_to_be_added);
+			auto jfy_add = Cabana::slice<FIELD_JFY>(fields_to_be_added);
+			auto jfz_add = Cabana::slice<FIELD_JFZ>(fields_to_be_added);
 
 			auto _add = KOKKOS_LAMBDA( const int i ) 
 				{
@@ -862,20 +890,6 @@ private:
 					jfz(i) += fac*jfz_add(i);
 				};
 			Kokkos::parallel_for( fields.size(), _add, "add_fields()" );
-
-	    // 		int ng = 1;
-	    // 		int nx_out = 16;
-	    // 		int ny_out = 16;
-	    // 		int nz_out = 1;
-	    // for ( int i=ng; i<nx_out+ng; i++ ){
-	    // 	for ( int j=ng; j<ny_out+ng; j++ ){
-	    // 	    int k = 1;
-	    // 	    int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
-	    // 	    std::cout << i<<" "<<j<<" "<<jfx(ii) << "	" << jfy(ii) << "	" << jfz(ii) << std::endl;
-	    // 	    }
-	    // 	std::cout<<"\n";		    
-	    // }
-	    // std::cout<<"\n\n";
 
 		}
 
@@ -887,53 +901,41 @@ private:
 				size_t nz_out, 
 				size_t ng)
 		{
-			//assert(grids[0].size()==(nx_out/2 + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng))
-			//assert(grids[1].size()==(nx_out + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
-			//assert(grids[2].size()==(nx_out/2 + 2*ng)*(ny_out/2 + 2*ng)*(nz_out + 2*ng))
 
-			// size_t num_cells_out = (nx_out + 2*ng)*(ny_out + 2*ng)*(nz_out + 2*ng);
-			// field_array_t fields_out("fields_interpolated", num_cells_out);
-
-
-			// This is the version for one coarsening
-			field_array_t field1 = interpolate_on_axis(d_grids[0], nx_out/2, ny_out, nz_out, ng, 0);
-			field_array_t field2 = interpolate_on_axis(d_grids[1], nx_out, ny_out/2, nz_out, ng, 1);
-			field_array_t field3 = interpolate_on_axis(d_grids[2], nx_out/2, ny_out/2, nz_out, ng, 0);
-			field_array_t field4 = interpolate_on_axis(field3,   nx_out, ny_out/2, nz_out, ng, 1);
-			/*
-			auto jfx_0 = Cabana::slice<FIELD_JFX>(grids[2]);
-			auto jfy_0 = Cabana::slice<FIELD_JFY>(grids[2]);
-			auto jfz_0 = Cabana::slice<FIELD_JFZ>(grids[2]);
-			for ( int i=ng; i<nx_out/2+ng; i++ ){
-			    for ( int j=ng; j<ny_out/2+ng; j++ ){
-				int k = 1;
-				int ii = VOXEL(i,j,k, nx_out/2, ny_out/2, nz_out, ng);
-				std::cout << i<<" "<<j<<" "<<jfx_0(ii) << "	" << jfy_0(ii) << "	" << jfz_0(ii) << std::endl;
-			    }
-			    std::cout<<"\n";		    
+			// Interpolate grids on "plus" diagonal until they have the right resolution
+			for ( int i=0; i<=num_coarsenings; i++ ) {
+				std::cout << "In plus grids, i = " << i << std::endl;
+				while ( xres_p[i] < nx_out ) {
+					d_grids_gen_p[i] = interpolate_on_axis(d_grids_gen_p[i], xres_p[i], yres_p[i], nz_out, ng, 0);
+					xres_p[i] *= 2;
+					std::cout << xres_p[i] << std::endl;
+				}
+				std::cout << "x-interpolation successful" << std::endl;
+				while ( yres_p[i] < ny_out ) {
+					d_grids_gen_p[i] = interpolate_on_axis(d_grids_gen_p[i], xres_p[i], yres_p[i], nz_out, ng, 1);
+					yres_p[i] *= 2;
+				}
+				std::cout << "y-interpolation successful" << std::endl;
+				
 			}
-			std::cout<<"\n\n";
-			*/
+			if ( verbose ) { std::cout << "Interpolated plus grids" << std::endl; }
 
-
-			
-			//assert(fields_out.size()==field1.size());
-			//assert(fields_out.size()==field2.size());
-			//assert(fields_out.size()==field4.size());
-
-			/*field_array_t field1 = interpolate_on_axis(grids[0], nx_out/4, ny_out, nz_out, ng, 0);
-			field_array_t field2 = interpolate_on_axis(field1, nx_out/2, ny_out, nz_out, ng, 0); // <-- add this one
-			field_array_t field3 = interpolate_on_axis(grids[1], nx_out/2, ny_out/2, nz_out, ng, 0); 
-			field_array_t field4 = interpolate_on_axis(field3, nx_out, ny_out/2, nz_out, ng, 1); // <-- add this one
-			field_array_t field5 = interpolate_on_axis(grids[2], nx_out, ny_out/4, nz_out, ng, 1);
-			field_array_t field6 = interpolate_on_axis(field5, nx_out, ny_out/2, nz_out, ng, 1); // <-- add this one
-			field_array_t field7 = interpolate_on_axis(grids[3], nx_out/4, ny_out/2, nz_out, ng, 1);
-			field_array_t field8 = interpolate_on_axis(field7, nx_out/4, ny_out, nz_out, ng, 0); 
-			field_array_t field9 = interpolate_on_axis(field8, nx_out/2, ny_out, nz_out, ng, 0); // <-- subtract this one
-			field_array_t field10 = interpolate_on_axis(grids[4], nx_out/2, ny_out/4, nz_out, ng, 1);
-			field_array_t field11 = interpolate_on_axis(field10, nx_out/2, ny_out/2, nz_out, ng, 1);
-			field_array_t field12 = interpolate_on_axis(field11, nx_out/2, ny_out, nz_out, ng, 0); // <-- subtract this one
-			*/
+			// Same for the "minus" diagonal
+			for ( int i=0; i<num_coarsenings; i++ ) {
+				while ( xres_m[i] < nx_out ) {
+					d_grids_gen_m[i] = interpolate_on_axis(d_grids_gen_m[i], xres_m[i], yres_m[i], nz_out, ng, 0);
+					xres_m[i] *= 2;
+				}
+				while ( yres_m[i] < ny_out ) {
+					d_grids_gen_m[i] = interpolate_on_axis(d_grids_gen_m[i], xres_m[i], yres_m[i], nz_out, ng, 1);
+					yres_m[i] *= 2;
+				}
+			}
+			if ( verbose ) { 
+				std::cout << "Interpolated minus grids" << std::endl;
+				std::cout << "Printing grid resolutions after interpolation" << std::endl;
+				printGridResolutions();
+			}
 
 
       	auto jfx = Cabana::slice<FIELD_JFX>(d_fields_out);
@@ -949,33 +951,15 @@ private:
 
 			Kokkos::parallel_for( d_fields_out.size(), _init, "init_output_fields()" );
 
-			// This is the one coarsening version
-			add_fields_inplace(d_fields_out, field1, 1.);
-			add_fields_inplace(d_fields_out, field2, 1.);
-			add_fields_inplace(d_fields_out, field4, -1.);
-
-			/*
-			auto jfx_test = Cabana::slice<FIELD_JFX>(field4);
-			auto jfy_test = Cabana::slice<FIELD_JFY>(field4);
-			auto jfz_test = Cabana::slice<FIELD_JFZ>(field4);
-			for ( int i=ng; i<nx_out+ng; i++ ){
-			    for ( int j=ng; j<ny_out+ng; j++ ){
-				int k = 1;
-				int ii = VOXEL(i,j,k, nx_out, ny_out, nz_out, ng);
-				std::cout << i<<" "<<j<<" "<<jfx_test(ii) << "	" << jfy_test(ii) << "	" << jfz_test(ii) << std::endl;
-			    }
-			    std::cout<<"\n";		    
+			// Add up contributions from "plus" diagonal
+			for ( int i=0; i<=num_coarsenings; i++ ) {
+				add_fields_inplace(d_fields_out, d_grids_gen_p[i], 1.);
 			}
-			std::cout<<"\n\n";
-			*/
-			// This is the two coarsening version
-			/*add_fields_inplace(fields_out, field2, 1.);
-			add_fields_inplace(fields_out, field4, 1.);
-			add_fields_inplace(fields_out, field6, 1.);
-			add_fields_inplace(fields_out, field9, -1.);
-			add_fields_inplace(fields_out, field12, -1.);*/
+			// And subtract contributions from "minus" diagonal
+			for ( int i=0; i<num_coarsenings; i++ ) {
+				add_fields_inplace(d_fields_out, d_grids_gen_m[i], -1.);
+			}
 
-			//return fields_out;
 		}
 											 
 

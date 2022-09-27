@@ -1,6 +1,6 @@
 #include "src/input/deck.h"
 // kokkos rng
-#include <Kokkos_Random.hpp>
+//#include <Kokkos_Random.hpp>
 
 
 class Custom_Field_Initializer : public Field_Initializer {
@@ -186,7 +186,7 @@ Input_Deck::Input_Deck() {
 	 ny = 64;
 	 nz = 1;
 
-	 num_steps = 200;
+	 num_steps = 2000;
 	 nppc = 800;
 
 	 //v0 = 0.2;

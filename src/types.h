@@ -8,6 +8,7 @@
 #endif
 
 #include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
 #include <Cabana_Core.hpp>
 
 // Inner array size (the size of the arrays in the structs-of-arrays).
@@ -29,6 +30,9 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 using KokkosDevice = Kokkos::Device<ExecutionSpace, MemorySpace>;
 
 typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
+
+// Kokkos rng type
+using KokkosRngPool = Kokkos::Random_XorShift64_Pool<KokkosDevice>;
 
 // Defaults
 //using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
@@ -188,6 +192,9 @@ class particle_mover_t {
   int32_t i;                 // Index of the particle to move
 };
 
+using moment_array_t = Kokkos::View<real_t *[7], 
+											   Kokkos::LayoutRight, 
+											   Kokkos::HostSpace>;
 /////////////// END VPIC TYPE ////////////
 //
 // TODO: this may be a bad name?

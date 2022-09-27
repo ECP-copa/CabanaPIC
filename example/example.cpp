@@ -19,6 +19,8 @@
 #include "visualization.h"
 
 #include "input/deck.h"
+#include "particleSort.h"
+#include "particleDiagnostic.h"
 //#include "../decks/2stream-short.cxx"
 
 // Global variable to hold paramters
@@ -64,7 +66,8 @@ int main( int argc, char* argv[] )
 		  bool implicit = false;
 		  int maxits = 5;
 		  bool SG = true;
-		  bool verbose = false;
+		  int minres = 2;
+		  bool verbose = true;
 
         // Define some consts
         const real_t dx = deck.dx;
@@ -107,6 +110,9 @@ int main( int argc, char* argv[] )
         const size_t num_particles = deck.num_particles;
 
         printf("c %e dt %e dx %e cdt_dx %e \n", c, dt,dx,cdt_dx);
+
+		  //Create moment array
+		  moment_array_t moments( "moments", num_cells);
 
         // Create the particle list.
         particle_list_t particles( "particles", num_particles );
@@ -216,7 +222,6 @@ int main( int argc, char* argv[] )
 
 		  int itcount;
 
-		  int minres = 8;
 		  Binomial_Filters SGfilt(nx,ny,nz,num_ghosts,minres);
 
 		  real_t dt_frac = 1.;
@@ -224,6 +229,7 @@ int main( int argc, char* argv[] )
 		  																	 // For explicit, you always want to do it.
 		  int step = 0;
 		  const real_t tot_en0 = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV);
+		  std::vector<size_t> npc_scan(num_cells+1, 0); //particle scan from sort
         // Main loop //
 		  std::cout << "Starting main loop" << std::endl;
         for ( step = 1; step <= num_steps; step++)
@@ -306,11 +312,11 @@ int main( int argc, char* argv[] )
 						  serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Add current deposited to last ghost cell into first valid cell
 						  serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Apply periodic BCs
 
-
+						  if ( verbose ) { std::cout << "Filled ghost cells, starting SGCT" << std::endl; }
 						  // SG filtering 
 						  if ( SG ) {
-						  		for (int filts=0; filts<15; filts++) {
-						  			SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts, minres);
+						  		for (int filts=0; filts<1; filts++) {
+						  			SGfilt.SGfilter(fields, nx, ny, nz, num_ghosts);
 								}
 						  }
 						  // Half advance the magnetic field from B_0 to B_{1/2}
@@ -346,6 +352,16 @@ int main( int argc, char* argv[] )
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
                 real_t tot_en = dump_energies(particles, field_solver, fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts,dV,tot_en0);
+					 auto debug_print_level = 0;
+					 auto Np = particles.size();
+					 particle_sort( particles,
+					 					 nx,
+										 ny, 
+										 nz, 
+										 num_ghosts, 
+										 npc_scan, 
+										 Np, 
+										 0);
 		//dump_kinetic_energy( particles, step, step*dt );
             }
 
