@@ -212,4 +212,9 @@ using moment_array_t = Kokkos::View<real_t *[7],
 
 #define VOXEL(x,y,z, nx,ny,nz, NG) ((x) + ((nx)+(NG*2))*((y) + ((ny)+(NG*2))*(z)))
 
+// for diagnostics
+struct mom_type {
+    real_t value[7]; // one zero moment + three 1st moments + three 2nd moments
+};
+
 #endif // pic_types_h

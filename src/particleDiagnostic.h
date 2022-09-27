@@ -1,10 +1,7 @@
 #ifndef particle_diagnostics_h
 #define particle_diagnostics_h
 
-#include "types.h"
-struct mom_type {
-    real_t value[7]; // one zero moment + three 1st moments + three 2nd moments
-};
+#include "particleTypes.h"
 
 template<class SliceType>
 struct tottemp {
