@@ -8,7 +8,7 @@ LIST(APPEND TESTS custom_init)
 # TODO: this should live somewhere more common to reduce code duplication
 foreach (test ${TESTS})
     set(DECK_PATH "${PROJECT_SOURCE_DIR}/decks/${test}")
-    add_executable(${test} ${SOURCES} ${CabanaPIC_EXAMPLE_DIR}/example.cpp ${DECK_PATH})
+    add_executable(${test} ${SOURCES} ${CabanaPIC_EXAMPLE_DIR}/example.cpp ${DECK_PATH}.cxx)
     target_compile_definitions(${test} PRIVATE USER_INPUT_DECK=${DECK_PATH})
     target_link_libraries(${test} CabanaPIC)
     add_test(NAME ${test} COMMAND ./${test})
