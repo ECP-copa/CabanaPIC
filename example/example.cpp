@@ -20,6 +20,20 @@
 
 #include "input/deck.h"
 
+// Requires C++14
+static auto make_field_solver(field_array_t &fields)
+{
+    // TODO: make this support 1/2/3d
+#ifdef ES_FIELD_SOLVER
+    std::cout << "Created ES Solver" << std::endl;
+    Field_Solver<ES_Field_Solver> field_solver(fields);
+#else // EM
+    std::cout << "Created EM Solver" << std::endl;
+    Field_Solver<EM_Field_Solver> field_solver(fields);
+#endif
+    return field_solver;
+}
+
 // Global variable to hold paramters
 //Parameters params;
 Input_Deck deck;

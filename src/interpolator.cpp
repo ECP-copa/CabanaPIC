@@ -108,7 +108,7 @@ void load_interpolator_array(
 
     //Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() ); // All cells
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng, ny+ng, nz+ng} ); // Try not to into ghosts // TODO: dry this
-    Kokkos::parallel_for( non_ghost_policy, _load_interpolator, "load_interpolator()" );
+    Kokkos::parallel_for( "load_interpolator()", non_ghost_policy, _load_interpolator );
 
         /*
         pi   = &fi(x,  y,  z  );
@@ -167,6 +167,6 @@ void initialize_interpolator(interpolator_array_t& f0)
             dcbzdz(i) = 0.0;
         };
 
-    Kokkos::parallel_for( f0.size(), _init_interpolator, "init_interpolator()" );
+    Kokkos::parallel_for( "init_interpolator()", f0.size(), _init_interpolator );
 
 }

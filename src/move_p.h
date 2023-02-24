@@ -6,7 +6,7 @@
 
 // I make no claims that this is a sensible way to do this.. I just want it working ASAP
 // THIS DEALS WITH GHOSTS ITSELF
-KOKKOS_INLINE_FUNCTION int detect_leaving_domain( size_t face, size_t nx, size_t ny, size_t nz, size_t ix, size_t iy, size_t iz, size_t num_ghosts)
+KOKKOS_INLINE_FUNCTION int detect_leaving_domain( size_t, size_t nx, size_t ny, size_t nz, size_t ix, size_t iy, size_t iz, size_t )
 {
 
     //RANK_TO_INDEX(ii, ix, iy, iz, (nx+(2*num_ghosts)), (ny+(2*num_ghosts)));
@@ -65,7 +65,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         T5& a0, // TODO: does this need to be const
         real_t q,
         particle_mover_t& pm,
-        const grid_t* g,
+        const grid_t* ,
         const size_t s,
         const size_t i,
         const size_t nx,

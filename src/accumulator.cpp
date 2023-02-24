@@ -5,9 +5,9 @@
 void clear_accumulator_array(
         field_array_t& fields,
         accumulator_array_t& accumulators,
-        size_t nx, // TODO: we can probably pull these out of global params..
-        size_t ny,
-        size_t nz
+        size_t, // TODO: we can probably pull these out of global params..
+        size_t,
+        size_t
 )
 {
     auto _clean_accumulator = KOKKOS_LAMBDA(const int i)
@@ -39,7 +39,7 @@ void clear_accumulator_array(
     };
 
     Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-    Kokkos::parallel_for( exec_policy, _clean_accumulator, "clean_accumulator()" );
+    Kokkos::parallel_for( "clean_accumulator()", exec_policy, _clean_accumulator );
 }
 
 void unload_accumulator_array(
@@ -107,7 +107,7 @@ void unload_accumulator_array(
 
     //may not be enough if particles run into ghost cells
     Kokkos::MDRangePolicy< Kokkos::Rank<3> > non_ghost_policy( {ng,ng,ng}, {nx+ng+1, ny+ng+1, nz+ng+1} ); // Try not to into ghosts // TODO: dry this
-    Kokkos::parallel_for( non_ghost_policy, _unload_accumulator, "unload_accumulator()" );
+    Kokkos::parallel_for( "unload_accumulator()", non_ghost_policy, _unload_accumulator );
 
     /* // Crib sheet for old variable names
     a0  = &a(x,  y,  z  );
@@ -120,4 +120,3 @@ void unload_accumulator_array(
     */
 
 }
-

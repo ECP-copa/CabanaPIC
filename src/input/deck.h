@@ -28,16 +28,16 @@ class Field_Initializer {
 
         virtual void init(
                 field_array_t& fields,
-                size_t nx,
-                size_t ny,
-                size_t nz,
-                size_t ng,
-                real_ Lx, // TODO: do we prefer xmin or Lx?
-                real_ Ly,
-                real_ Lz,
-                real_ dx,
-                real_ dy,
-                real_ dz
+                size_t,
+                size_t,
+                size_t,
+                size_t,
+                real_, // TODO: do we prefer xmin or Lx?
+                real_,
+                real_,
+                real_,
+                real_,
+                real_
         )
         {
             std::cout << "Default field init" << std::endl;
@@ -62,7 +62,7 @@ class Field_Initializer {
                     cbz(i) = 0.0;
                 };
 
-            Kokkos::parallel_for( fields.size(), _init_fields, "zero_fields()" );
+            Kokkos::parallel_for( "zero_fields()", fields.size(), _init_fields );
 
         }
 };
@@ -80,15 +80,15 @@ class Particle_Initializer {
                 particle_list_t& particles,
                 size_t nx,
                 size_t ny,
-                size_t nz,
-                size_t ng,
+                size_t,
+                size_t,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
                 real_ v0,
-                real_ Lx,
-                real_ Ly,
-                real_ Lz
+                real_,
+                real_,
+                real_
                 )
         {
             // TODO: this doesnt currently do anything with nppc/num_cells
