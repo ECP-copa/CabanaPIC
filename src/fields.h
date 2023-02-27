@@ -467,6 +467,19 @@ class ES_Field_Solver
 class ES_Field_Solver_1D
 {
     public:
+        void advance_b(
+                field_array_t&,
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t,
+                size_t
+                )
+        {
+            // No-op, becasue ES
+        }
 
         real_t e_energy(
                 field_array_t& fields,
