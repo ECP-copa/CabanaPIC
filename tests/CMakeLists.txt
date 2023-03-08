@@ -1,5 +1,7 @@
 add_subdirectory(decks)
-add_subdirectory(energy_comparison)
+if (${SOLVER_TYPE} STREQUAL "EM")
+  add_subdirectory(energy_comparison)
+endif()
 
 #LIST(APPEND TESTS example)
 
