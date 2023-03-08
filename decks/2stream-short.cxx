@@ -27,8 +27,8 @@
 Input_Deck::Input_Deck()
 {
     // User puts initialization code here
-    nx = 1;
-    ny = 32;
+    nx = 32;
+    ny = 1;
     nz = 1;
 
     num_steps = 3000;
@@ -41,8 +41,8 @@ Input_Deck::Input_Deck()
 
     const real_t default_grid_len = 1.0;
 
-    len_x_global = default_grid_len;
-    len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_x_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_y_global = default_grid_len;
     len_z_global = default_grid_len;
 
     Npe = n0*len_x_global*len_y_global*len_z_global;

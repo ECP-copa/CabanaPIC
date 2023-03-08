@@ -111,8 +111,8 @@ Input_Deck::Input_Deck()
     // Tell the deck to use the custom initer in place of the default
     particle_initer = new Custom_Particle_Initializer();
 
-    nx = 1;
-    ny = 32;
+    nx = 32;
+    ny = 1;
     nz = 1;
 
     num_steps = 30;
@@ -125,8 +125,8 @@ Input_Deck::Input_Deck()
 
     const real_t default_grid_len = 1.0;
 
-    len_x_global = default_grid_len;
-    len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_x_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_y_global = default_grid_len;
     len_z_global = default_grid_len;
 
     Npe = n0*len_x_global*len_y_global*len_z_global;
