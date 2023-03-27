@@ -69,8 +69,8 @@ if(ENABLE_COVERAGE_BUILD)
 endif(ENABLE_COVERAGE_BUILD)
 
 add_subdirectory(src)
-set(CabanaPIC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/example)
-add_subdirectory(example)
+set(CabanaPIC_EXAMPLE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/example/policy)
+add_subdirectory(example/policy)
 
 ##### TESTS ######
 if (ENABLE_TESTS)

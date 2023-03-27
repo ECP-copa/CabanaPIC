@@ -28,6 +28,14 @@ using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 #endif
 ///// END ESSENTIALS ///
 
+class Particle {
+
+};
+
+class Field {
+
+};
+
 enum UserParticleFields
 {
     PositionX = 0,
