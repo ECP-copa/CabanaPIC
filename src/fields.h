@@ -314,6 +314,41 @@ template<typename Solver_Type> class Field_Solver : public Solver_Type
             Kokkos::parallel_for( "init_fields()", fields.size(), _init_fields );
         }
 
+        // TODO: is this the right place for this vs in the helper?
+        void dump_fields(FILE * fp,
+                field_array_t& d_fields,
+                real_t xmin,
+                real_t,
+                real_t,
+                real_t dx,
+                real_t,
+                real_t,
+                size_t nx,
+                size_t ny,
+                size_t,
+                size_t ng
+                )
+        {
+            // Host
+            field_array_t::host_mirror_type fields("host_fields", d_fields.size());
+
+            // Copy device field to host
+            Cabana::deep_copy(fields, d_fields);
+
+            auto ex = Cabana::slice<FIELD_EX>(fields);
+
+            for( size_t i=1; i<nx+1; i++ )
+            {
+                real_t x = xmin + (i-0.5)*dx;
+                size_t ii = VOXEL(i,1,1,nx,ny,nz,ng);
+                //	  fprintf(fp,"%e %e %e %e %e %e %e\n",x,y,ey(ii),jfx(ii),jfy(ii),jfz(ii),cbz(ii));
+                fprintf(fp,"%e %e\n",x,ex(ii));
+            }
+
+            fprintf(fp,"\n\n");
+
+        }
+
         void advance_b(
                 field_array_t& fields,
                 real_t px,
@@ -407,6 +442,7 @@ class ES_Field_Solver
                 real_t,
                 size_t,
                 size_t,
+                size_t,
                 size_t
                 )
         {
@@ -431,12 +467,26 @@ class ES_Field_Solver
 class ES_Field_Solver_1D
 {
     public:
+        void advance_b(
+                field_array_t&,
+                real_t,
+                real_t,
+                real_t,
+                size_t,
+                size_t,
+                size_t,
+                size_t
+                )
+        {
+            // No-op, becasue ES
+        }
 
         real_t e_energy(
                 field_array_t& fields,
                 real_t,
                 real_t,
                 real_t,
+                size_t,
                 size_t,
                 size_t,
                 size_t
@@ -502,41 +552,6 @@ class EM_Field_Solver
     public:
 
         //how to formalize/generalize this?
-
-        // TODO: is this the right place for this vs in the helper?
-        void dump_fields(FILE * fp,
-                field_array_t& d_fields,
-                real_t xmin,
-                real_t,
-                real_t,
-                real_t dx,
-                real_t,
-                real_t,
-                size_t nx,
-                size_t ny,
-                size_t,
-                size_t ng
-                )
-        {
-            // Host
-            field_array_t::host_mirror_type fields("host_fields", d_fields.size());
-
-            // Copy device field to host
-            Cabana::deep_copy(fields, d_fields);
-
-            auto ex = Cabana::slice<FIELD_EX>(fields);
-
-            for( size_t i=1; i<nx+1; i++ )
-            {
-                real_t x = xmin + (i-0.5)*dx;
-                size_t ii = VOXEL(i,1,1,nx,ny,nz,ng);
-                //	  fprintf(fp,"%e %e %e %e %e %e %e\n",x,y,ey(ii),jfx(ii),jfy(ii),jfz(ii),cbz(ii));
-                fprintf(fp,"%e %e\n",x,ex(ii));
-            }
-
-            fprintf(fp,"\n\n");
-
-        }
 
         real_t e_energy(
                 field_array_t& fields,

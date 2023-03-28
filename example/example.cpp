@@ -25,8 +25,8 @@ static auto make_field_solver(field_array_t &fields)
 {
     // TODO: make this support 1/2/3d
 #ifdef ES_FIELD_SOLVER
-    std::cout << "Created ES Solver" << std::endl;
-    Field_Solver<ES_Field_Solver> field_solver(fields);
+    std::cout << "Created ES Solver (1D only)" << std::endl;
+    Field_Solver<ES_Field_Solver_1D> field_solver(fields);
 #else // EM
     std::cout << "Created EM Solver" << std::endl;
     Field_Solver<EM_Field_Solver> field_solver(fields);
@@ -66,6 +66,12 @@ int main( int argc, char* argv[] )
         const int nx = deck.nx;
         const int ny = deck.ny;
         const int nz = deck.nz;
+#ifdef ES_FIELD_SOLVER
+	if(ny>1 || nz>1){
+	    std::cerr << "Error: ES Field solver supports 1D only.\n";
+	    return -1;
+	}
+#endif
         const int num_ghosts = deck.num_ghosts;
         const size_t num_cells = deck.num_cells;
         real_t dxp = 2.f / (npc);

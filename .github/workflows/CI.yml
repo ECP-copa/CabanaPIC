@@ -43,7 +43,7 @@ jobs:
           cmake --install build
       - name: Checkout CabanaPIC
         uses: actions/checkout@v2.2.0
-      - name: Build CabanaPIC
+      - name: Build CabanaPIC EM
         run: |
           cmake -B build \
             -DCMAKE_INSTALL_PREFIX=$HOME/CabanaPIC \
@@ -53,10 +53,28 @@ jobs:
             -DCMAKE_SHARED_LINKER_FLAGS="--coverage" \
             -DCMAKE_PREFIX_PATH="$HOME/Cabana" \
             -DENABLE_TESTS=ON \
+            -DSOLVER_TYPE=EM \
             -DREAL_TYPE=double
           cmake --build build --parallel 2
           cmake --install build
-      - name: Test CabanaPIC
+      - name: Test CabanaPIC EM
+        run: |
+          CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target test
+      - name: Build CabanaPIC ES
+        run: |
+          cmake -B build \
+            -DCMAKE_INSTALL_PREFIX=$HOME/CabanaPIC \
+            -DMPIEXEC_MAX_NUMPROCS=2 -DMPIEXEC_PREFLAGS="--oversubscribe" \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -Wall -Wextra -pedantic" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage" \
+            -DCMAKE_PREFIX_PATH="$HOME/Cabana" \
+            -DENABLE_TESTS=ON \
+            -DSOLVER_TYPE=ES \
+            -DREAL_TYPE=double
+          cmake --build build --parallel 2
+          cmake --install build
+      - name: Test CabanaPIC ES
         run: |
           CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --target test
       - name: Upload Report to codecov.io
