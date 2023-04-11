@@ -41,8 +41,11 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 real_ dxp,
                 size_t nppc,
                 real_ w,
-                real_ v0
-                )
+                real_ v0,
+                real_,
+                real_,
+                real_		
+                ) override
         {
             std::cout << "Using Custom Particle Initialization" << std::endl;
 
@@ -75,26 +78,25 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     real_ x = pic*dxp+0.5*dxp-1.0;
                     size_t pre_ghost = (2*pi/nppc); //pre_gohost ranges [0,nx*ny*nz).
 
-                    size_t ix,iy,iz;
-                    RANK_TO_INDEX(pre_ghost, ix, iy, iz, nx, ny);
-                    ix += ng;
-                    iy += ng;
-                    iz += ng;
-
-                    position_x.access(s,i) = 0.0;
-                    position_y.access(s,i) = x;
+                    position_x.access(s,i) = x;
+                    position_y.access(s,i) = 0.0;
                     position_z.access(s,i) = 0.0;
 
                     weight.access(s,i) = w;
 
+		    int ix,iy,iz;
+		    ix = pre_ghost+1;
+		    iy = 1;
+		    iz = 1;
                     cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
                     // Initialize velocity.(each cell length is 2)
+		    real_t nax = 0.0001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam; // *(1.0-na*sign); //0;
+                    velocity_x.access(s,i) = sign * v0*gam*(1.0+nax); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
-                    velocity_z.access(s,i) = 1e-7*sign;
+		    //if(pi<100) printf("%d %d %d pre-g %d putting particle at x=%e with ux = %e ix = %d, pi = %d \n", pic, s, i, pre_ghost, position_x.access(s,i), velocity_x.access(s,i), ix, cell.access(s,i) );		    
                 };
 
             Cabana::SimdPolicy<particle_list_t::vector_length,ExecutionSpace>
@@ -107,26 +109,26 @@ Input_Deck::Input_Deck()
 {
     // User puts initialization code here
 
-    std::cout << "Input_Deck constructor" << std::endl;
+    std::cout << "Custom Input_Deck constructor" << std::endl;
     // Tell the deck to use the custom initer in place of the default
     particle_initer = new Custom_Particle_Initializer();
 
-    nx = 1;
-    ny = 32;
+    nx = 32;
+    ny = 1;
     nz = 1;
 
     num_steps = 30;
     nppc = 100;
 
-    v0 = 0.2;
+    v0 = 0.0866025403784439;
 
     // Can also create local temporaries
-    //real_ gam = 1.0 / sqrt(1.0 - v0*v0);
+    real_ gam = 1.0 / sqrt(1.0 - v0*v0);
 
     const real_t default_grid_len = 1.0;
 
-    len_x_global = default_grid_len;
-    len_y_global = 3.14159265358979*0.5; // TODO: use proper PI?
+    len_x_global = 6.28318530717959*(gam*sqrt(gam));
+    len_y_global = default_grid_len;
     len_z_global = default_grid_len;
 
     Npe = n0*len_x_global*len_y_global*len_z_global;
