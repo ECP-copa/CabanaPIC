@@ -6,7 +6,6 @@ class defaultDeck
 {
 public:
     using real_ = real_t;
-    Input_Deck* deck;
 
     defaultDeck()
     {
@@ -21,9 +20,14 @@ public:
     void Create() {
 	std::cout<< "Default Input Deck\n";
         deck->derive_params();
-        deck->print_run_details();
-	
+        deck->print_run_details();	
     }
+
+    Input_Deck * getDeck(){
+	return deck;
+    }
+private:
+    Input_Deck* deck;
 };
 
 

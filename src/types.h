@@ -32,9 +32,6 @@ class Particle {
 
 };
 
-class Field {
-
-};
 
 enum UserParticleFields
 {

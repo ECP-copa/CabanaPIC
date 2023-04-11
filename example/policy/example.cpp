@@ -21,10 +21,22 @@ int main( int argc, char* argv[] )
     {
 
 	//        typedef ParticleManager< Particle, LandauDampingDeck, PrintFile > MyParticleMgr;
-        typedef ParticleManager< Particle, Field, defaultDeck, PrintFile > MyParticleMgr;
-
+#ifdef ES_FIELD_SOLVER	
+        typedef ParticleManager< Particle, ES_Field_Solver, defaultDeck, PrintFile > MyParticleMgr;
+#else // EM
+        typedef ParticleManager< Particle, EM_Field_Solver, defaultDeck, PrintFile > MyParticleMgr;
+#endif
+	
 	MyParticleMgr aParticleMgr;
 	aParticleMgr.Create();
+	Input_Deck *deck = aParticleMgr.getDeck();
+	aParticleMgr.createParticles(deck);
+	aParticleMgr.createGrid(deck);
+	aParticleMgr.createInterpolator(deck);
+	aParticleMgr.createAccumulator(deck);
+	aParticleMgr.createFieldSolver(deck);
+	aParticleMgr.setBoundaryType(deck);
+	
 	aParticleMgr.Print();
 	aParticleMgr.Print();
 	
