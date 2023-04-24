@@ -17,13 +17,14 @@ void serial_update_ghosts_B(
         Slice_Z slice_z,
         int nx, int ny, int nz, int ng)
 {
-    const Boundary boundary = deck.BOUNDARY_TYPE;
-    if (boundary == Boundary::Reflect)
-    {
-        // TODO: this
-        exit(1);
-    }
-    else { // assume periodic
+    //TODO: create a policy for boundaries
+    // const Boundary boundary = deck.BOUNDARY_TYPE;
+    // if (boundary == Boundary::Reflect)
+    // {
+    //     // TODO: this
+    //     exit(1);
+    // }
+    // else { // assume periodic
 
         // TODO: it may be worth turning these into fewer kernels, as they
         // really don't have a lot of work
@@ -96,7 +97,7 @@ void serial_update_ghosts_B(
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> yx_policy({0,0}, {ny+2,nx+2});
         Kokkos::parallel_for( "yx boundary()", yx_policy, _yx_boundary );
-    }
+	//}
 }
 
 template<class Slice_X, class Slice_Y, class Slice_Z>
@@ -109,13 +110,13 @@ void serial_update_ghosts(
         int nx, int ny, int nz, int ng)
 {
 
-    const Boundary boundary = deck.BOUNDARY_TYPE;
-    if (boundary == Boundary::Reflect)
-    {
-        // TODO: this
-        exit(1);
-    }
-    else { // assume periodic
+    // const Boundary boundary = deck.BOUNDARY_TYPE;
+    // if (boundary == Boundary::Reflect)
+    // {
+    //     // TODO: this
+    //     exit(1);
+    // }
+    // else { // assume periodic
 
         /*
            To fill in contributions from places of periodic BC
@@ -267,7 +268,7 @@ void serial_update_ghosts(
         //       }
         //   }
 
-    }
+    // }
 }
 
 // Policy base class

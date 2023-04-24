@@ -21,9 +21,11 @@ int main( int argc, char* argv[] )
     {
 
 	//        typedef ParticleManager< Particle, LandauDampingDeck, PrintFile > MyParticleMgr;
-#ifdef ES_FIELD_SOLVER	
+#ifdef ES_FIELD_SOLVER
+	std::cout<<"Use ES_FIELD_SOLVER\n";
         typedef ParticleManager< Particle, ES_Field_Solver, defaultDeck, PrintFile > MyParticleMgr;
 #else // EM
+	std::cout<<"Use EM_FIELD_SOLVER\n";
         typedef ParticleManager< Particle, EM_Field_Solver, defaultDeck, PrintFile > MyParticleMgr;
 #endif
 	
@@ -36,6 +38,7 @@ int main( int argc, char* argv[] )
 	aParticleMgr.createAccumulator(deck);
 	aParticleMgr.createFieldSolver(deck);
 	aParticleMgr.setBoundaryType(deck);
+	aParticleMgr.timeStepping(deck);
 	
 	aParticleMgr.Print();
 	aParticleMgr.Print();
