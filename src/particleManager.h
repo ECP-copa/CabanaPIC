@@ -6,6 +6,10 @@
 #include "fields.h"
 #include "push.h"
 
+#ifndef ENERGY_DUMP_INTERVAL
+#define ENERGY_DUMP_INTERVAL 1
+#endif
+
 template <class Particle,
 	  class Field,
 	  class DeckPolicy,
@@ -95,6 +99,11 @@ public:
             // Half advance the magnetic field from B_{1/2} to B_1
             d_field_solver->advance_b(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 
+
+            if( step % ENERGY_DUMP_INTERVAL == 0 )
+            {
+                dump_energies(*d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+            }
 
 	}
 
