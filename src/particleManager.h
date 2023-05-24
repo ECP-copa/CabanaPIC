@@ -12,8 +12,9 @@
 
 template <class Particle,
 	  class Field,
-	  class DeckPolicy,
-	  template <class U> class PrintPolicy
+	  class DeckPolicy,	  
+	  template <class U> class PrintPolicy,
+	  class TimeSteppingPolicy = Explicit
 	  >
 class ParticleManager
     : public DeckPolicy
@@ -26,8 +27,18 @@ public:
 	delete d_field_solver;
     }
 
-    void timeStepping(Input_Deck * deck)
+    template<class Q = TimeSteppingPolicy>
+    typename std::enable_if<std::is_same<Q, Implicit>::value>::type     
+    timeStepping(Input_Deck * deck)
     {
+	std::cout<<"Implicit timestepping:\n";
+    }
+    
+    template<class Q = TimeSteppingPolicy>
+    typename std::enable_if<std::is_same<Q, Explicit>::value>::type 
+    timeStepping(Input_Deck * deck)
+    {
+	std::cout<<"Explicit timestepping:\n";
 	const int nx = deck->nx;
 	const int ny = deck->ny;
 	const int nz = deck->nz;

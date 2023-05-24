@@ -32,7 +32,9 @@ class Particle {
 
 };
 
-
+struct Explicit {};
+struct Implicit {};
+    
 enum UserParticleFields
 {
     PositionX = 0,
