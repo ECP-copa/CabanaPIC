@@ -501,6 +501,7 @@ class ES_Field_Solver_1D
                 lsum += ex(i) * ex(i)
                     +ey(i) * ey(i)
                     +ez(i) * ez(i);
+		//printf("%d %e\n",i,ex(i));
             };
 
             real_t e_tot_energy=0;
@@ -529,20 +530,57 @@ class ES_Field_Solver_1D
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
             serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-
+	    
+	    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+		{
+		 const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+		 lsum += jfx(i);
+		 //printf("xyz=%d,%d,%d,j=%e\n",x,y,z,jfx(i));
+		};
+	    real_t jx_avg;
+	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+	    Kokkos::parallel_reduce("find_jx_avg", fft_exec_policy, _find_javg, jx_avg );
+	    jx_avg /=nx;
+	    //printf("jx_avg=%e\n",jx_avg);
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
                 const real_t cj = dt_eps0;
-                ex(i) = ex(i) + ( - cj * jfx(i) ) ;
-                ey(i) = ey(i) + ( - cj * jfy(i) ) ;
-                ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+                ex(i) = ex(i) + ( - cj * (jfx(i)-jx_avg )) ;
+                //ey(i) = ey(i) + ( - cj * jfy(i) ) ;
+                //ez(i) = ez(i) + ( - cj * jfz(i) ) ;
+		//printf("%d %e %e\n",i,jfx(i), ex(i));
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
             Kokkos::parallel_for( "es_advance_e_1d()", exec_policy, _advance_e );
         }
+
+    	  // Given E_n and E_{n+1/2}, puts E_{n+1} into the array of E_{n+1/2}
+    void extend_e(
+		  field_array_t& fields_nph, 
+		  field_array_t& fields_n)
+    {
+            auto ex = Cabana::slice<FIELD_EX>(fields_nph);
+            auto ey = Cabana::slice<FIELD_EY>(fields_nph);
+            auto ez = Cabana::slice<FIELD_EZ>(fields_nph);
+            
+            auto ex_old = Cabana::slice<FIELD_EX>(fields_n);
+            auto ey_old = Cabana::slice<FIELD_EY>(fields_n);
+            auto ez_old = Cabana::slice<FIELD_EZ>(fields_n);
+				
+				auto _extend_e = KOKKOS_LAMBDA( const int i )
+            {
+                ex(i) = ex(i) + ( ex(i) - ex_old(i) ) ;
+                ey(i) = ey(i) + ( ey(i) - ey_old(i) ) ;
+                ez(i) = ez(i) + ( ez(i) - ez_old(i) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields_nph.size() );
+            Kokkos::parallel_for( exec_policy, _extend_e, "extend_e()" );
+    }
+    
 };
 
 // EM HERE: UNFINISHED
@@ -722,6 +760,7 @@ class EM_Field_Solver
 
 template<typename field_solver_t>
 void dump_energies(
+	std::vector<particle_list_t>& particles,
         field_solver_t& field_solver,
         field_array_t& fields,
         int step,
@@ -736,6 +775,30 @@ void dump_energies(
         )
 {
     real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
+
+
+    // compute total kinetic energy
+    real_t k_tot_energy=0, tot_energy,den;
+    int num_sp = particles.size();
+    for(size_t is = 0; is<num_sp; ++is){
+	auto vx = Cabana::slice<VelocityX>(particles[is]);
+	auto vy = Cabana::slice<VelocityY>(particles[is]);
+	auto vz = Cabana::slice<VelocityZ>(particles[is]);
+	
+	auto weight = Cabana::slice<Weight>( particles[is] );
+	auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+	    {
+	     lsum += weight(i)* (sqrt( 1.0 + ( vx(i) * vx(i)
+					      +vy(i) * vy(i)
+					      +vz(i) * vz(i) ) ) - 1.0);
+	    };
+	
+	Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles[is].size() );
+	Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
+    }
+    //k_tot_energy = 0.5*k_tot_energy;
+    tot_energy = e_en+k_tot_energy; //for ES
+    
     // Print energies to screen *and* dump them to disk
     // TODO: is it ok to keep opening and closing the file like this?
     // one per time step is probably fine?
@@ -757,7 +820,7 @@ void dump_energies(
     energy_file << " " << b_en;
     printf("%d %f %e %e\n",step, time, e_en, b_en);
 #else
-    printf("%d %f %e\n",step, time, e_en);
+    printf("%d %f %e %e\n",step, time, e_en,tot_energy);
 #endif
     energy_file << std::endl;
     energy_file.close();

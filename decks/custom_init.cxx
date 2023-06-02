@@ -93,7 +93,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     // Initialize velocity.(each cell length is 2)
 		    real_t nax = 0.0001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
-                    velocity_x.access(s,i) = sign * v0*gam*(1.0+nax); //0;
+                    velocity_x.access(s,i) = sign * v0*gam*(1.0+nax*sign); //0;
                     velocity_y.access(s,i) = 0;
                     velocity_z.access(s,i) = 0; //na*sign;  //sign * v0 *gam*(1.0+na*sign);
 		    //if(pi<100) printf("%d %d %d pre-g %d putting particle at x=%e with ux = %e ix = %d, pi = %d \n", pic, s, i, pre_ghost, position_x.access(s,i), velocity_x.access(s,i), ix, cell.access(s,i) );		    
@@ -117,7 +117,7 @@ Input_Deck::Input_Deck()
     ny = 1;
     nz = 1;
 
-    num_steps = 30;
+    num_steps = 200;
     nppc = 100;
 
     v0 = 0.0866025403784439;
@@ -140,3 +140,4 @@ Input_Deck::Input_Deck()
 
     n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
 }
+ 

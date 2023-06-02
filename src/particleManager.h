@@ -32,6 +32,125 @@ public:
     timeStepping(Input_Deck * deck)
     {
 	std::cout<<"Implicit timestepping:\n";
+	const int nx = deck->nx;
+	const int ny = deck->ny;
+	const int nz = deck->nz;
+	const int num_ghosts = deck->num_ghosts;
+	const size_t num_cells = deck->num_cells;
+	
+        const real_t dx = deck->dx;
+        const real_t dy = deck->dy;
+        const real_t dz = deck->dz;
+	
+	real_t dt = deck->dt;
+	real_t c = deck->c;
+	real_t eps0 = deck->eps;
+        real_t qsp = deck->qsp;
+        real_t me = deck->me;
+        real_t qdt_2mc = qsp*dt/(2*me*c);
+
+        real_t cdt_dx = c*dt/dx;
+        real_t cdt_dy = c*dt/dy;
+        real_t cdt_dz = c*dt/dz;
+        real_t dt_eps0 = dt/eps0;
+        real_t frac = 1.0f;
+        const real_t px =  (nx>1) ? frac*c*dt/dx : 0;
+        const real_t py =  (ny>1) ? frac*c*dt/dy : 0;
+        const real_t pz =  (nz>1) ? frac*c*dt/dz : 0;
+
+	const int num_steps = deck->num_steps;
+	
+        auto scatter_add = Kokkos::Experimental::create_scatter_view(d_accumulators);
+
+	
+	field_array_t old_fields( "old_fields", num_cells);
+
+	std::vector<particle_list_t> old_particles;
+	for(int is=0; is<d_numSpecies; ++is){
+	    auto num_particles = deck->num_particles + d_nip[is];
+	    old_particles.push_back( particle_list_t( "old_particleSpecies" + std::to_string( is ),
+	     					      num_particles ) );	    
+	}
+	 bool converged, last_iteration, deposit_current, update_p;
+	 int itcount;
+	 int maxits = 3;
+	 real_t dt_frac = 1.0;
+	 for(size_t step = 1; step <= num_steps; ++step)
+	 {
+
+	    load_interpolator_array(d_fields, d_interpolators, nx, ny, nz, num_ghosts);
+
+	    clear_accumulator_array(d_fields, d_accumulators, nx, ny, nz);
+	 
+	    Cabana::deep_copy( old_fields, d_fields ); 
+	    for(int is=0; is<d_numSpecies; ++is){
+	    	Cabana::deep_copy( old_particles[is], d_particles_k[is] ); // reset particle states to beginning of time-step
+	    }
+	 
+	    converged = false;
+	    last_iteration = false; // a flag to see if we're on the last iteration.  If we are, do a full time-step instead of a half.
+	    itcount = 0; 
+	    while ( !converged )
+	    {
+	    deposit_current = !last_iteration;
+	    // Move
+	     	if( last_iteration ) dt_frac = 1.; 
+	     	else                 dt_frac = 0.5;
+		
+		for(int is=0; is<d_numSpecies; ++is){
+		    Cabana::deep_copy( d_particles_k[is], old_particles[is] ); // reset particle states to beginning of time-step
+		    
+		    push_sm(
+		     d_particles_k[is],
+		     d_interpolators,
+		     dt_frac*qdt_2mc,
+		     dt_frac*cdt_dx,
+		     dt_frac*cdt_dy,
+		     dt_frac*cdt_dz,			 
+		     qsp,
+		     scatter_add,
+		     d_grid,
+		     nx,
+		     ny,
+		     nz,
+		     num_ghosts,
+		     d_boundary,
+		     deposit_current
+		     );
+		}
+		if(deposit_current){
+		    Cabana::deep_copy( d_fields, old_fields ); // Reset fields back to beginning of time-step
+		    Kokkos::Experimental::contribute(d_accumulators, scatter_add);
+		    // Only reset the data if these two are not the same arrays
+		    scatter_add.reset_except(d_accumulators);
+		    // Map accumulator current back onto the fields
+		    unload_accumulator_array(d_fields, d_accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
+		    d_field_solver->advance_b(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
+		    // Advance the electric field from E_0 to E_1/2
+		    d_field_solver->advance_e(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts, dt_eps0);
+		    // Convert fields to interpolators for next iteration		    
+		    load_interpolator_array(d_fields, d_interpolators, nx, ny, nz, num_ghosts);
+		    clear_accumulator_array(d_fields, d_accumulators, nx, ny, nz);		    
+		}else{
+		     // Advance the electric field from E_0 to E_1
+		    d_field_solver->extend_e(d_fields, old_fields); // get E_1 given E_{1/2} and E_0
+		    // Half advance the magnetic field from B_{1/2} to B_1
+		    d_field_solver->advance_b(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);		    
+		}	    
+
+		itcount++;
+		if ( last_iteration ) { converged = true; }
+		if ( itcount >= maxits-1 ) { last_iteration = true; } // Currently, don't check for convergence, just do a fixed number of iterations
+		//std::cout << "Iteration number " << itcount << " -  Step number " << step << ", !last_iteration="<<deposit_current << std::endl;
+	    }//converge	 
+
+            if( step % ENERGY_DUMP_INTERVAL == 0 )
+            {
+                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+            }
+
+	}
+	
     }
     
     template<class Q = TimeSteppingPolicy>
@@ -113,7 +232,7 @@ public:
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(*d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
             }
 
 	}
