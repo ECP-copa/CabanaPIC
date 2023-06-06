@@ -91,7 +91,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
                     // Initialize velocity.(each cell length is 2)
-		    real_t nax = 0.0001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
+		    real_t nax = 0.000001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0*gam*(1.0+nax*sign); //0;
                     velocity_y.access(s,i) = 0;
@@ -117,20 +117,21 @@ Input_Deck::Input_Deck()
     ny = 1;
     nz = 1;
 
-    num_steps = 200;
+    num_steps = 2000; //400;
     nppc = 100;
 
-    v0 = 0.0866025403784439;
-
+    v0 = sqrt(3.0)*0.5*0.1; //0.866025403784439;
+    n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
+    
     // Can also create local temporaries
     real_ gam = 1.0 / sqrt(1.0 - v0*v0);
-
+    printf("#gamma0=%e\n",gam);
     const real_t default_grid_len = 1.0;
 
-    len_x_global = 6.28318530717959*(gam*sqrt(gam));
+    len_x_global = 3.1415926*2*(0.1*gam*gam*gam);
     len_y_global = default_grid_len;
     len_z_global = default_grid_len;
-
+    
     Npe = n0*len_x_global*len_y_global*len_z_global;
 
     dt = 0.99*courant_length(
@@ -138,6 +139,5 @@ Input_Deck::Input_Deck()
             nx, ny, nz
             ) / c;
 
-    n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
+
 }
- 
