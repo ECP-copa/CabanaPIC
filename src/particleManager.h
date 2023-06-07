@@ -4,7 +4,8 @@
 #include "interpolator.h"
 #include "accumulator.h"
 #include "fields.h"
-#include "push.h"
+//#include "push.h"
+#include "particlePusher.h"
 
 #ifndef ENERGY_DUMP_INTERVAL
 #define ENERGY_DUMP_INTERVAL 1
@@ -14,11 +15,13 @@ template <class Particle,
 	  class Field,
 	  class DeckPolicy,	  
 	  template <class U> class PrintPolicy,
-	  class TimeSteppingPolicy = Explicit
+	  class TimeSteppingPolicy,
+	  class ParticlePusherPolicy
 	  >
 class ParticleManager
     : public DeckPolicy
     , public PrintPolicy<Particle>
+    , public ParticlePusherPolicy
 {
 public:
     ParticleManager() {}
@@ -100,7 +103,7 @@ public:
 		for(int is=0; is<d_numSpecies; ++is){
 		    Cabana::deep_copy( d_particles_k[is], old_particles[is] ); // reset particle states to beginning of time-step
 		    
-		    push_sm(
+		    push(
 		     d_particles_k[is],
 		     d_interpolators,
 		     dt_frac*qdt_2mc,
@@ -146,7 +149,7 @@ public:
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, dx, dy, dz, nx, ny, nz, num_ghosts);
             }
 
 	}
@@ -232,7 +235,7 @@ public:
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, px, py, pz, nx, ny, nz, num_ghosts);
+                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, dx, dy, dz, nx, ny, nz, num_ghosts);
             }
 
 	}
@@ -342,7 +345,7 @@ private:
     field_array_t d_fields;
     Field_Solver<Field> *d_field_solver;
     Boundary d_boundary;
-    
+    using ParticlePusherPolicy::push;
 };
 
 #endif

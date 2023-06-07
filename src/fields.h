@@ -6,10 +6,14 @@
 #include "Cabana_DeepCopy.hpp" // Cabana::deep_copy
 #include "input/deck.h"
 
-// TODO: Namespace this stuff?
+#ifdef USE_GPU
+#include <cufft.h>
+#else
+#include "fftw3.h"
+#endif
 
+// TODO: Namespace this stuff?
 template<class Slice_X, class Slice_Y, class Slice_Z>
-//KOKKOS_INLINE_FUNCTION
 void serial_update_ghosts_B(
         //field_array_t& fields,
         Slice_X slice_x,
@@ -17,14 +21,7 @@ void serial_update_ghosts_B(
         Slice_Z slice_z,
         int nx, int ny, int nz, int ng)
 {
-    //TODO: create a policy for boundaries
-    // const Boundary boundary = deck.BOUNDARY_TYPE;
-    // if (boundary == Boundary::Reflect)
-    // {
-    //     // TODO: this
-    //     exit(1);
-    // }
-    // else { // assume periodic
+    // assume periodic
 
         // TODO: it may be worth turning these into fewer kernels, as they
         // really don't have a lot of work
@@ -52,7 +49,7 @@ void serial_update_ghosts_B(
         //}
 
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> zy_policy({1,1}, {nz+1,ny+1});
-        Kokkos::parallel_for( "zy boundary()", zy_policy, _zy_boundary );
+        Kokkos::parallel_for( zy_policy, _zy_boundary, "zy boundary()" );
 
         //for (int x = 0; x < nx+2; x++) {
             //for (int z = 1; z < nz+1; z++) {
@@ -74,7 +71,7 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> xz_policy({0,1}, {nx+2,nz+1});
-        Kokkos::parallel_for( "xz boundary()", xz_policy, _xz_boundary );
+        Kokkos::parallel_for( xz_policy, _xz_boundary, "xz boundary()" );
 
         //for (int y = 0; y < ny+2; y++) {
             //for (int x = 0; x < nx+2; x++) {
@@ -96,8 +93,8 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> yx_policy({0,0}, {ny+2,nx+2});
-        Kokkos::parallel_for( "yx boundary()", yx_policy, _yx_boundary );
-	//}
+        Kokkos::parallel_for( yx_policy, _yx_boundary, "yx boundary()" );
+
 }
 
 template<class Slice_X, class Slice_Y, class Slice_Z>
@@ -110,13 +107,7 @@ void serial_update_ghosts(
         int nx, int ny, int nz, int ng)
 {
 
-    // const Boundary boundary = deck.BOUNDARY_TYPE;
-    // if (boundary == Boundary::Reflect)
-    // {
-    //     // TODO: this
-    //     exit(1);
-    // }
-    // else { // assume periodic
+ // assume periodic
 
         /*
            To fill in contributions from places of periodic BC
@@ -141,7 +132,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> x_policy(1, nx+1);
-        Kokkos::parallel_for( "_x_boundary()", x_policy, _x_boundary );
+        Kokkos::parallel_for( x_policy, _x_boundary, "_x_boundary()" );
 
         //for ( y = 1; y <= ny; y++ ){
         auto _y_boundary = KOKKOS_LAMBDA( const int y )
@@ -161,7 +152,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> y_policy(1, ny+1);
-        Kokkos::parallel_for( "_y_boundary()", y_policy, _y_boundary );
+        Kokkos::parallel_for( y_policy, _y_boundary, "_y_boundary()" );
 
         //for ( z = 1; z <= nz; z++ ){
         auto _z_boundary = KOKKOS_LAMBDA( const int z )
@@ -181,7 +172,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> z_policy(1, nz+1);
-        Kokkos::parallel_for( "_z_boundary()", z_policy, _z_boundary );
+        Kokkos::parallel_for( z_policy, _z_boundary, "_z_boundary()" );
 
         // // Copy x from RHS -> LHS
         // int x = 1;
@@ -268,8 +259,8 @@ void serial_update_ghosts(
         //       }
         //   }
 
-    // }
 }
+
 
 // Policy base class
 template<typename Solver_Type> class Field_Solver : public Solver_Type
@@ -441,10 +432,10 @@ class ES_Field_Solver
                 real_t,
                 real_t,
                 real_t,
-                size_t,
-                size_t,
-                size_t,
-                size_t
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
@@ -484,32 +475,256 @@ class ES_Field_Solver_1D
 
         real_t e_energy(
                 field_array_t& fields,
-                real_t,
-                real_t,
-                real_t,
-                size_t,
-                size_t,
-                size_t,
-                size_t
+                real_t dx,
+                real_t dy,
+                real_t dz,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng
                 )
         {
             auto ex = Cabana::slice<FIELD_EX>(fields);
             auto ey = Cabana::slice<FIELD_EY>(fields);
             auto ez = Cabana::slice<FIELD_EZ>(fields);
-            auto _e_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+            auto _e_energy =  KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum ) // KOKKOS_LAMBDA( const int i, real_t & lsum )
             {
-                lsum += ex(i) * ex(i)
-                    +ey(i) * ey(i)
-                    +ez(i) * ez(i);
-		//printf("%d %e\n",i,ex(i));
+	     const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+	     lsum += ex(i) * ex(i)
+	     +ey(i) * ey(i)
+	     +ez(i) * ez(i);
+	     //printf("%d, %d, %d, %d %e\n",x,y,z,i,ex(i));
             };
 
             real_t e_tot_energy=0;
-            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-            Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
-            return e_tot_energy*0.5f;
+	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+	    Kokkos::parallel_reduce("e_energy", fft_exec_policy, _e_energy, e_tot_energy );
+            //Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            //Kokkos::parallel_reduce("es_e_energy_1d()", exec_policy, _e_energy, e_tot_energy );
+            return e_tot_energy*0.5f*dx*dy*dz;
         }
+    /*
+        void advance_e(
+                field_array_t& fields,
+                real_t px,
+                real_t py,
+                real_t pz,
+                size_t nx,
+                size_t ny,
+                size_t nz,
+                size_t ng,
+                real_t dt_eps0
+                )
+        {
+            auto ex = Cabana::slice<FIELD_EX>(fields);
+            auto ey = Cabana::slice<FIELD_EY>(fields);
+            auto ez = Cabana::slice<FIELD_EZ>(fields);
 
+            auto cbx = Cabana::slice<FIELD_CBX>(fields);
+            auto cby = Cabana::slice<FIELD_CBY>(fields);
+            auto cbz = Cabana::slice<FIELD_CBZ>(fields);
+
+            auto jfx = Cabana::slice<FIELD_JFX>(fields);
+            auto jfy = Cabana::slice<FIELD_JFY>(fields);
+            auto jfz = Cabana::slice<FIELD_JFZ>(fields);
+
+	    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+
+	    size_t n_inner_cell = nx*ny*nz;
+	    real_t iLx = px/(nx*dt_eps0);
+	    real_t iLy = py/(ny*dt_eps0);
+	    real_t iLz = pz/(nz*dt_eps0);
+
+	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
+
+	    //for many ffts
+	    int rank = 3;
+	    int n[3] = {nx, ny, nz};
+	    int depth = 3;
+	    int idist = 1, odist = 1;
+	    int istride = 3,ostride = 3;
+	    int *inembed = n, *onembed = n;
+
+	    ViewVecComplex fft_coefficients("fft_coef", n_inner_cell*3);
+	    ViewVecComplex fft_out("fft_out", n_inner_cell*3);
+	    
+	    //start fft
+#ifdef USE_GPU
+	    // CUFFT plans
+	    cufftHandle forward_plan, inverse_plan;
+	    cufftPlanMany(&forward_plan, rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, depth);
+
+	    cufftPlanMany(&inverse_plan, rank, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_C2C, depth);
+#else
+	    	    //plan
+	    fftwf_plan plan_fft = fftwf_plan_many_dft (rank, //rank
+						       n, //dims -- this doesn't include zero-padding
+						       depth, //howmany
+						       reinterpret_cast<fftwf_complex *>(fft_coefficients.data()), //in
+						       inembed, //inembed
+						       depth, //istride
+						       idist, //idist
+						       reinterpret_cast<fftwf_complex *>(fft_out.data()), //out
+						       onembed, //onembed
+						       depth, //ostride
+						       odist, //odist
+						       FFTW_FORWARD,  
+						       FFTW_ESTIMATE );
+	    
+	    fftwf_plan plan_ifft = fftwf_plan_many_dft (rank, //rank
+						       n, //dims -- this doesn't include zero-padding
+						       depth, //howmany
+							reinterpret_cast<fftwf_complex *>(fft_out.data()), //in
+						       inembed, //inembed
+						       depth, //istride
+						       idist, //idist
+							reinterpret_cast<fftwf_complex *>(fft_coefficients.data()), //out
+						       onembed, //onembed
+						       depth, //ostride
+						       odist, //odist
+						       FFTW_BACKWARD,  
+						       FFTW_ESTIMATE );
+#endif
+
+	    auto _find_jf_fft = KOKKOS_LAMBDA( const int i, const int j, const int k  ){ //for(int i=0; i<ny; ++i){
+		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
+		const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
+		fft_coefficients(3*f0+0) = jfx(f1);
+		fft_coefficients(3*f0+1) = jfy(f1);
+		fft_coefficients(3*f0+2) = jfz(f1);
+
+		//printf ("real part = %15.8e  imag part = %15.8e\n", fft_coefficients[i].x, fft_coefficients[i].y);
+	    };   
+
+	    Kokkos::parallel_for("find_jf_fft", fft_exec_policy, _find_jf_fft );
+
+#ifdef USE_GPU	    
+	    // Transform signal 
+	    cufftExecC2C(forward_plan, (cufftComplex *)(fft_coefficients.data()), (cufftComplex *)(fft_out.data()), CUFFT_FORWARD);
+#else
+	    fftwf_execute(plan_fft);
+#endif	    
+	    //Perform div,poisson solve, and gradient in Fourier space
+	    auto _DPG_Fourier = KOKKOS_LAMBDA(  const int i, const int j, const int k ){ 
+		int i0 = i-ng;
+		int j0 = j-ng;
+		int k0 = k-ng;
+
+		real_t kx,ky,kz;
+		const int f0 = VOXEL(i0,   j0,   k0,   nx, ny, nz, 0);
+		//d(jfx)/dx
+		if(i0<(nx+1)/2) {
+		    kx = (real_t)i0*2.0*M_PI*iLx;
+		}else{
+		    kx = (real_t)(nx-i0)*2.0*M_PI*iLx;
+		}
+
+		//d(jfy)/dy
+		if(j0<(ny+1)/2) {
+		    ky = (real_t)j0*2.0*M_PI*iLy;
+		}else{
+		    ky = (real_t)(ny-j0)*2.0*M_PI*iLy;
+		}
+
+		//d(jfz)/dz
+		if(k0<(nz+1)/2) {
+		    kz = (real_t)k0*2.0*M_PI*iLz;
+		}else{
+		    kz = (real_t)(nz-k0)*2.0*M_PI*iLz;
+		}
+		
+		Kokkos::complex<real_t> kdotj = fft_out(3*f0+0)*kx+fft_out(3*f0+1)*ky+fft_out(3*f0+2)*kz;
+		real_t k2 = kx*kx+ky*ky+kz*kz;
+		if(i0==0&&j0==0&&k0==0) k2 = 1.;
+		Kokkos::complex<real_t> phif = kdotj/k2;
+		if(i0==0&&j0==0&&k0==0) phif = 0.;
+		fft_out(3*f0+0)=kx*phif;
+		fft_out(3*f0+1)=ky*phif;
+		fft_out(3*f0+2)=kz*phif;
+	    };
+
+	    Kokkos::parallel_for("DPG_Fourier", fft_exec_policy, _DPG_Fourier );
+
+#ifdef USE_GPU
+	    // Transform signal back
+	    cufftExecC2C(inverse_plan, (cufftComplex *)(fft_out.data()), (cufftComplex *)(fft_coefficients.data()), CUFFT_INVERSE);
+	    cufftDestroy(inverse_plan);
+	    cufftDestroy(forward_plan);
+#else
+	    fftwf_execute(plan_ifft);
+	    fftwf_destroy_plan(plan_fft);
+	    fftwf_destroy_plan(plan_ifft);
+#endif
+
+	    auto _find_jf_ifft = KOKKOS_LAMBDA( const int i, const int j, const int k  ){ //for(int i=0; i<ny; ++i){
+		const int f1 = VOXEL(i,   j,   k,   nx, ny, nz, ng);
+	    	const int f0 = VOXEL(i-ng,   j-ng,   k-ng,   nx, ny, nz, 0); //fft_coefficients does not include ghost cells
+	    	jfx(f1) = fft_coefficients(3*f0+0).real()/n_inner_cell;
+	    	jfy(f1) = fft_coefficients(3*f0+1).real()/n_inner_cell;
+	    	jfz(f1) = fft_coefficients(3*f0+2).real()/n_inner_cell;
+	    };
+
+	    Kokkos::parallel_for("find_jf_ifft", fft_exec_policy, _find_jf_ifft );	    
+	    //end fft
+            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+
+
+
+	    //remove the average (for 1D problems only)
+	    real_t jx_avg = 0,jy_avg=0,jz_avg=0;
+	    
+	    if(nx==1||ny==1||nz==1){
+		if(nx>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfx(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jx_avg );
+		    jx_avg /=n_inner_cell;
+		}
+
+		if(ny>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfy(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jy_avg );
+		    jy_avg /=n_inner_cell;
+		}
+
+		if(nz>1){
+		    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+			{
+			    const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+			    lsum += jfz(i);
+			};
+
+		    Kokkos::parallel_reduce("find_jz_avg", fft_exec_policy, _find_javg, jz_avg );
+		    jz_avg /=n_inner_cell;
+		}
+	    }
+	    
+            // NOTE: this does work on ghosts that is extra, but it simplifies
+            // the logic and is fairly cheap
+	    const real_t cjx = (nx>1)?dt_eps0:0;
+	    const real_t cjy = (ny>1)?dt_eps0:0;
+	    const real_t cjz = (nz>1)?dt_eps0:0;
+            auto _advance_e = KOKKOS_LAMBDA( const int i )
+            {
+                ex(i) = ex(i) + ( - cjx * (jfx(i)-jx_avg) ) ;
+                ey(i) = ey(i) + ( - cjy * (jfy(i)-jy_avg) ) ;
+                ez(i) = ez(i) + ( - cjz * (jfz(i)-jz_avg) ) ;
+            };
+
+            Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
+            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
+        }
+    */
         void advance_e(
                 field_array_t& fields,
                 real_t,
@@ -530,7 +745,28 @@ class ES_Field_Solver_1D
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
             serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-	    
+	    // printf("\n#after serial_update_ghosts: \n");
+	    //for(int i=137; i<169; ++i) printf("%d %e\n",i,jfx(i));
+	    // for (int x = 0; x < nx+2; x++) {
+	    // 	for (int y = 0; y < ny+2; y++) {
+	    // 	    for (int z = 0; z < nz+2; z++) {
+	    // 		const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+	    // 		printf("%d, %d, %d, %d %e\n",x,y,z,i,jfx(i));
+	    // 	    }
+	    // 	}
+	    // }
+	    serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+	    //printf("\n#after serial_update_ghosts_B: \n");
+	    //for(int i=137; i<169; ++i) printf("%d %e\n",i,jfx(i));
+	    // for (int x = 0; x < nx+2; x++) {
+	    // 	for (int y = 0; y < ny+2; y++) {
+	    // 	    for (int z = 0; z < nz+2; z++) {
+	    // 		const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+	    // 		printf("%d, %d, %d, %d %e\n",x,y,z,i,jfx(i));
+	    // 	    }
+	    // 	}
+	    // }
+
 	    auto _find_javg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
 		{
 		 const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
@@ -541,13 +777,24 @@ class ES_Field_Solver_1D
 	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
 	    Kokkos::parallel_reduce("find_jx_avg", fft_exec_policy, _find_javg, jx_avg );
 	    jx_avg /=nx;
-	    //printf("jx_avg=%e\n",jx_avg);
+
+	    auto _find_jnorm = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+		{
+		 const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+		 lsum += fabs(jfx(i));
+		 //printf("xyz=%d,%d,%d,j=%e\n",x,y,z,jfx(i));
+		};
+	    real_t jx_norm;
+	    Kokkos::parallel_reduce("find_jx_norm", fft_exec_policy, _find_jnorm, jx_norm );
+	    jx_norm /=nx;
+
+	    printf("#jx_norm=%e\n",jx_norm);
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
             {
                 const real_t cj = dt_eps0;
-                ex(i) = ex(i) + ( - cj * (jfx(i)-jx_avg )) ;
+                ex(i) = ex(i) + ( - cj * (jfx(i))); // - jx_avg )) ;
                 //ey(i) = ey(i) + ( - cj * jfy(i) ) ;
                 //ez(i) = ez(i) + ( - cj * jfz(i) ) ;
 		//printf("%d %e %e\n",i,jfx(i), ex(i));
@@ -555,10 +802,24 @@ class ES_Field_Solver_1D
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
             Kokkos::parallel_for( "es_advance_e_1d()", exec_policy, _advance_e );
+
+	    auto _find_eavg = KOKKOS_LAMBDA( const int x, const int y, const int z, real_t & lsum )
+		{
+		 const int i = VOXEL(x,   y,   z,   nx, ny, nz, ng);
+		 lsum +=  (jfx(i) - jx_avg); //ex(i); //
+		 //printf("xyz=%d,%d,%d,j=%e\n",x,y,z,jfx(i));
+		};
+	    real_t ex_avg;
+	    
+	    //Kokkos::parallel_reduce("find_jx_avg", fft_exec_policy, _find_eavg, ex_avg );
+	    printf("#e_energy = %e\n",e_energy(fields, 0, 0, 0, nx, ny, nz, ng));
+	    // for(int i=137; i<169; ++i) printf("%d %e\n",i,ex(i));
         }
 
+    
     	  // Given E_n and E_{n+1/2}, puts E_{n+1} into the array of E_{n+1/2}
-    void extend_e(
+
+        void extend_e(
 		  field_array_t& fields_nph, 
 		  field_array_t& fields_n)
     {
@@ -570,17 +831,17 @@ class ES_Field_Solver_1D
             auto ey_old = Cabana::slice<FIELD_EY>(fields_n);
             auto ez_old = Cabana::slice<FIELD_EZ>(fields_n);
 				
-				auto _extend_e = KOKKOS_LAMBDA( const int i )
+	    auto _extend_e = KOKKOS_LAMBDA( const int i )
             {
-                ex(i) = ex(i) + ( ex(i) - ex_old(i) ) ;
-                ey(i) = ey(i) + ( ey(i) - ey_old(i) ) ;
-                ez(i) = ez(i) + ( ez(i) - ez_old(i) ) ;
+                ex(i) = ex(i)*2.0  - ex_old(i)  ;
+                ey(i) = ey(i)*2.0  - ey_old(i)  ;
+                ez(i) = ez(i)*2.0  - ez_old(i)  ;
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields_nph.size() );
             Kokkos::parallel_for( exec_policy, _extend_e, "extend_e()" );
     }
-    
+
 };
 
 // EM HERE: UNFINISHED
@@ -760,21 +1021,21 @@ class EM_Field_Solver
 
 template<typename field_solver_t>
 void dump_energies(
-	std::vector<particle_list_t>& particles,
+	std::vector<particle_list_t>& particles,	
         field_solver_t& field_solver,
         field_array_t& fields,
         int step,
         real_t time,
-        real_t px,
-        real_t py,
-        real_t pz,
+        real_t dx,
+        real_t dy,
+        real_t dz,
         size_t nx,
         size_t ny,
         size_t nz,
         size_t ng
         )
 {
-    real_t e_en = field_solver.e_energy(fields, px, py, pz, nx, ny, nz, ng);
+    real_t e_en = field_solver.e_energy(fields, dx, dy, dz, nx, ny, nz, ng);
 
 
     // compute total kinetic energy
@@ -788,15 +1049,19 @@ void dump_energies(
 	auto weight = Cabana::slice<Weight>( particles[is] );
 	auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
 	    {
-	     lsum += weight(i)* (sqrt( 1.0 + ( vx(i) * vx(i)
-					      +vy(i) * vy(i)
-					      +vz(i) * vz(i) ) ) - 1.0);
+	     // lsum += weight(i)* (sqrt( 1.0 + ( vx(i) * vx(i)
+	     // 				      +vy(i) * vy(i)
+	     // 				      +vz(i) * vz(i) ) ) - 1.0);
+	    lsum += 0.5*weight(i)*( vx(i) * vx(i)
+	    			+vy(i) * vy(i)
+	    			+vz(i) * vz(i) );
+	     
 	    };
 	
 	Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles[is].size() );
 	Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
     }
-    //k_tot_energy = 0.5*k_tot_energy;
+
     tot_energy = e_en+k_tot_energy; //for ES
     
     // Print energies to screen *and* dump them to disk
@@ -816,7 +1081,7 @@ void dump_energies(
     energy_file << step << " " << time << " " << e_en;
 #ifndef ES_FIELD_SOLVER
     // Only write b info if it's available
-    real_t b_en = field_solver.b_energy(fields, px, py, pz, nx, ny, nz, ng);
+    real_t b_en = field_solver.b_energy(fields, dx, dy, dz, nx, ny, nz, ng);
     energy_file << " " << b_en;
     printf("%d %f %e %e\n",step, time, e_en, b_en);
 #else
