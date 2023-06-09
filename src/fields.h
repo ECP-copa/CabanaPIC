@@ -49,7 +49,7 @@ void serial_update_ghosts_B(
         //}
 
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> zy_policy({1,1}, {nz+1,ny+1});
-        Kokkos::parallel_for( zy_policy, _zy_boundary, "zy boundary()" );
+        Kokkos::parallel_for( "zy boundary()", zy_policy, _zy_boundary );
 
         //for (int x = 0; x < nx+2; x++) {
             //for (int z = 1; z < nz+1; z++) {
@@ -71,7 +71,7 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> xz_policy({0,1}, {nx+2,nz+1});
-        Kokkos::parallel_for( xz_policy, _xz_boundary, "xz boundary()" );
+        Kokkos::parallel_for( "xz boundary()", xz_policy, _xz_boundary );
 
         //for (int y = 0; y < ny+2; y++) {
             //for (int x = 0; x < nx+2; x++) {
@@ -93,7 +93,7 @@ void serial_update_ghosts_B(
         };
         //}
         Kokkos::MDRangePolicy<Kokkos::Rank<2>> yx_policy({0,0}, {ny+2,nx+2});
-        Kokkos::parallel_for( yx_policy, _yx_boundary, "yx boundary()" );
+        Kokkos::parallel_for( "yx boundary()", yx_policy, _yx_boundary );
 
 }
 
@@ -132,7 +132,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> x_policy(1, nx+1);
-        Kokkos::parallel_for( x_policy, _x_boundary, "_x_boundary()" );
+        Kokkos::parallel_for( "_x_boundary()", x_policy, _x_boundary );
 
         //for ( y = 1; y <= ny; y++ ){
         auto _y_boundary = KOKKOS_LAMBDA( const int y )
@@ -152,7 +152,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> y_policy(1, ny+1);
-        Kokkos::parallel_for( y_policy, _y_boundary, "_y_boundary()" );
+        Kokkos::parallel_for( "_y_boundary()", y_policy, _y_boundary );
 
         //for ( z = 1; z <= nz; z++ ){
         auto _z_boundary = KOKKOS_LAMBDA( const int z )
@@ -172,7 +172,7 @@ void serial_update_ghosts(
             }
         };
         Kokkos::RangePolicy<ExecutionSpace> z_policy(1, nz+1);
-        Kokkos::parallel_for( z_policy, _z_boundary, "_z_boundary()" );
+        Kokkos::parallel_for( "_z_boundary()", z_policy, _z_boundary );
 
         // // Copy x from RHS -> LHS
         // int x = 1;
@@ -839,7 +839,7 @@ class ES_Field_Solver_1D
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields_nph.size() );
-            Kokkos::parallel_for( exec_policy, _extend_e, "extend_e()" );
+            Kokkos::parallel_for( "extend_e()", exec_policy, _extend_e );
     }
 
 };
