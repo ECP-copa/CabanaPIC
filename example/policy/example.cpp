@@ -23,14 +23,17 @@ int main( int argc, char* argv[] )
 	//        typedef ParticleManager< Particle, LandauDampingDeck, PrintFile > MyParticleMgr;
 #ifdef ES_FIELD_SOLVER 
 	std::cout<<"Use ES_FIELD_SOLVER\n";
-        //typedef ParticleManager< Particle, ES_Field_Solver_1D, defaultDeck, PrintFile, Explicit, Particle_Pusher_Leapfrog > MyParticleMgr;
-        typedef ParticleManager< Particle, ES_Field_Solver_1D, defaultDeck, PrintFile, Implicit, Particle_Pusher_Leapfrog_EC > MyParticleMgr;	
+        typedef ParticleManager< Particle, ES_Field_Solver_1D, defaultDeck, PrintFile, Explicit, Particle_Pusher_Leapfrog > MyParticleMgr;
+        //typedef ParticleManager< Particle, ES_Field_Solver_1D, defaultDeck, PrintFile, Implicit, Particle_Pusher_Leapfrog_EC > MyParticleMgr;
+	//typedef ParticleManager< Particle, ES_Field_Solver_Spectral, defaultDeck, PrintFile, Implicit, Particle_Pusher_Leapfrog_EC > MyParticleMgr;
+	//typedef ParticleManager< Particle, ES_Field_Solver_Spectral, defaultDeck, PrintFile, Explicit, Particle_Pusher_Leapfrog > MyParticleMgr;	
 #else // EM
 	std::cout<<"Use EM_FIELD_SOLVER\n";
         typedef ParticleManager< Particle, EM_Field_Solver, defaultDeck, PrintFile, Explicit, Particle_Pusher_Leapfrog > MyParticleMgr;
 #endif
 	
 	MyParticleMgr aParticleMgr;
+	std::cout<< typeid( aParticleMgr ).name() << "\n";
 	aParticleMgr.Create();
 	Input_Deck *deck = aParticleMgr.getDeck();
 	aParticleMgr.createParticles(deck);

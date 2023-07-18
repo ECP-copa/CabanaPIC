@@ -91,8 +91,8 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                     cell.access(s,i) = VOXEL(ix,iy,iz,nx,ny,nz,ng);
 
                     // Initialize velocity.(each cell length is 2)
-		    // real_t nax = 0.001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
-		    real_t nax = 0.000001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
+		    real_t nax = 0.0005*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
+		    //real_t nax = 0.000001*sin(2.0*3.1415926*((x+1.0+ix*2)/(2*nx)));
                     real_ gam = 1.0/sqrt(1.0-v0*v0);
                     velocity_x.access(s,i) = sign * v0*gam*(1.0+nax*sign); //0;
                     velocity_y.access(s,i) = 0;

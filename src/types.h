@@ -26,6 +26,8 @@ using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
 using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 #endif
+typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
+
 ///// END ESSENTIALS ///
 
 class Particle {
