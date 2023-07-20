@@ -1086,7 +1086,7 @@ class ES_Field_Solver_1D
 	    Kokkos::parallel_reduce("find_jx_norm", fft_exec_policy, _find_jnorm, jx_norm );
 	    jx_norm /=nx;
 
-	    printf("#jx_norm=%e\n",jx_norm);
+	    //printf("#jx_norm=%e\n",jx_norm);
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int i )
@@ -1110,7 +1110,7 @@ class ES_Field_Solver_1D
 	    real_t ex_avg;
 	    
 	    //Kokkos::parallel_reduce("find_jx_avg", fft_exec_policy, _find_eavg, ex_avg );
-	    printf("#e_energy = %e\n",e_energy(fields, 0, 0, 0, nx, ny, nz, ng));
+	    //printf("#e_energy = %e\n",e_energy(fields, 0, 0, 0, nx, ny, nz, ng));
 	    // for(int i=137; i<169; ++i) printf("%d %e\n",i,ex(i));
         }
 
