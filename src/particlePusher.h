@@ -3,8 +3,43 @@
 
 #include "particleBC.h"
 
-class Particle_Pusher_Leapfrog
+class velocityBoris
 {
+public:
+    KOKKOS_INLINE_FUNCTION void update(real_t &ux, real_t &uy, real_t &uz, real_t qdt_2mc, real_t hax, real_t hay, real_t haz, real_t cbx, real_t cby, real_t cbz)
+    {
+	ux  += hax;                               // Half advance E
+	uy  += hay;
+	uz  += haz;
+	real_t one = 1.0;
+	real_t one_third = 1.0/3.0;
+	const real_t two_fifteenths = 2./15.;
+	
+	real_t v0   = qdt_2mc/sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
+                                                  // Boris - scalars
+	real_t v1   = cbx*cbx + (cby*cby + cbz*cbz);
+	real_t v2   = (v0*v0)*v1;
+	real_t v3   = v0*(one+v2*(one_third+v2*two_fifteenths));
+	real_t v4   = v3/(one+v1*(v3*v3));
+	v4  += v4;
+	v0   = ux + v3*( uy*cbz - uz*cby );       // Boris - uprime
+	v1   = uy + v3*( uz*cbx - ux*cbz );
+	v2   = uz + v3*( ux*cby - uy*cbx );
+	ux  += v4*( v1*cbz - v2*cby );            // Boris - rotation
+	uy  += v4*( v2*cbx - v0*cbz );
+	uz  += v4*( v0*cby - v1*cbx );
+	ux  += hax;                               // Half advance E
+	uy  += hay;
+	uz  += haz;	
+    }
+};
+    
+template<class velocityStep>
+class Particle_Pusher_Leapfrog
+    : public velocityStep
+{
+private:
+    velocityStep vs;
 public:
 template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS_INLINE_FUNCTION int move_p(
         //particle_list_t particles,
@@ -365,12 +400,16 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             real_t uy = velocity_y.access(s,i);   // Load velocity
             real_t uz = velocity_z.access(s,i);   // Load velocity
 
+	    vs.update(ux, uy, uz, qdt_2mc, hax, hay, haz, cbx, cby, cbz);
+	    /*
+	    {   
+	    
             ux  += hax;                               // Half advance E
             uy  += hay;
             uz  += haz;
 
             real_t v0   = qdt_2mc/sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
-            /**/                                      // Boris - scalars
+                                                  // Boris - scalars
             real_t v1   = cbx*cbx + (cby*cby + cbz*cbz);
             real_t v2   = (v0*v0)*v1;
             real_t v3   = v0*(one+v2*(one_third+v2*two_fifteenths));
@@ -385,12 +424,13 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             ux  += hax;                               // Half advance E
             uy  += hay;
             uz  += haz;
-
+	}
+	    */
             velocity_x.access(s,i) = ux;
             velocity_y.access(s,i) = uy;
             velocity_z.access(s,i) = uz;
 
-            v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
+            real_t v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
             /**/                                      // Get norm displacement
             ux  *= cdt_dx;
             uy  *= cdt_dy;
@@ -399,10 +439,10 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             uy  *= v0;
             uz  *= v0;
             v0   = dx + ux;                           // Streak midpoint (inbnds)
-            v1   = dy + uy;
-            v2   = dz + uz;
-            v3   = v0 + ux;                           // New position
-            v4   = v1 + uy;
+            real_t v1   = dy + uy;
+            real_t v2   = dz + uz;
+            real_t v3   = v0 + ux;                           // New position
+            real_t v4   = v1 + uy;
             real_t v5   = v2 + uz;
 
             real_t q = weight.access(s,i)*qsp;   // Load charge

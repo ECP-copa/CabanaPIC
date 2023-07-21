@@ -63,7 +63,11 @@ if (NOT ${INPUT_DECK} STREQUAL "")
     endif()
 endif()
 ####### End User Deck ######
-
+message(Kokkos_ENABLE_CUDA="${Kokkos_ENABLE_CUDA}")
+if (Kokkos_ENABLE_CUDA)
+    add_definitions(-DUSE_GPU=ON)
+endif(Kokkos_ENABLE_CUDA)
+  
 if(ENABLE_COVERAGE_BUILD)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
 endif(ENABLE_COVERAGE_BUILD)

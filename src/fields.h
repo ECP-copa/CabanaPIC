@@ -722,7 +722,7 @@ class ES_Field_Solver_Spectral
             };
 
             Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, fields.size() );
-            Kokkos::parallel_for( exec_policy, _advance_e, "es_advance_e()" );
+            Kokkos::parallel_for(  "es_advance_e()", exec_policy, _advance_e );
         }
 
     
