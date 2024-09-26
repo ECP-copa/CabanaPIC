@@ -791,9 +791,8 @@ class ES_Field_Solver_1D
 	     lsum += ex(i) * ex(i)
 	     +ey(i) * ey(i)
 	     +ez(i) * ez(i);
-	     //printf("%d, %d, %d, %d %e\n",x,y,z,i,ex(i));
+	     //printf("xyz=%d,%d,%d, exyz=%e,%e,%e\n",x,y,z,ex(i),ey(i),ez(i));
             };
-
             real_t e_tot_energy=0;
 	    Kokkos::MDRangePolicy<Kokkos::Rank<3>> fft_exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
 	    Kokkos::parallel_reduce("e_energy", fft_exec_policy, _e_energy, e_tot_energy );
@@ -1318,7 +1317,7 @@ class EM_Field_Solver
 };
 
 template<typename field_solver_t>
-void dump_energies(
+real_t dump_energies(
 	std::vector<particle_list_t>& particles,	
         field_solver_t& field_solver,
         field_array_t& fields,
@@ -1330,37 +1329,22 @@ void dump_energies(
         size_t nx,
         size_t ny,
         size_t nz,
-        size_t ng
+        size_t ng,
+	real_t k_tot_energy,
+	real_t tot_en0=0	
         )
 {
+    //printf("%f\t",time);
     real_t e_en = field_solver.e_energy(fields, dx, dy, dz, nx, ny, nz, ng);
 
 
     // compute total kinetic energy
-    real_t k_tot_energy=0, tot_energy,den;
+    real_t tot_energy,den;
     int num_sp = particles.size();
-    for(size_t is = 0; is<num_sp; ++is){
-	auto vx = Cabana::slice<VelocityX>(particles[is]);
-	auto vy = Cabana::slice<VelocityY>(particles[is]);
-	auto vz = Cabana::slice<VelocityZ>(particles[is]);
-	
-	auto weight = Cabana::slice<Weight>( particles[is] );
-	auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
-	    {
-	     // lsum += weight(i)* (sqrt( 1.0 + ( vx(i) * vx(i)
-	     // 				      +vy(i) * vy(i)
-	     // 				      +vz(i) * vz(i) ) ) - 1.0);
-	    lsum += 0.5*weight(i)*( vx(i) * vx(i)
-	    			+vy(i) * vy(i)
-	    			+vz(i) * vz(i) );
-	     
-	    };
-	
-	Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles[is].size() );
-	Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
-    }
 
     tot_energy = e_en+k_tot_energy; //for ES
+    if(step==0) den = 0;	
+    else den = tot_energy - tot_en0;
     
     // Print energies to screen *and* dump them to disk
     // TODO: is it ok to keep opening and closing the file like this?
@@ -1371,12 +1355,18 @@ void dump_energies(
     {
         // delete what is there
         energy_file.open("energies.txt", std::ofstream::out | std::ofstream::trunc);
+#ifdef ES_FIELD_SOLVER	
+	energy_file << "#ES field solver\n#step, time, E_field_energy, Kinetic energy, change of energy, relative energy error\n";
+#else
+	energy_file << "#ES field solver\n#step, time, E_field_energy, Kinetic energy, change of energy, B_field_energy\n";	
+#endif	
+	
     }
     else {
         energy_file.open("energies.txt", std::ios::app); // append
     }
 
-    energy_file << step << " " << time << " " << e_en;
+    energy_file << step << " " << time << " " << e_en<<" "<<k_tot_energy<<" "<<den<<" "<<den/tot_en0;    
 #ifndef ES_FIELD_SOLVER
     // Only write b info if it's available
     real_t b_en = field_solver.b_energy(fields, dx, dy, dz, nx, ny, nz, ng);
@@ -1384,9 +1374,11 @@ void dump_energies(
     printf("%d %f %e %e\n",step, time, e_en, b_en);
 #else
     printf("%d %f %e %e\n",step, time, e_en,tot_energy);
+    // printf("\n");
 #endif
     energy_file << std::endl;
     energy_file.close();
+    return tot_energy;    
 }
 
 #endif // pic_EM_fields_h

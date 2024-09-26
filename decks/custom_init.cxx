@@ -114,22 +114,28 @@ Input_Deck::Input_Deck()
     // Tell the deck to use the custom initer in place of the default
     particle_initer = new Custom_Particle_Initializer();
 
-    nx = 32;
+    nx = 33;
     ny = 1;
     nz = 1;
-
-    num_steps = 2000; //400;
+    real_ time = 60;
+    //num_steps = 2000; //400;
     nppc = 100;
 
-    v0 = sqrt(3.0)*0.5*0.1; //0.866025403784439;
+
     n0 = 2.0; //for 2stream, for 2 species, making sure omega_p of each species is 1
     
     // Can also create local temporaries
+    real_ inv_k;
+    real_ fac = 1; //8.0;
+    v0 = 0.0866025403784439*fac; //*4.0; //sqrt(3.0)*0.5*inv_k; //0.866025403784439;
     real_ gam = 1.0 / sqrt(1.0 - v0*v0);
-    printf("#gamma0=%e\n",gam);
+    // real_ gam = 1.39; //1.0038; //1.066; //
+    // v0 = sqrt( 1.0 - 1.0/(gam*gam) );
+    inv_k = v0*(gam*gam*gam)*2.0/sqrt(3.0);
+    printf("#gamma0=%e, v0=%e\n",gam, v0);
     const real_t default_grid_len = 1.0;
 
-    len_x_global = 3.1415926*2*(0.1*gam*gam*gam);
+    len_x_global = 0.628318530717959*(gam*sqrt(gam))*fac; //6.28318530717959*inv_k; //3.1415926*2*(inv_k); //*gam*gam*gam);
     len_y_global = default_grid_len;
     len_z_global = default_grid_len;
     
@@ -139,6 +145,6 @@ Input_Deck::Input_Deck()
             len_x_global, len_y_global, len_z_global,
             nx, ny, nz
             ) / c;
-
+    num_steps = (int) time/dt;
     printf("dt = %e\n",dt);
 }

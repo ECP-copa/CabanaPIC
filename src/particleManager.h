@@ -6,6 +6,7 @@
 #include "fields.h"
 //#include "push.h"
 #include "particlePusher.h"
+#include "analyticPusher.h"
 
 #ifndef ENERGY_DUMP_INTERVAL
 #define ENERGY_DUMP_INTERVAL 1
@@ -49,8 +50,9 @@ public:
 	real_t c = deck->c;
 	real_t eps0 = deck->eps;
         real_t qsp = deck->qsp;
-        real_t me = deck->me;
-        real_t qdt_2mc = qsp*dt/(2*me*c);
+        real_t me = deck->me; 
+	real_t q_mc = qsp/(me*c); //TODO: species dependent mass
+        //real_t qdt_2mc = qsp*dt/(2*me*c);
 
         real_t cdt_dx = c*dt/dx;
         real_t cdt_dy = c*dt/dy;
@@ -106,7 +108,8 @@ public:
 		    push(
 		     d_particles_k[is],
 		     d_interpolators,
-		     dt_frac*qdt_2mc,
+		     dt_frac*q_mc,
+		     dt,
 		     dt_frac*cdt_dx,
 		     dt_frac*cdt_dy,
 		     dt_frac*cdt_dz,			 
@@ -175,6 +178,7 @@ public:
         real_t qsp = deck->qsp;
         real_t me = deck->me;
         real_t qdt_2mc = qsp*dt/(2*me*c);
+	real_t q_mc = qsp/(me*c);
 
         real_t cdt_dx = c*dt/dx;
         real_t cdt_dy = c*dt/dy;
@@ -186,6 +190,19 @@ public:
         const real_t pz =  (nz>1) ? frac*c*dt/dz : 0;
 
 	const int num_steps = deck->num_steps;
+	std::cout<<"Number of steps = "<<num_steps<<"\n";
+	real_t k_tot_en = 0;
+	for(int is=0; is<d_numSpecies; ++is){
+	    k_tot_en += kinetic_energy(
+				       d_particles_k[is],
+				       d_interpolators,
+				       q_mc,
+				       dt
+				       );
+	    
+	}
+	
+	const real_t tot_en0 = dump_energies(d_particles_k, *d_field_solver, d_fields, 0, 0, dx, dy, dz, nx, ny, nz, num_ghosts,k_tot_en);
 	
         auto scatter_add = Kokkos::Experimental::create_scatter_view(d_accumulators);
 	
@@ -201,7 +218,9 @@ public:
 		push(
 		     d_particles_k[is],
 		     d_interpolators,
-		     qdt_2mc,
+		     q_mc,
+		     dt,
+		     //qdt_2mc,
 		     cdt_dx,
 		     cdt_dy,
 		     cdt_dz,
@@ -235,7 +254,17 @@ public:
 
             if( step % ENERGY_DUMP_INTERVAL == 0 )
             {
-                dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, dx, dy, dz, nx, ny, nz, num_ghosts);
+		k_tot_en = 0;
+		for(int is=0; is<d_numSpecies; ++is){
+		     k_tot_en += kinetic_energy(
+					        d_particles_k[is],
+					        d_interpolators,
+					        q_mc,
+					        dt
+					        );
+					       
+		}
+                real_t tot_en = dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, dx, dy, dz, nx, ny, nz, num_ghosts, k_tot_en, tot_en0);
             }
 
 	}
@@ -325,8 +354,9 @@ public:
 	    size_t Ne = deck->Ne; // (nppc*nx*ny*nz)
 	    real_t we = (real_t) Npe/(real_t) Ne;
 	    real_t v0 = deck->v0;
-	    
-	    deck->initialize_particles( d_particles_k[is], nx, ny, nz, num_ghosts, dxp, npc, we, v0 );
+	    real_t vt = deck->vt;
+	    printf("deck-vt=%e\n",vt);
+	    deck->initialize_particles( d_particles_k[is], nx, ny, nz, num_ghosts, dxp, npc, we, v0, vt );
 	    
 	}
 	
@@ -346,6 +376,7 @@ private:
     Field_Solver<Field> *d_field_solver;
     Boundary d_boundary;
     using ParticlePusherPolicy::push;
+    using ParticlePusherPolicy::kinetic_energy;
 };
 
 #endif

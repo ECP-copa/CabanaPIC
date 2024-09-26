@@ -7,6 +7,8 @@
 #define real_t REAL_TYPE
 #endif
 
+#include <math.h>
+
 #include <Kokkos_Core.hpp>
 #include <Cabana_Core.hpp>
 
@@ -15,6 +17,7 @@
 #ifndef CELL_BLOCK_FACTOR
 #define CELL_BLOCK_FACTOR 32
 #endif
+
 // Cell blocking factor in memory
 const size_t cell_blocking = CELL_BLOCK_FACTOR;
 
@@ -22,11 +25,15 @@ const size_t cell_blocking = CELL_BLOCK_FACTOR;
 #ifdef REQUIRE_HOST
 using MemorySpace = Kokkos::HostSpace;
 using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+using KokkosDevice = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>;
 #else
 using MemorySpace = Kokkos::DefaultExecutionSpace::memory_space;
 using ExecutionSpace = Kokkos::DefaultExecutionSpace;
 #endif
+using KokkosDevice = Kokkos::Device<ExecutionSpace, MemorySpace>;
+
 typedef Kokkos::View<Kokkos::complex<real_t>*,  MemorySpace>   ViewVecComplex;
+
 
 ///// END ESSENTIALS ///
 

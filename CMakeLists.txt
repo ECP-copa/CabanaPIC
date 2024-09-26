@@ -16,6 +16,8 @@ option(ENABLE_TESTS OFF)
 option(ENABLE_COVERAGE_BUILD OFF)
 #### End User configuration Options ####
 
+set(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "" FORCE)
+
 ##### SET SOLVES TYPE #####
 # Flag for switching between electromagnetic and electrostatic solver
 set(SOLVER_TYPE "EM" CACHE STRING "Selected Solver Type")

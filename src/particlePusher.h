@@ -6,8 +6,13 @@
 class velocityBoris
 {
 public:
-    KOKKOS_INLINE_FUNCTION void update(real_t &ux, real_t &uy, real_t &uz, real_t qdt_2mc, real_t hax, real_t hay, real_t haz, real_t cbx, real_t cby, real_t cbz)
+    KOKKOS_INLINE_FUNCTION void update(real_t &ux, real_t &uy, real_t &uz, real_t q_mc, real_t dt, real_t hax, real_t hay, real_t haz, real_t cbx, real_t cby, real_t cbz)
     {
+	real_t qdt_2mc = q_mc*dt*0.5;
+	hax *= qdt_2mc;
+	hay *= qdt_2mc;
+	haz *= qdt_2mc;
+	
 	ux  += hax;                               // Half advance E
 	uy  += hay;
 	uz  += haz;
@@ -15,7 +20,7 @@ public:
 	real_t one_third = 1.0/3.0;
 	const real_t two_fifteenths = 2./15.;
 	
-	real_t v0   = qdt_2mc/sqrtf(one + (ux*ux + (uy*uy + uz*uz)));
+	real_t v0   = qdt_2mc /sqrtf(one + (ux*ux + (uy*uy + uz*uz))); //relativistic
                                                   // Boris - scalars
 	real_t v1   = cbx*cbx + (cby*cby + cbz*cbz);
 	real_t v2   = (v0*v0)*v1;
@@ -41,6 +46,12 @@ class Particle_Pusher_Leapfrog
 private:
     velocityStep vs;
 public:
+    void kinetic_energy()
+    {
+	printf("exit\n");
+	exit(1);
+    }
+    
 template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS_INLINE_FUNCTION int move_p(
         //particle_list_t particles,
         T1& position_x,
@@ -290,7 +301,9 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
     void push(
 	      particle_list_t& particles,
 	      interpolator_array_t& f0,
-	      real_t qdt_2mc,
+	      real_t q_mc,
+	      real_t dt,
+	      // real_t qdt_2mc,
 	      real_t cdt_dx,
 	      real_t cdt_dy,
 	      real_t cdt_dz,
@@ -380,11 +393,11 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             real_t dy = position_y.access(s,i);   // Load position
             real_t dz = position_z.access(s,i);   // Load position
 
-            real_t hax  = qdt_2mc*(    ( ex    + dy*dexdy    ) +
+            real_t hax  = (    ( ex    + dy*dexdy    ) +
                     dz*( dexdz + dy*d2exdydz ) );
-            real_t hay  = qdt_2mc*(    ( ey    + dz*deydz    ) +
+            real_t hay  = (    ( ey    + dz*deydz    ) +
                     dx*( deydx + dz*d2eydzdx ) );
-            real_t haz  = qdt_2mc*(    ( ez    + dx*dezdx    ) +
+            real_t haz  = (    ( ez    + dx*dezdx    ) +
                     dy*( dezdy + dx*d2ezdxdy ) );
 
             //1D only
@@ -400,7 +413,8 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             real_t uy = velocity_y.access(s,i);   // Load velocity
             real_t uz = velocity_z.access(s,i);   // Load velocity
 
-	    vs.update(ux, uy, uz, qdt_2mc, hax, hay, haz, cbx, cby, cbz);
+	    //vs.update(ux, uy, uz, qdt_2mc, hax, hay, haz, cbx, cby, cbz);
+	    vs.update(ux, uy, uz, q_mc, dt, hax, hay, haz, cbx, cby, cbz);
 	    /*
 	    {   
 	    
@@ -430,7 +444,7 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
             velocity_y.access(s,i) = uy;
             velocity_z.access(s,i) = uz;
 
-            real_t v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz)));
+            real_t v0   = one/sqrtf(one + (ux*ux+ (uy*uy + uz*uz))); //relativistic
             /**/                                      // Get norm displacement
             ux  *= cdt_dx;
             uy  *= cdt_dy;
@@ -542,6 +556,97 @@ template<typename T1, typename T2, typename T3, typename T4, typename T5> KOKKOS
         Cabana::simd_parallel_for( vec_policy, _push, "push()" );
 	
     }
+
+
+    real_t kinetic_energy(particle_list_t& particles,
+			  interpolator_array_t& f0,
+			  real_t q_mc,
+			  real_t dt		  
+			  )
+    {
+	real_t k_tot_energy=0;
+	real_t qdt_2mc = 0.5*dt*q_mc;
+
+	auto _ex = Cabana::slice<EX>(f0);
+	auto _dexdy = Cabana::slice<DEXDY>(f0);
+	auto _dexdz = Cabana::slice<DEXDZ>(f0);
+	auto _d2exdydz = Cabana::slice<D2EXDYDZ>(f0);
+	auto _ey = Cabana::slice<EY>(f0);
+	auto _deydz = Cabana::slice<DEYDZ>(f0);
+	auto _deydx = Cabana::slice<DEYDX>(f0);
+	auto _d2eydzdx = Cabana::slice<D2EYDZDX>(f0);
+	auto _ez = Cabana::slice<EZ>(f0);
+	auto _dezdx = Cabana::slice<DEZDX>(f0);
+	auto _dezdy = Cabana::slice<DEZDY>(f0);
+	auto _d2ezdxdy = Cabana::slice<D2EZDXDY>(f0);
+
+
+	auto position_x = Cabana::slice<PositionX>( particles );
+	auto position_y = Cabana::slice<PositionY>( particles );
+	auto position_z = Cabana::slice<PositionZ>( particles );
+	
+	auto vx = Cabana::slice<VelocityX>(particles);
+	auto vy = Cabana::slice<VelocityY>(particles);
+	auto vz = Cabana::slice<VelocityZ>(particles);
+	
+	auto weight = Cabana::slice<Weight>( particles );
+	auto cell   = Cabana::slice<Cell_Index>( particles );
+	
+	auto _k_energy = KOKKOS_LAMBDA( const int i, real_t & lsum )
+	    {
+	     real_t dx = position_x( i ); // Load position
+	     real_t dy = position_y( i ); // Load position
+	     real_t dz = position_z( i ); // Load position
+
+	     int ii  = cell( i );
+	     
+	     auto ex = _ex(ii);
+	     auto dexdy = _dexdy(ii);
+	     auto dexdz = _dexdz(ii);
+	     auto d2exdydz = _d2exdydz(ii);
+	     auto ey = _ey(ii);
+	     auto deydz = _deydz(ii);
+	     auto deydx = _deydx(ii);
+	     auto d2eydzdx = _d2eydzdx(ii);
+	     auto ez = _ez(ii);
+	     auto dezdx = _dezdx(ii);
+	     auto dezdy = _dezdy(ii);
+	     auto d2ezdxdy = _d2ezdxdy(ii);
+
+	     real_t hax  = (    ( ex    + dy*dexdy    ) +
+                    dz*( dexdz + dy*d2exdydz ) );
+	     real_t hay  = (    ( ey    + dz*deydz    ) +
+                    dx*( deydx + dz*d2eydzdx ) );
+	     real_t haz  = (    ( ez    + dx*dezdx    ) +
+                    dy*( dezdy + dx*d2ezdxdy ) );
+
+	     hax *= qdt_2mc;
+	     hay *= qdt_2mc;
+	     haz *= qdt_2mc;
+	     
+	     real_t v0,v1,v2;
+	     
+	     //push by half dt
+	     v0 = vx(i) + hax;
+	     v1 = vy(i) + hay;
+	     v2 = vz(i) + haz;
+	     
+	     v0 = v0*v0 + v1*v1 + v2*v2;
+	     real_t one = 1.0;
+	     lsum += weight(i)* v0 / (one + sqrt(one+v0));
+	     
+	    // lsum += 0.5*weight(i)*( vx(i) * vx(i)
+	    // 			+vy(i) * vy(i)
+	    // 			+vz(i) * vz(i) );
+	     
+	    };
+	
+	Kokkos::RangePolicy<ExecutionSpace> exec_policy( 0, particles.size() );
+	Kokkos::parallel_reduce("k_energy()", exec_policy, _k_energy, k_tot_energy );
+
+	return k_tot_energy;
+    }
+			  
 };
 
     
