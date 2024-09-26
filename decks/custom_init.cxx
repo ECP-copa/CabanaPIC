@@ -44,6 +44,7 @@ class Custom_Particle_Initializer : public Particle_Initializer {
                 real_ v0,
                 real_,
                 real_,
+                real_,
                 real_		
                 ) override
         {

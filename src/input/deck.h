@@ -81,13 +81,14 @@ class Particle_Initializer {
                 size_t nx,
                 size_t ny,
                 size_t,
-                size_t,
+                size_t ng,
                 real_ dxp,
                 size_t nppc,
                 real_ w,
                 real_ v0,
+                real_ vt,
                 real_,
-                real_,
+                real_,		
                 real_
                 )
         {
@@ -215,10 +216,11 @@ class _Input_Deck {
                 real_ dxp,
                 size_t nppc,
                 real_ w,
-                real_ v0
+                real_ v0,
+		real_ vt
         )
         {
-            particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0,
+            particle_initer->init(particles, nx, ny, nz, ng, dxp, nppc, w, v0, vt,
                     len_x_global, len_y_global, len_z_global);
         }
 
@@ -287,7 +289,8 @@ class _Input_Deck {
         //real_ local_y_max;
         //real_ local_z_max;
         real_ v0 = 1.0; //drift velocity
-
+        real_ vt = 1.0; //thermal velocity (sqrt(T/m))
+    
         //size_t ghost_offset; // Where the cell id needs to start for a "real" cell, basically nx
         //size_t num_real_cells;
 
