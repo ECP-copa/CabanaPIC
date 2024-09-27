@@ -311,6 +311,7 @@ class _Input_Deck {
 
         bool perform_uncenter = false;
 
+        bool perform_sgfilter = false; //perform sparse grid filering
         ////////////////////////////////////////////////////
 
         void print_run_details()

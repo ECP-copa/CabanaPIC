@@ -147,5 +147,11 @@ Input_Deck::Input_Deck()
             nx, ny, nz
             ) / c;
     num_steps = (int) time/dt;
+
+    perform_sgfilter = true;
+
+    std::cout << "perform_sgfilter = "<<std::boolalpha << perform_sgfilter <<"\n" ;
+
     printf("dt = %e\n",dt);
+    exit(1);
 }
