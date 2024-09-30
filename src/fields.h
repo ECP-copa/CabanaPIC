@@ -528,8 +528,8 @@ class ES_Field_Solver_Spectral
             auto jfy = Cabana::slice<FIELD_JFY>(fields);
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
-	    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+	    //serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            //serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
 
 	    size_t n_inner_cell = nx*ny*nz;
 	    real_t iLx = px/(nx*dt_eps0);
@@ -1041,7 +1041,7 @@ class ES_Field_Solver_1D
             auto jfy = Cabana::slice<FIELD_JFY>(fields);
             auto jfz = Cabana::slice<FIELD_JFZ>(fields);
 
-            serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            // serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
 	    // printf("\n#after serial_update_ghosts: \n");
 	    //for(int i=137; i<169; ++i) printf("%d %e\n",i,jfx(i));
 	    // for (int x = 0; x < nx+2; x++) {
@@ -1052,7 +1052,7 @@ class ES_Field_Solver_1D
 	    // 	    }
 	    // 	}
 	    // }
-	    serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+	    // serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
 	    //printf("\n#after serial_update_ghosts_B: \n");
 	    //for(int i=137; i<169; ++i) printf("%d %e\n",i,jfx(i));
 	    // for (int x = 0; x < nx+2; x++) {
@@ -1236,8 +1236,8 @@ class EM_Field_Solver
             auto cbz = Cabana::slice<FIELD_CBZ>(fields);
 
 
-            serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
-            serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
+            // serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, ng);
+            // serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, ng);
             // NOTE: this does work on ghosts that is extra, but it simplifies
             // the logic and is fairly cheap
             auto _advance_e = KOKKOS_LAMBDA( const int x, const int y, const int z)

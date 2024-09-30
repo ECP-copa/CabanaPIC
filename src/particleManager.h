@@ -4,7 +4,7 @@
 #include "interpolator.h"
 #include "accumulator.h"
 #include "fields.h"
-//#include "push.h"
+#include "sparseFilter.h"
 #include "particlePusher.h"
 #include "analyticPusher.h"
 
@@ -131,6 +131,15 @@ public:
 		    scatter_add.reset_except(d_accumulators);
 		    // Map accumulator current back onto the fields
 		    unload_accumulator_array(d_fields, d_accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
+		    
+		    // Fill ghosts cells
+		    auto jfx = Cabana::slice<FIELD_JFX>(d_fields);
+		    auto jfy = Cabana::slice<FIELD_JFY>(d_fields);
+		    auto jfz = Cabana::slice<FIELD_JFZ>(d_fields);
+		    
+		    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Add current deposited to last ghost cell into first valid cell
+		    serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Apply periodic BCs
+		    
 		    d_field_solver->advance_b(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
 		    // Advance the electric field from E_0 to E_1/2
 		    d_field_solver->advance_e(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts, dt_eps0);
@@ -167,7 +176,14 @@ public:
 	const int nx = deck->nx;
 	const int ny = deck->ny;
 	const int nz = deck->nz;
-	const int num_ghosts = deck->num_ghosts;	
+	const int num_ghosts = deck->num_ghosts;
+
+	const bool SG = deck->perform_sgfilter;
+	int minres = 16;
+	std::cout << "perform_sgfilter = "<<std::boolalpha << SG <<"\n" ;
+	Binomial_Filters *SGfilt;
+	if(SG) SGfilt = new Binomial_Filters(nx,ny,nz,num_ghosts,minres);
+	
         const real_t dx = deck->dx;
         const real_t dy = deck->dy;
         const real_t dz = deck->dz;
@@ -240,7 +256,19 @@ public:
             scatter_add.reset_except(d_accumulators);
 	    // Map accumulator current back onto the fields
             unload_accumulator_array(d_fields, d_accumulators, nx, ny, nz, num_ghosts, dx, dy, dz, dt);
+
+	    // Fill ghosts cells
+	    auto jfx = Cabana::slice<FIELD_JFX>(d_fields);
+	    auto jfy = Cabana::slice<FIELD_JFY>(d_fields);
+	    auto jfz = Cabana::slice<FIELD_JFZ>(d_fields);
 	    
+	    serial_update_ghosts(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Add current deposited to last ghost cell into first valid cell
+	    serial_update_ghosts_B(jfx, jfy, jfz, nx, ny, nz, num_ghosts); // Apply periodic BCs
+	    
+	    //SG filtering
+	    if(SG){
+		SGfilt->SGfilter(d_fields, nx, ny, nz, num_ghosts, step);
+	    }
 	    //TODO: wrap it to be one call instead of three
 	    // Half advance the magnetic field from B_0 to B_{1/2}
             d_field_solver->advance_b(d_fields, real_t(0.5)*px, real_t(0.5)*py, real_t(0.5)*pz, nx, ny, nz, num_ghosts);
@@ -267,8 +295,9 @@ public:
                 real_t tot_en = dump_energies(d_particles_k, *d_field_solver, d_fields, step, step*dt, dx, dy, dz, nx, ny, nz, num_ghosts, k_tot_en, tot_en0);
             }
 
-	}
+	} //time loop
 
+	if(SG) delete SGfilt;
     }
     
     void setBoundaryType(Input_Deck * deck)
