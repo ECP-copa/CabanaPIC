@@ -95,7 +95,7 @@ public:
 					jfy_orig(i) = jfy_sg(i);
 					jfz_orig(i) = jfz_sg(i);
 				};
-			Kokkos::parallel_for( fields.size(), _copy_to_orig, "copy_to_orig()" );
+			Kokkos::parallel_for( "copy_to_orig()", fields.size(), _copy_to_orig);
 			
 			std::cout << "aa" << std::endl;
 			serial_update_ghosts_B(jfx_orig, jfy_orig, jfz_orig, nx, ny, nz, ng); // refill ghost cells
@@ -160,7 +160,7 @@ public:
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx+ng,ny+ng,nz+ng});
             //Kokkos::MDRangePolicy<ExecutionSpace> exec_policy( 0, fields_in.size() );
-            Kokkos::parallel_for( exec_policy, _filter, "binomial_filter()" );
+			Kokkos::parallel_for( "binomial_filter()",exec_policy, _filter );
 		}
 
 /*****************************************************************************************************************/
@@ -227,7 +227,7 @@ public:
 
 				};
 	    		Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
-            Kokkos::parallel_for( exec_policy, _filter, "binomial_filter_with_restriction()" );
+			Kokkos::parallel_for( "binomial_filter_with_restriction()", exec_policy, _filter );
 		 
 		 		serial_update_ghosts_B(jfx_out, jfy_out, jfz_out, nx_out, ny_out, nz_out, ng); // Fill ghost cells in output grid
 
@@ -391,7 +391,7 @@ public:
 					
 				};
 				Kokkos::MDRangePolicy<Kokkos::Rank<3>> exec_policy({ng,ng,ng}, {nx_out+ng,ny_out+ng,nz_out+ng});
-				Kokkos::parallel_for( exec_policy, _interpolate, "interpolate()" );
+				Kokkos::parallel_for( "interpolate()", exec_policy, _interpolate );
 
             serial_update_ghosts_B(jfx_out, jfy_out, jfz_out, nx_out, ny_out, nz_out, ng); // Make sure output has ghost cells
 				return fields_out;
@@ -424,7 +424,7 @@ public:
 					jfy(i) += fac*jfy_add(i);
 					jfz(i) += fac*jfz_add(i);
 				};
-			Kokkos::parallel_for( fields.size(), _add, "add_fields()" );
+			Kokkos::parallel_for( "add_fields()", fields.size(), _add );
 
 		}
 
@@ -491,7 +491,7 @@ public:
 					jfz(i) = 0.0;
 				};
 
-			Kokkos::parallel_for( d_fields_out.size(), _init, "init_output_fields()" );
+			Kokkos::parallel_for( "init_output_fields()", d_fields_out.size(), _init );
 
 			// Add up contributions from "plus" diagonal
 			for ( int i=0; i<=num_coarsenings; i++ ) {

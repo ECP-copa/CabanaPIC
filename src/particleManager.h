@@ -6,7 +6,7 @@
 #include "fields.h"
 #include "sparseFilter.h"
 #include "particlePusher.h"
-#include "analyticPusher.h"
+//#include "analyticPusher.h"
 
 #ifndef ENERGY_DUMP_INTERVAL
 #define ENERGY_DUMP_INTERVAL 1
